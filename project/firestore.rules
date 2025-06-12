@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow read and write access to all documents for development
+    // In production, implement proper authentication-based rules
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Trips collection with real-time sync
+    match /trips/{tripId} {
+      allow read, write: if true;
+      
+      // Allow subcollections for trip-related data
+      match /{subcollection=**} {
+        allow read, write: if true;
+      }
+    }
+    
+    // Diesel consumption records
+    match /diesel/{recordId} {
+      allow read, write: if true;
+    }
+    
+    // Missed loads tracking
+    match /missedLoads/{loadId} {
+      allow read, write: if true;
+    }
+    
+    // System configurations
+    match /systemConfig/{configId} {
+      allow read, write: if true;
+    }
+    
+    // User activity logs
+    match /activityLogs/{logId} {
+      allow read, write: if true;
+    }
+  }
+}
