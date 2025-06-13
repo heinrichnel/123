@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES, CostEntry } from '../../types';
 import { Calculator, Clock, Navigation, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from '../../utils/helpers';
-import { useAppContext } from '../../context/AppContext';
+import { AppContext } from '../../context/AppContext';
 
 interface SystemCostGeneratorProps {
   trip: Trip;
@@ -13,26 +13,26 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
   trip, 
   onGenerateSystemCosts 
 }) => {
-  const [systemRates, setSystemRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
+  const [systemRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
   
   // Get the latest system cost rates from the admin configuration
-  const { trips } = useAppContext();
+  const { trips } = React.useContext(AppContext);
   
   // Find the most recent trip with system costs to get the latest rates
   useEffect(() => {
-    const tripsWithSystemCosts = trips.filter(t => 
-      t.costs.some(c => c.isSystemGenerated) && 
-      t.revenueCurrency === trip.revenueCurrency
+    const tripsWithSystemCosts = trips.filter((t: Trip) => 
+      t.costs.some((c: CostEntry) => c.isSystemGenerated) && 
+      t.currency === trip.currency
     );
     
     if (tripsWithSystemCosts.length > 0) {
       // Sort by date to get the most recent
-      tripsWithSystemCosts.sort((a, b) => 
+      tripsWithSystemCosts.sort((a: Trip, b: Trip) => 
         new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
       );
       
       const mostRecentTrip = tripsWithSystemCosts[0];
-      const systemCost = mostRecentTrip.costs.find(c => c.isSystemGenerated);
+      const systemCost = mostRecentTrip.costs.find((c: CostEntry) => c.isSystemGenerated);
       
       if (systemCost && systemCost.calculationDetails) {
         // Extract rate information from the calculation details
@@ -46,7 +46,7 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
         }
       }
     }
-  }, [trips, trip.revenueCurrency]);
+  }, [trips, trip.currency]);
   
   // Use effective date logic to determine which rates to apply
   const getApplicableRates = (currency: 'USD' | 'ZAR'): SystemCostRates => {
@@ -66,7 +66,7 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
     return rates;
   };
   
-  const rates = getApplicableRates(trip.revenueCurrency);
+  const rates = getApplicableRates(trip.currency);
   
   // Calculate trip duration in days
   const startDate = new Date(trip.startDate);
@@ -80,14 +80,14 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
       subCategory: 'Repair & Maintenance per KM',
       amount: trip.distanceKm * rates.perKmCosts.repairMaintenance,
       rate: rates.perKmCosts.repairMaintenance,
-      calculation: `${trip.distanceKm} km × ${formatCurrency(rates.perKmCosts.repairMaintenance, trip.revenueCurrency)}/km`
+      calculation: `${trip.distanceKm} km × ${formatCurrency(rates.perKmCosts.repairMaintenance, trip.currency)}/km`
     },
     {
       category: 'System Costs',
       subCategory: 'Tyre Cost per KM',
       amount: trip.distanceKm * rates.perKmCosts.tyreCost,
       rate: rates.perKmCosts.tyreCost,
-      calculation: `${trip.distanceKm} km × ${formatCurrency(rates.perKmCosts.tyreCost, trip.revenueCurrency)}/km`
+      calculation: `${trip.distanceKm} km × ${formatCurrency(rates.perKmCosts.tyreCost, trip.currency)}/km`
     }
   ] : [];
 
@@ -98,56 +98,56 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
       subCategory: 'GIT Insurance',
       amount: tripDurationDays * rates.perDayCosts.gitInsurance,
       rate: rates.perDayCosts.gitInsurance,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.gitInsurance, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.gitInsurance, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'Short-Term Insurance',
       amount: tripDurationDays * rates.perDayCosts.shortTermInsurance,
       rate: rates.perDayCosts.shortTermInsurance,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.shortTermInsurance, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.shortTermInsurance, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'Tracking Cost',
       amount: tripDurationDays * rates.perDayCosts.trackingCost,
       rate: rates.perDayCosts.trackingCost,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.trackingCost, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.trackingCost, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'Fleet Management System',
       amount: tripDurationDays * rates.perDayCosts.fleetManagementSystem,
       rate: rates.perDayCosts.fleetManagementSystem,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.fleetManagementSystem, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.fleetManagementSystem, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'Licensing',
       amount: tripDurationDays * rates.perDayCosts.licensing,
       rate: rates.perDayCosts.licensing,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.licensing, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.licensing, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'VID / Roadworthy',
       amount: tripDurationDays * rates.perDayCosts.vidRoadworthy,
       rate: rates.perDayCosts.vidRoadworthy,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.vidRoadworthy, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.vidRoadworthy, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'Wages',
       amount: tripDurationDays * rates.perDayCosts.wages,
       rate: rates.perDayCosts.wages,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.wages, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.wages, trip.currency)}/day`
     },
     {
       category: 'System Costs',
       subCategory: 'Depreciation',
       amount: tripDurationDays * rates.perDayCosts.depreciation,
       rate: rates.perDayCosts.depreciation,
-      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.depreciation, trip.revenueCurrency)}/day`
+      calculation: `${tripDurationDays} days × ${formatCurrency(rates.perDayCosts.depreciation, trip.currency)}/day`
     }
   ];
 
@@ -160,7 +160,7 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
       category: cost.category,
       subCategory: cost.subCategory,
       amount: cost.amount,
-      currency: trip.revenueCurrency,
+      currency: trip.currency,
       referenceNumber: `SYS-${trip.id}-${String(index + 1).padStart(3, '0')}`,
       date: trip.startDate,
       notes: `System-generated operational overhead cost. ${cost.calculation}`,
@@ -231,8 +231,8 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
             <Calculator className="w-4 h-4 text-gray-600" />
             <span className="text-sm font-medium text-gray-700">Currency</span>
           </div>
-          <p className="text-lg font-bold text-gray-900">{trip.revenueCurrency}</p>
-          <p className="text-xs text-gray-500">Using {trip.revenueCurrency} rates</p>
+          <p className="text-lg font-bold text-gray-900">{trip.currency}</p>
+          <p className="text-xs text-gray-500">Using {trip.currency} rates</p>
         </div>
       </div>
 
@@ -255,11 +255,11 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
                   <tr key={index} className="border-t border-gray-200">
                     <td className="px-4 py-3 text-sm text-gray-900">{cost.subCategory}</td>
                     <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                      {formatCurrency(cost.rate, trip.revenueCurrency)}
+                      {formatCurrency(cost.rate, trip.currency)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900 text-right">{trip.distanceKm} km</td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
-                      {formatCurrency(cost.amount, trip.revenueCurrency)}
+                      {formatCurrency(cost.amount, trip.currency)}
                     </td>
                   </tr>
                 ))}
@@ -287,11 +287,11 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
                 <tr key={index} className="border-t border-gray-200">
                   <td className="px-4 py-3 text-sm text-gray-900">{cost.subCategory}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                    {formatCurrency(cost.rate, trip.revenueCurrency)}
+                    {formatCurrency(cost.rate, trip.currency)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-900 text-right">{tripDurationDays}</td>
                   <td className="px-4 py-3 text-sm font-medium text-gray-900 text-right">
-                    {formatCurrency(cost.amount, trip.revenueCurrency)}
+                    {formatCurrency(cost.amount, trip.currency)}
                   </td>
                 </tr>
               ))}
@@ -311,7 +311,7 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
           </div>
           <div className="text-right">
             <p className="text-2xl font-bold text-green-800">
-              {formatCurrency(totalSystemCosts, trip.revenueCurrency)}
+              {formatCurrency(totalSystemCosts, trip.currency)}
             </p>
             <p className="text-sm text-green-600">Operational overhead</p>
           </div>

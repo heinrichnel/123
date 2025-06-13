@@ -120,7 +120,7 @@ const TripPlanningForm: React.FC<TripPlanningFormProps> = ({
 
     onAddDelay({
       tripId: trip.id,
-      delayType: newDelay.delayType as any,
+      delayType: newDelay.delayType as DelayReason['delayType'],
       description: newDelay.description,
       delayDuration: parseFloat(newDelay.delayDuration),
       reportedAt: new Date().toISOString(),
@@ -347,3 +347,4 @@ const TripPlanningForm: React.FC<TripPlanningFormProps> = ({
 };
 
 export default TripPlanningForm;
+

@@ -6,7 +6,7 @@ import DeploymentStatus from '../components/admin/DeploymentStatus';
 import SyncStatus from '../components/ui/SyncStatus';
 import Card, { CardContent, CardHeader } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import { Settings, Database, Globe, Shield, Users, Key } from 'lucide-react';
+import { Database, Globe, Shield, Users, Key } from 'lucide-react';
 
 const Admin: React.FC = () => {
   const { connectionStatus } = useAppContext();

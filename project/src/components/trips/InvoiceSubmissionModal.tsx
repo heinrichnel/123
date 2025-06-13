@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trip, AdditionalCost, DelayReason } from '../../types';
+import { Trip, AdditionalCost } from '../../types';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, TextArea, FileUpload } from '../ui/FormElements';
@@ -7,13 +7,7 @@ import AdditionalCostsForm from '../costs/AdditionalCostsForm';
 import { 
   Send, 
   X, 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle, 
-  FileText, 
-  DollarSign,
-  Calendar,
-  Flag
+  AlertTriangle
 } from 'lucide-react';
 import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
 
@@ -199,6 +193,8 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
   const hasDiscrepancies = discrepancies.length > 0;
   const totalAdditionalCosts = trip.additionalCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
   const finalInvoiceAmount = kpis.totalRevenue + totalAdditionalCosts;
+
+  console.log(trip);
 
   return (
     <Modal

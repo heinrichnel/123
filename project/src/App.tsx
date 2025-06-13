@@ -15,7 +15,7 @@ import Admin from './pages/Admin';
 import Modal from './components/ui/Modal';
 import ConnectionStatus from './components/ui/ConnectionStatus';
 import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from './types';
-import { Database, Loader2 } from 'lucide-react';
+import { Database } from 'lucide-react';
 import DriverBehaviorPage from './pages/DriverBehaviorPage';
 import TripDetails from './components/trips/TripDetails';
 import TripForm from './components/trips/TripForm';
@@ -23,7 +23,7 @@ import SystemCostConfiguration from './components/admin/SystemCostConfiguration'
 import ActionLog from './components/actionlog/ActionLog';
 
 const AppContent: React.FC = () => {
-  const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad, connectionStatus } = useAppContext();
+  const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad } = useAppContext();
 
   const [currentView, setCurrentView] = useState('ytd-kpis');
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
