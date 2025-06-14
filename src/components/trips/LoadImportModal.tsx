@@ -4,6 +4,7 @@ import Button from '../ui/Button';
 import { useAppContext } from '../../context/AppContext';
 import { Input } from '../ui/FormElements';
 import { Upload, X, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+import TripDashboard from './components/TripDashboard';
 
 interface LoadImportModalProps {
   isOpen: boolean;
@@ -226,4 +227,12 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
   );
 };
 
-export default LoadImportModal;
+function App() {
+  return (
+    <div>
+      <TripDashboard />
+    </div>
+  );
+}
+
+export default App;

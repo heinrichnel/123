@@ -21,6 +21,7 @@ import TripDetails from './components/trips/TripDetails';
 import TripForm from './components/trips/TripForm';
 import SystemCostConfiguration from './components/admin/SystemCostConfiguration';
 import ActionLog from './components/actionlog/ActionLog';
+import TripDashboard from './components/TripDashboard';
 
 const AppContent: React.FC = () => {
   const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad, connectionStatus } = useAppContext();

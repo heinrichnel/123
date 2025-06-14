@@ -299,4 +299,19 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
   );
 };
 
+const flagTrip = (id: string, reason: string) =>
+  editTrip(id, { status: "flagged", flagReason: reason });
+
+const resolveFlag = (id: string) =>
+  editTrip(id, { resolved: true });
+
+const completeTrip = (id: string) =>
+  setTrips(prev =>
+    prev.map(trip =>
+      trip.id === id && trip.resolved
+        ? { ...trip, status: "completed" }
+        : trip
+    )
+  );
+
 export default FlagResolutionModal;

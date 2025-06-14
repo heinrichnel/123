@@ -36,6 +36,7 @@ import {
   canCompleteTrip,
   formatDate
 } from '../../utils/helpers';
+import AddTripForm from './AddTripForm';
 
 interface DashboardProps {
   trips: Trip[];
@@ -51,9 +52,10 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [tripList, setTripList] = useState<Trip[]>(trips);
 
   const filteredTrips = useMemo(() => {
-    let filtered = trips;
+    let filtered = tripList;
     
     if (filters.startDate || filters.endDate) {
       filtered = filterTripsByDateRange(filtered, filters.startDate, filters.endDate);
@@ -69,7 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
     }
     
     return filtered;
-  }, [trips, filters]);
+  }, [tripList, filters]);
 
   const stats = useMemo(() => {
     const totalTrips = filteredTrips.length;
@@ -209,6 +211,10 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       ? 'Dashboard PDF report is being generated...'
       : 'Dashboard Excel report is being generated...';
     alert(message);
+  };
+
+  const handleAddTrip = (trip: Trip) => {
+    setTripList(prev => [...prev, trip]);
   };
 
   return (
@@ -695,8 +701,27 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Add Trip Form */}
+      <Card>
+        <CardHeader 
+          title="Add New Trip" 
+          icon={<Truck className="w-5 h-5 text-blue-600" />}
+        />
+        <CardContent>
+          <AddTripForm onAddTrip={handleAddTrip} />
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default Dashboard;
+function App() {
+  return (
+    <div>
+      <Dashboard trips={[]} />
+    </div>
+  );
+}
+
+export default App;

@@ -4,21 +4,15 @@ import { Trip } from "../types/Trip";
 const TripDashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
 
-  // Add or upload trip
   const addTrip = (trip: Trip) => setTrips(prev => [...prev, trip]);
-
   const editTrip = (id: string, updated: Partial<Trip>) =>
     setTrips(prev =>
       prev.map(trip => (trip.id === id ? { ...trip, ...updated } : trip))
     );
-
-  // Flag trip
   const flagTrip = (id: string, reason: string) =>
     editTrip(id, { status: "flagged", flagReason: reason });
-
   const resolveFlag = (id: string) =>
     editTrip(id, { resolved: true });
-
   const completeTrip = (id: string) =>
     setTrips(prev =>
       prev.map(trip =>
@@ -28,7 +22,6 @@ const TripDashboard: React.FC = () => {
       )
     );
 
-  // Filtered lists
   const activeTrips = trips.filter(t => t.status === "active");
   const flaggedTrips = trips.filter(t => t.status === "flagged");
   const completedTrips = trips.filter(t => t.status === "completed");
@@ -66,16 +59,3 @@ const TripDashboard: React.FC = () => {
 };
 
 export default TripDashboard;
-
-import React from "react";
-import TripDashboard from "./components/TripDashboard";
-
-function App() {
-  return (
-    <div>
-      <TripDashboard />
-    </div>
-  );
-}
-
-export default App;
