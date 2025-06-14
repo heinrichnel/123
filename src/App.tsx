@@ -22,9 +22,11 @@ import TripForm from './components/trips/TripForm';
 import SystemCostConfiguration from './components/admin/SystemCostConfiguration';
 import ActionLog from './components/actionlog/ActionLog';
 import TripDashboard from './components/TripDashboard';
+import { collection, addDoc, onSnapshot } from "firebase/firestore";
+import { db } from "../firebase"; // jou Firebase config
 
 const AppContent: React.FC = () => {
-  const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad, connectionStatus } = useAppContext();
+  const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad, connectionStatus, setTrips } = useAppContext();
 
   const [currentView, setCurrentView] = useState('ytd-kpis');
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
@@ -49,14 +51,26 @@ const AppContent: React.FC = () => {
     return () => clearTimeout(timer);
   }, [trips, isInitialLoad]);
 
+  // Listen for trips collection changes
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'trips'), (snapshot) => {
+      const tripsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTrips(tripsData);
+    });
+    return () => unsub();
+  }, [setTrips]);
+
   const handleAddTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>) => {
     try {
-      const tripId = addTrip(tripData);
+      const newTrip = {
+        ...tripData,
+        status: 'active', // Stel eksplisiet die status
+        costs: [],
+      };
+      await addDoc(collection(db, "trips"), newTrip); // Maak seker addTrip is async as jy Firestore gebruik
       setShowTripForm(false);
       setEditingTrip(undefined);
-      
-      // Show success message
-      alert(`Trip created successfully!\n\nFleet: ${tripData.fleetNumber}\nDriver: ${tripData.driverName}\nRoute: ${tripData.route}\n\nTrip ID: ${tripId}`);
+      alert(`Trip created successfully!\n\nFleet: ${tripData.fleetNumber}`);
     } catch (error) {
       console.error('Error adding trip:', error);
       alert('Error creating trip. Please try again.');

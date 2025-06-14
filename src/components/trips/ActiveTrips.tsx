@@ -1,11 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Trip } from "../types/Trip";
+import { collection, onSnapshot, addDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 const TripDashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
 
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'trips'), (snapshot) => {
+      const tripsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTrips(tripsData);
+    });
+    return () => unsub();
+  }, []);
+
   // Add or upload trip
-  const addTrip = (trip: Trip) => setTrips(prev => [...prev, trip]);
+  const addTrip = async (trip: Omit<Trip, 'id'>) => {
+    const docRef = await addDoc(collection(db, "trips"), trip);
+    setTrips(prev => [...prev, { id: docRef.id, ...trip }]);
+  };
 
   const editTrip = (id: string, updated: Partial<Trip>) =>
     setTrips(prev =>
