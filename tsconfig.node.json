@@ -1,11 +1,1 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "composite": true,
-    "module": "CommonJS",
-    "target": "ES2020",
-    "outDir": "dist-node",
-    "types": ["node"]
-  },
-  "include": ["functions", "scripts", "node_modules/@types"]
-}
+{}
