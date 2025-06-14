@@ -1,7 +1,11 @@
 import { db } from "../../firebase";
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableFirestoreNetwork, disableFirestoreNetwork } from "firebase/firestore";
+import {
+  getFirestore,
+  enableNetwork,
+  disableNetwork
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -14,10 +18,10 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // ✅ Firestore and Auth
-export const db = getFirestore(app);
+const db = getFirestore(app);
 
 // Add these exports:
-export { enableFirestoreNetwork, disableFirestoreNetwork };
+export { db, enableNetwork, disableNetwork };
 
 /* 🔁 LISTENERS & FIRESTORE INTERACTION FUNCTIONS */
 
