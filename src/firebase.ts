@@ -1,53 +1,20 @@
 // src/firebase.ts
 
 import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  enableNetwork,
-  disableNetwork,
-  collection,
-  doc,
-  addDoc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  limit,
-  startAfter,
-  endBefore,
-} from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
-import { firebaseConfig } from './firebaseConfig';
+import { getFirestore } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_AUTH_DOMAIN',
+  projectId: 'YOUR_PROJECT_ID',
+  // ...other config
+};
 
 // ✅ Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
 // ✅ Firestore and Auth
 export const db = getFirestore(app);
-export const auth = getAuth(app);
-
-// ✅ Optional: Enable Analytics (only in production and browser)
-let analytics: ReturnType<typeof getAnalytics> | null = null;
-if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-  isAnalyticsSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-      console.log('📊 Firebase Analytics enabled');
-    } else {
-      console.warn('⚠️ Firebase Analytics not supported in this browser');
-    }
-  });
-}
-export { analytics };
-
-// ✅ Firestore network control
-export const enableFirestoreNetwork = () => enableNetwork(db);
-export const disableFirestoreNetwork = () => disableNetwork(db);
 
 // ✅ Export Firebase app
 export { app };
@@ -94,3 +61,6 @@ export const deleteCARReportFromFirebase = () => {};
 
 // Connectivity Monitor (basic placeholder)
 export const monitorConnectionStatus = () => {};
+
+// Importing db from firebase for Firestore operations
+import { db } from "./firebase"; // If in src/
