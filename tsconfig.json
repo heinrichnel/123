@@ -1,8 +1,13 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "nodenext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],    // ✅ Ensures DOM + ESNext types are included
+    "allowJs": true,                              // ✅ Supports JS interop if needed
+    "resolveJsonModule": true,                    // ✅ Allows importing JSON files directly
+    "isolatedModules": true,                      // ✅ Required for tools like Vite (and for `.tsx`)
+    "noEmit": true,                               // ✅ Prevents TypeScript from outputting `.js` files (Vite handles this)
     "strict": true,
     "jsx": "react-jsx",
     "esModuleInterop": true,

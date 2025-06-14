@@ -22,11 +22,11 @@
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react": "^4.1.0",
     "autoprefixer": "^10.4.21",
-    "esbuild": "0.19.12",
+    "esbuild": "^0.25.5",
     "postcss": "^8.5.5",
-    "rollup": "3.29.4",
+    "rollup": "^3.29.5",
     "tailwindcss": "^4.1.10",
     "typescript": "^5.4.5",
-    "vite": "5.0.0"
+    "vite": "^6.3.5"
   }
 }
