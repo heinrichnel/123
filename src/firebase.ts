@@ -1,70 +1,109 @@
-import { db } from "../../firebase";
+// src/firebase.ts
 
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
   enableNetwork,
-  disableNetwork
+  disableNetwork,
+  collection,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc
 } from "firebase/firestore";
 
+// ————————————————
+// 1. Firebase-konfigurasie (gebruik Vite-omgewingveranderlikes)
+// ————————————————
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  // ...other config
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  // …ander sleutel/waarde-pare soos nodig
 };
 
-// ✅ Initialize Firebase App
+// ————————————————
+// 2. App & Firestore-initialisering
+// ————————————————
 const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
 
-// ✅ Firestore and Auth
-const db = getFirestore(app);
+// ————————————————
+// 3. Versamelings („collections“)
+// ————————————————
+export const tripsCollection  = collection(db, "trips");
+export const dieselCollection = collection(db, "diesel");
+// Voeg by: missedLoadsCollection, driverBehaviorCollection, ensovoorts…
 
-// Add these exports:
-export { db, enableNetwork, disableNetwork };
+// ————————————————
+// 4. Netwerkbeheer
+// ————————————————
+export { enableNetwork, disableNetwork };
 
-/* 🔁 LISTENERS & FIRESTORE INTERACTION FUNCTIONS */
+// ————————————————
+// 5. Real-time Listeners
+// ————————————————
+// Voorbeeld vir trips:
+export const listenToTrips = (
+  onUpdate: (docs: any[]) => void,
+  onError?: (error: Error) => void
+) =>
+  onSnapshot(
+    tripsCollection,
+    snapshot => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      onUpdate(data);
+    },
+    error => {
+      if (onError) onError(error);
+      console.error("listenToTrips fout:", error);
+    }
+  );
 
-// Placeholder listeners – implement logic later
-export const listenToTrips = () => {};
-export const listenToDieselRecords = () => {};
-export const listenToMissedLoads = () => {};
-export const listenToDriverBehaviorEvents = () => {};
-export const listenToActionItems = () => {};
-export const listenToCARReports = () => {};
+// Jy kan soortgelyke listeners skep vir:
+// listenToDieselRecords, listenToMissedLoads, listenToDriverBehaviorEvents, listenToActionItems, listenToCARReports
 
-// CRUD: Trips
-export const addTripToFirebase = () => {};
-export const updateTripInFirebase = () => {};
-export const deleteTripFromFirebase = () => {};
+// ————————————————
+// 6. CRUD-funksies
+// ————————————————
+// Trips
+export const addTripToFirebase = (tripData: any) =>
+  addDoc(tripsCollection, tripData);
 
-// CRUD: Diesel
-export const addDieselToFirebase = () => {};
-export const updateDieselInFirebase = () => {};
-export const deleteDieselFromFirebase = () => {};
+export const updateTripInFirebase = (id: string, tripData: any) =>
+  updateDoc(doc(tripsCollection, id), tripData);
 
-// CRUD: Missed Loads
-export const addMissedLoadToFirebase = () => {};
-export const updateMissedLoadInFirebase = () => {};
-export const deleteMissedLoadFromFirebase = () => {};
+export const deleteTripFromFirebase = (id: string) =>
+  deleteDoc(doc(tripsCollection, id));
 
-// CRUD: Driver Behaviour
-export const addDriverBehaviorEventToFirebase = () => {};
-export const updateDriverBehaviorEventToFirebase = () => {};
-export const deleteDriverBehaviorEventToFirebase = () => {};
+// Diesel
+export const addDieselToFirebase = (data: any) =>
+  addDoc(dieselCollection, data);
 
-// CRUD: Action Items
-export const addActionItemToFirebase = () => {};
-export const updateActionItemInFirebase = () => {};
-export const deleteActionItemFromFirebase = () => {};
+export const updateDieselInFirebase = (id: string, data: any) =>
+  updateDoc(doc(dieselCollection, id), data);
 
-// CRUD: CAR Reports
-export const addCARReportToFirebase = () => {};
-export const updateCARReportInFirebase = () => {};
-export const deleteCARReportFromFirebase = () => {};
+export const deleteDieselFromFirebase = (id: string) =>
+  deleteDoc(doc(dieselCollection, id));
 
-// Connectivity Monitor (basic placeholder)
-export const monitorConnectionStatus = () => {};
+// Voeg op dieselfde wyse by:
+// addMissedLoadToFirebase, updateMissedLoadInFirebase, deleteMissedLoadFromFirebase
+// addDriverBehaviorEventToFirebase, updateDriverBehaviorEventToFirebase, deleteDriverBehaviorEventToFirebase
+// addActionItemToFirebase, updateActionItemInFirebase, deleteActionItemFromFirebase
+// addCARReportToFirebase, updateCARReportInFirebase, deleteCARReportFromFirebase
 
-// Only one default export
-export default CostForm;
+// ————————————————
+// 7. Verbindingsmonitor (voorbeeld)
+// ————————————————
+export const monitorConnectionStatus = (
+  onOnline: () => void,
+  onOffline: () => void
+) => {
+  enableNetwork(db).then(onOnline).catch(() => onOffline());
+  // jy kan hier ‘n interval of event luisteraar insit om herhaaldelik te monitor
+};
+
+// ————————————————
+// GEEN default-eksport nie
+// ————————————————
