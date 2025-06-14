@@ -1,4 +1,4 @@
-// src/firebase.ts
+import { db } from "../../firebase"; // Correct path if firebase.ts is in src/
 
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
@@ -15,9 +15,6 @@ const app = initializeApp(firebaseConfig);
 
 // ✅ Firestore and Auth
 export const db = getFirestore(app);
-
-// ✅ Export Firebase app
-export { app };
 
 /* 🔁 LISTENERS & FIRESTORE INTERACTION FUNCTIONS */
 
@@ -61,6 +58,3 @@ export const deleteCARReportFromFirebase = () => {};
 
 // Connectivity Monitor (basic placeholder)
 export const monitorConnectionStatus = () => {};
-
-// Importing db from firebase for Firestore operations
-import { db } from "./firebase"; // If in src/

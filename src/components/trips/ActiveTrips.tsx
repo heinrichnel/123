@@ -1,10 +1,14 @@
+// src/components/trips/ActiveTrips.tsx
+
 import React, { useState, useEffect } from "react";
 import { Trip } from "../types/Trip";
 import { collection, onSnapshot, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAppContext } from "../../context/AppContext";
 
 const TripDashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const { trips: contextTrips } = useAppContext();
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'trips'), (snapshot) => {
@@ -14,7 +18,6 @@ const TripDashboard: React.FC = () => {
     return () => unsub();
   }, []);
 
-  // Add or upload trip
   const addTrip = async (trip: Omit<Trip, 'id'>) => {
     const docRef = await addDoc(collection(db, "trips"), trip);
     setTrips(prev => [...prev, { id: docRef.id, ...trip }]);
@@ -25,7 +28,6 @@ const TripDashboard: React.FC = () => {
       prev.map(trip => (trip.id === id ? { ...trip, ...updated } : trip))
     );
 
-  // Flag trip
   const flagTrip = (id: string, reason: string) =>
     editTrip(id, { status: "flagged", flagReason: reason });
 
@@ -41,7 +43,6 @@ const TripDashboard: React.FC = () => {
       )
     );
 
-  // Filtered lists
   const activeTrips = trips.filter(t => t.status === "active");
   const flaggedTrips = trips.filter(t => t.status === "flagged");
   const completedTrips = trips.filter(t => t.status === "completed");
@@ -58,6 +59,7 @@ const TripDashboard: React.FC = () => {
           </li>
         ))}
       </ul>
+
       <h2>Flagged Trips</h2>
       <ul>
         {flaggedTrips.map(trip => (
@@ -68,6 +70,7 @@ const TripDashboard: React.FC = () => {
           </li>
         ))}
       </ul>
+
       <h2>Completed Trips</h2>
       <ul>
         {completedTrips.map(trip => (
@@ -79,16 +82,3 @@ const TripDashboard: React.FC = () => {
 };
 
 export default TripDashboard;
-
-import React from "react";
-import TripDashboard from "./components/TripDashboard";
-
-function App() {
-  return (
-    <div>
-      <TripDashboard />
-    </div>
-  );
-}
-
-export default App;

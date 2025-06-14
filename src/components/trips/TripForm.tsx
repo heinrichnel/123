@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Trip, CLIENTS, DRIVERS, FLEET_NUMBERS, CLIENT_TYPES } from '../../types';
+import React, { useState } from "react";
+import { Trip } from "../types/Trip";
+
+import { CLIENTS, DRIVERS, FLEET_NUMBERS, CLIENT_TYPES } from '../../types';
 import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
 import { Save, X, Building } from 'lucide-react';
