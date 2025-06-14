@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Globe, Clock, Code, GitBranch, CheckCircle, Upload } from 'lucide-react';
@@ -9,7 +9,7 @@ interface DeploymentStatusProps {
 }
 
 const DeploymentStatus: React.FC<DeploymentStatusProps> = ({ className = '' }) => {
-  const [deploymentInfo, setDeploymentInfo] = useState({
+  const [deploymentInfo] = useState({
     status: 'success',
     url: 'https://matanuska-491ad.web.app',
     deployedAt: new Date().toISOString(),

@@ -1,5 +1,4 @@
-import { Trip, CostEntry, FlaggedCost, Driver, SystemCostRates, InvoiceAging, AGING_THRESHOLDS } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { Trip, CostEntry, FlaggedCost } from '../types';
 
 // Date formatting
 export const formatDate = (date: string | Date): string => {
@@ -360,7 +359,14 @@ export const generateCurrencyFleetReport = (trips: Trip[], currency: 'USD' | 'ZA
       }
       
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, {
+      trips: number;
+      revenue: number;
+      expenses: number;
+      flags: number;
+      internalTrips: number;
+      externalTrips: number;
+    }>);
 
     return {
       currency,
@@ -457,7 +463,7 @@ export const downloadCurrencyFleetReport = async (trips: Trip[], currency: 'USD'
     ];
 
     // Add driver data
-    Object.entries(report.driverStats).forEach(([driver, stats]: [string, any]) => {
+    Object.entries(report.driverStats).forEach(([driver, stats]: [string, unknown]) => {
       const netProfit = stats.revenue - stats.expenses;
       const profitMargin = stats.revenue > 0 ? (netProfit / stats.revenue) * 100 : 0;
       csvContent.push(
@@ -633,11 +639,11 @@ export const isOnline = (): boolean => {
 };
 
 // Retry operation with exponential backoff
-export const retryOperation = async (
-  operation: () => Promise<any>,
+export const retryOperation = async <T>(
+  operation: () => Promise<T>,
   maxRetries = 3,
   delay = 1000
-): Promise<any> => {
+): Promise<T> => {
   let lastError;
   
   for (let i = 0; i < maxRetries; i++) {

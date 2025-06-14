@@ -3,7 +3,7 @@ import { Trip } from '../../types';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
-import { Save, X, DollarSign, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Save, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 
 interface PaymentUpdateModalProps {

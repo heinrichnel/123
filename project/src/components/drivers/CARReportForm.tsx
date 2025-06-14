@@ -4,7 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
-import { Save, X, AlertTriangle, FileText, Calendar, User, FileUp } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { formatDate } from '../../utils/helpers';
 
 interface CARReportFormProps {
@@ -115,7 +115,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
   }, [existingReport, linkedEvent, isOpen]);
   
   // Handle form changes
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear error for this field

@@ -4,11 +4,9 @@ import Button from '../ui/Button';
 import { useAppContext } from '../../context/AppContext';
 import { Input, TextArea } from '../ui/FormElements';
 import { 
-  Save, 
   X, 
   CheckCircle, 
   AlertTriangle, 
-  Fuel,
   FileText,
   Upload
 } from 'lucide-react';

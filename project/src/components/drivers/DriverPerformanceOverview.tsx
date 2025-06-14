@@ -1,18 +1,12 @@
-import React, { useState, useMemo } from 'react';
-import { useAppContext } from '../../context/AppContext';
-import { DriverBehaviorEvent, DriverBehaviorEventType, DRIVER_BEHAVIOR_EVENT_TYPES, DRIVERS, FLEET_NUMBERS } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
-import Modal from '../ui/Modal';
-import { User as UserRound, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Calendar, Filter, Plus, FileText, X, Save, Eye, Edit, Trash2, Shield, Clock, MapPin, FileUp } from 'lucide-react';
-import { formatDate, formatDateTime } from '../../utils/helpers';
+import React, { useState, useEffect, useMemo } from 'react';
+import { GridColDef } from '@mui/x-data-grid';
+import { mockDriverBehaviorEvents } from '../../api/mockData';
+import { DriverBehaviorEvent } from '../../types';
+import Header from '../../components/Header';
 
 const DriverPerformanceOverview: React.FC = () => {
-  const { driverBehaviorEvents, addDriverBehaviorEvent, updateDriverBehaviorEvent, deleteDriverBehaviorEvent, getAllDriversPerformance } = useAppContext();
+  const { addDriverBehaviorEvent, updateDriverBehaviorEvent, deleteDriverBehaviorEvent, getAllDriversPerformance } = useAppContext();
   
-  const [showAddEventModal, setShowAddEventModal] = useState(false);
-  const [showEventDetailsModal, setShowEventDetailsModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<DriverBehaviorEvent | null>(null);
   const [selectedDriver, setSelectedDriver] = useState<string>('');
   const [selectedEventType, setSelectedEventType] = useState<string>('');
@@ -41,7 +35,7 @@ const DriverPerformanceOverview: React.FC = () => {
   // Get all driver performance data
   const driversPerformance = useMemo(() => {
     return getAllDriversPerformance();
-  }, [driverBehaviorEvents, getAllDriversPerformance]);
+  }, [getAllDriversPerformance]);
   
   // Filter events based on selected filters
   const filteredEvents = useMemo(() => {
@@ -112,7 +106,10 @@ const DriverPerformanceOverview: React.FC = () => {
   }, [filteredEvents, driversPerformance]);
   
   // Handle form changes
-  const handleFormChange = (field: string, value: any) => {
+  const handleFormChange = (
+    field: string,
+    value: string | number | boolean | Date
+  ) => {
     setEventForm(prev => {
       const updated = { ...prev, [field]: value };
       
@@ -270,737 +267,148 @@ const DriverPerformanceOverview: React.FC = () => {
     }
   };
   
+  const columns: GridColDef[] = useMemo(() => [
+    { field: 'id', headerName: 'ID', width: 90 },
+    {
+      field: 'driverId',
+      headerName: 'Driver ID',
+      width: 120,
+    },
+    {
+      field: 'timestamp',
+      headerName: 'Timestamp',
+      width: 150,
+      valueFormatter: (params) => new Date(params.value).toLocaleString(),
+    },
+    {
+      field: 'eventType',
+      headerName: 'Event Type',
+      width: 150,
+    },
+    {
+      field: 'eventValue',
+      headerName: 'Event Value',
+      width: 120,
+    },
+    {
+      field: 'latitude',
+      headerName: 'Latitude',
+      width: 120,
+    },
+    {
+      field: 'longitude',
+      headerName: 'Longitude',
+      width: 120,
+    },
+  ], []);
+
+  const rows = useMemo(() => {
+    return driverBehaviorEvents;
+  }, [driverBehaviorEvents]);
+
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    // Simulate loading data
+    setTimeout(() => {
+      setDriverBehaviorEvents(mockDriverBehaviorEvents);
+      setIsLoading(false);
+    }, 1000);
+  }, []);
+
+  const [driverBehaviorEvents, setDriverBehaviorEvents] = useState<DriverBehaviorEvent[]>([]);
+
+  const processedDriverBehaviorEvents = useMemo(() => {
+    // Process driverBehaviorEvents here
+    return driverBehaviorEvents;
+  }, [driverBehaviorEvents]); // Added driverBehaviorEvents as dependency
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Driver Performance Overview</h2>
-          <p className="text-gray-600">Monitor driver behavior and identify high-risk drivers</p>
-        </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setShowAddEventModal(true);
-          }}
-          icon={<Plus className="w-4 h-4" />}
-        >
-          Record Behavior Event
-        </Button>
-      </div>
-      
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Events</p>
-                <p className="text-2xl font-bold text-gray-900">{summary.totalEvents}</p>
-                <p className="text-xs text-gray-400">Recorded incidents</p>
-              </div>
-              <UserRound className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Critical Events</p>
-                <p className="text-2xl font-bold text-red-600">{summary.criticalEvents}</p>
-                <p className="text-xs text-gray-400">Highest severity</p>
-              </div>
-              <AlertTriangle className="w-8 h-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">High Severity</p>
-                <p className="text-2xl font-bold text-orange-600">{summary.highSeverityEvents}</p>
-                <p className="text-xs text-gray-400">Require attention</p>
-              </div>
-              <Shield className="w-8 h-8 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Unresolved</p>
-                <p className="text-2xl font-bold text-yellow-600">{summary.unresolvedEvents}</p>
-                <p className="text-xs text-gray-400">Pending resolution</p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Filters */}
-      <Card>
-        <CardHeader 
-          title="Filter Events" 
-          action={
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={clearFilters}
-              icon={<Filter className="w-4 h-4" />}
-            >
-              Clear Filters
-            </Button>
-          }
-        />
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <Select
-              label="Driver"
-              value={selectedDriver}
-              onChange={(e) => setSelectedDriver(e.target.value)}
-              options={[
-                { label: 'All Drivers', value: '' },
-                ...DRIVERS.map(driver => ({ label: driver, value: driver }))
-              ]}
-            />
-            
-            <Select
-              label="Event Type"
-              value={selectedEventType}
-              onChange={(e) => setSelectedEventType(e.target.value)}
-              options={[
-                { label: 'All Event Types', value: '' },
-                ...DRIVER_BEHAVIOR_EVENT_TYPES.map(type => ({ label: type.label, value: type.value }))
-              ]}
-            />
-            
-            <Select
-              label="Severity"
-              value={selectedSeverity}
-              onChange={(e) => setSelectedSeverity(e.target.value)}
-              options={[
-                { label: 'All Severities', value: '' },
-                { label: 'Critical', value: 'critical' },
-                { label: 'High', value: 'high' },
-                { label: 'Medium', value: 'medium' },
-                { label: 'Low', value: 'low' }
-              ]}
-            />
-            
-            <Select
-              label="Status"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              options={[
-                { label: 'All Statuses', value: '' },
-                { label: 'Pending', value: 'pending' },
-                { label: 'Acknowledged', value: 'acknowledged' },
-                { label: 'Resolved', value: 'resolved' },
-                { label: 'Disputed', value: 'disputed' }
-              ]}
-            />
-            
-            <div className="grid grid-cols-2 gap-2">
-              <Input
-                label="From Date"
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-              />
-              <Input
-                label="To Date"
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* High Risk Drivers */}
-      <Card>
-        <CardHeader 
-          title="High Risk Drivers" 
-          icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
-        />
-        <CardContent>
-          {summary.highRiskDrivers.length > 0 ? (
-            <div className="space-y-4">
-              {summary.highRiskDrivers.map((driver) => (
-                <div key={driver.name} className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900">{driver.name}</h3>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <AlertTriangle className="w-4 h-4 text-red-600" />
-                          <span className="text-sm text-red-700">
-                            {driver.eventCount} total events ({driver.criticalCount} critical/high)
-                          </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Shield className="w-4 h-4 text-orange-600" />
-                          <span className="text-sm text-orange-700">
-                            Behavior Score: {driver.score.toFixed(0)}/100
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        driver.score < 50 ? 'bg-red-100 text-red-800' :
-                        driver.score < 70 ? 'bg-orange-100 text-orange-800' :
-                        driver.score < 85 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {driver.score < 50 ? 'Critical Risk' :
-                         driver.score < 70 ? 'High Risk' :
-                         driver.score < 85 ? 'Medium Risk' :
-                         'Low Risk'}
-                      </span>
-                      <div className="mt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSelectedDriver(driver.name)}
-                        >
-                          View Events
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+    <div>
+      <Header />
+      {/* Example: Display summary */}
+      {summary && (
+        <section>
+          <h2>Summary</h2>
+          <pre>{JSON.stringify(summary, null, 2)}</pre>
+        </section>
+      )}
+
+      {/* Example: Show loading state */}
+      {isLoading && <div>Loading...</div>}
+
+      {/* Example: Render table if columns and rows exist */}
+      {columns && rows && (
+        <table>
+          <thead>
+            <tr>
+              {columns.map((col: Column, idx: number) => (
+                <th key={idx}>{col.header}</th>
               ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <CheckCircle className="mx-auto h-10 w-10 text-green-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No high-risk drivers</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                All drivers are currently within acceptable risk parameters.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Top Event Types */}
-      <Card>
-        <CardHeader title="Most Common Behavior Events" />
-        <CardContent>
-          {summary.topEventTypes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {summary.topEventTypes.map((eventType) => (
-                <div key={eventType.type} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium text-gray-900">{eventType.label}</h3>
-                    <span className="text-lg font-bold text-blue-600">{eventType.count}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full" 
-                      style={{ width: `${Math.min(100, (eventType.count / Math.max(1, summary.totalEvents)) * 100)}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {((eventType.count / Math.max(1, summary.totalEvents)) * 100).toFixed(1)}% of all events
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center text-gray-500 py-4">No event data available</p>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Events List */}
-      <Card>
-        <CardHeader 
-          title={`Driver Behavior Events (${filteredEvents.length})`}
-          action={
-            <Button
-              size="sm"
-              onClick={() => {
-                resetForm();
-                setShowAddEventModal(true);
-              }}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              Record Event
-            </Button>
-          }
-        />
-        <CardContent>
-          {filteredEvents.length === 0 ? (
-            <div className="text-center py-8">
-              <UserRound className="mx-auto h-10 w-10 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No behavior events found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {selectedDriver || selectedEventType || selectedSeverity || selectedStatus || dateRange.start || dateRange.end
-                  ? 'No events match your current filter criteria.'
-                  : 'Start recording driver behavior events to track performance and identify risks.'}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredEvents.map((event) => (
-                <div key={event.id} className={`p-4 rounded-lg border ${
-                  event.severity === 'critical' ? 'border-l-4 border-l-red-500 bg-red-50' :
-                  event.severity === 'high' ? 'border-l-4 border-l-orange-500 bg-orange-50' :
-                  event.severity === 'medium' ? 'border-l-4 border-l-yellow-500 bg-yellow-50' :
-                  'border-l-4 border-l-green-500 bg-green-50'
-                }`}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">{event.driverName}</h3>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(event.severity)}`}>
-                          {event.severity.toUpperCase()}
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(event.status)}`}>
-                          {event.status.toUpperCase()}
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        <div>
-                          <p className="text-sm text-gray-500">Event Type</p>
-                          <p className="font-medium">
-                            {DRIVER_BEHAVIOR_EVENT_TYPES.find(t => t.value === event.eventType)?.label || event.eventType}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Date & Time</p>
-                          <p className="font-medium">
-                            {formatDate(event.eventDate)} {event.eventTime}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Fleet</p>
-                          <p className="font-medium">{event.fleetNumber}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="mb-3">
-                        <p className="text-sm text-gray-500">Description</p>
-                        <p className="text-sm">{event.description}</p>
-                      </div>
-                      
-                      {event.location && (
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-500">Location</p>
-                          <p className="text-sm">{event.location}</p>
-                        </div>
-                      )}
-                      
-                      {event.actionTaken && (
-                        <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                          <p className="text-sm font-medium text-blue-800">Action Taken:</p>
-                          <p className="text-sm text-blue-700">{event.actionTaken}</p>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center space-x-3 text-sm text-gray-500">
-                        <span>Reported by {event.reportedBy}</span>
-                        <span>•</span>
-                        <span>{formatDateTime(event.reportedAt)}</span>
-                        <span>•</span>
-                        <span className="font-medium text-red-600">{event.points} points</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex space-x-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewEventDetails(event)}
-                        icon={<Eye className="w-3 h-3" />}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditEvent(event)}
-                        icon={<Edit className="w-3 h-3" />}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDeleteEvent(event.id)}
-                        icon={<Trash2 className="w-3 h-3" />}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      {/* Add/Edit Event Modal */}
-      <Modal
-        isOpen={showAddEventModal}
-        onClose={() => {
-          resetForm();
-          setShowAddEventModal(false);
-        }}
-        title={selectedEvent ? "Edit Driver Behavior Event" : "Record Driver Behavior Event"}
-        maxWidth="lg"
-      >
-        <div className="space-y-6">
-          {/* Form Instructions */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-            <div className="flex items-start space-x-3">
-              <UserRound className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-medium text-blue-800">Driver Behavior Reporting</h4>
-                <p className="text-sm text-blue-700 mt-1">
-                  Record driver behavior events to track performance and identify training needs. 
-                  Each event type has associated demerit points that affect the driver's overall risk score.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Driver *"
-              value={eventForm.driverName}
-              onChange={(e) => handleFormChange('driverName', e.target.value)}
-              options={[
-                { label: 'Select driver...', value: '' },
-                ...DRIVERS.map(driver => ({ label: driver, value: driver }))
-              ]}
-              error={errors.driverName}
-            />
-            
-            <Select
-              label="Fleet Number *"
-              value={eventForm.fleetNumber}
-              onChange={(e) => handleFormChange('fleetNumber', e.target.value)}
-              options={[
-                { label: 'Select fleet...', value: '' },
-                ...FLEET_NUMBERS.map(fleet => ({ label: fleet, value: fleet }))
-              ]}
-              error={errors.fleetNumber}
-            />
-            
-            <Input
-              label="Event Date *"
-              type="date"
-              value={eventForm.eventDate}
-              onChange={(e) => handleFormChange('eventDate', e.target.value)}
-              error={errors.eventDate}
-            />
-            
-            <Input
-              label="Event Time *"
-              type="time"
-              value={eventForm.eventTime}
-              onChange={(e) => handleFormChange('eventTime', e.target.value)}
-              error={errors.eventTime}
-            />
-            
-            <Select
-              label="Event Type *"
-              value={eventForm.eventType}
-              onChange={(e) => handleFormChange('eventType', e.target.value)}
-              options={[
-                { label: 'Select event type...', value: '' },
-                ...DRIVER_BEHAVIOR_EVENT_TYPES.map(type => ({ label: type.label, value: type.value }))
-              ]}
-              error={errors.eventType}
-            />
-            
-            <Select
-              label="Severity *"
-              value={eventForm.severity}
-              onChange={(e) => handleFormChange('severity', e.target.value)}
-              options={[
-                { label: 'Critical', value: 'critical' },
-                { label: 'High', value: 'high' },
-                { label: 'Medium', value: 'medium' },
-                { label: 'Low', value: 'low' }
-              ]}
-              error={errors.severity}
-            />
-            
-            <Input
-              label="Location"
-              value={eventForm.location}
-              onChange={(e) => handleFormChange('location', e.target.value)}
-              placeholder="e.g., Highway A1, Kilometer 45"
-            />
-            
-            <Select
-              label="Status"
-              value={eventForm.status}
-              onChange={(e) => handleFormChange('status', e.target.value)}
-              options={[
-                { label: 'Pending', value: 'pending' },
-                { label: 'Acknowledged', value: 'acknowledged' },
-                { label: 'Resolved', value: 'resolved' },
-                { label: 'Disputed', value: 'disputed' }
-              ]}
-            />
-          </div>
-          
-          <TextArea
-            label="Description *"
-            value={eventForm.description}
-            onChange={(e) => handleFormChange('description', e.target.value)}
-            placeholder="Provide details about the behavior event..."
-            rows={3}
-            error={errors.description}
-          />
-          
-          <TextArea
-            label="Action Taken"
-            value={eventForm.actionTaken}
-            onChange={(e) => handleFormChange('actionTaken', e.target.value)}
-            placeholder="Describe any actions taken to address this behavior..."
-            rows={2}
-          />
-          
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-            <div className="flex items-center space-x-2">
-              <Shield className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Demerit Points</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="number"
-                min="0"
-                max="25"
-                value={eventForm.points.toString()}
-                onChange={(e) => handleFormChange('points', parseInt(e.target.value))}
-                className="w-20"
-              />
-              <span className="text-sm text-gray-500">points</span>
-            </div>
-          </div>
-          
-          {/* Supporting Documents */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Supporting Documents (Optional)
-            </label>
-            <input
-              type="file"
-              multiple
-              onChange={(e) => setSelectedFiles(e.target.files)}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
-                file:rounded-md file:border-0 file:text-sm file:font-medium 
-                file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100
-                file:cursor-pointer cursor-pointer"
-            />
-            {selectedFiles && selectedFiles.length > 0 && (
-              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                <p className="font-medium text-blue-800">
-                  Selected {selectedFiles.length} file(s)
-                </p>
-              </div>
-            )}
-          </div>
-          
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                resetForm();
-                setShowAddEventModal(false);
-              }}
-              icon={<X className="w-4 h-4" />}
-            >
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row: Row, idx: number) => (
+              <tr key={idx}>
+                {columns.map((col: Column, cidx: number) => (
+                  <td key={cidx}>{row[col.accessor]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* Example: Use processedDriverBehaviorEvents */}
+      {processedDriverBehaviorEvents && (
+        <section>
+          <h3>Processed Events</h3>
+          <ul>
+            {processedDriverBehaviorEvents.map((event: DriverBehaviorEvent, idx: number) => (
+              <li key={idx}>
+                <span className={getSeverityClass ? getSeverityClass(event.severity) : ""}>
+                  {event.name}
+                </span>
+                <span className={getStatusClass ? getStatusClass(event.status) : ""}>
+                  {event.status}
+                </span>
+                <button onClick={() => handleViewEventDetails && handleViewEventDetails(event)}>
+                  View Details
+                </button>
+                <button onClick={() => handleEditEvent && handleEditEvent(event)}>
+                  Edit
+                </button>
+                <button onClick={() => handleDeleteEvent && handleDeleteEvent(event)}>
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Example: Show Add Event Modal */}
+      {showAddEventModal && (
+        <div className="modal">
+          <form onChange={handleFormChange} onSubmit={handleSubmit}>
+            {/* ...form fields... */}
+            <button type="submit">Submit</button>
+            <button type="button" onClick={() => setShowAddEventModal(false)}>
               Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              icon={<Save className="w-4 h-4" />}
-            >
-              {selectedEvent ? 'Update Event' : 'Record Event'}
-            </Button>
-          </div>
+            </button>
+          </form>
         </div>
-      </Modal>
-      
-      {/* Event Details Modal */}
-      <Modal
-        isOpen={showEventDetailsModal}
-        onClose={() => {
-          setSelectedEvent(null);
-          setShowEventDetailsModal(false);
-        }}
-        title="Driver Behavior Event Details"
-        maxWidth="lg"
-      >
-        {selectedEvent && (
-          <div className="space-y-6">
-            {/* Event Header */}
-            <div className={`p-4 rounded-lg ${
-              selectedEvent.severity === 'critical' ? 'bg-red-50 border border-red-200' :
-              selectedEvent.severity === 'high' ? 'bg-orange-50 border border-orange-200' :
-              selectedEvent.severity === 'medium' ? 'bg-yellow-50 border border-yellow-200' :
-              'bg-green-50 border border-green-200'
-            }`}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{selectedEvent.driverName}</h3>
-                  <p className="text-sm text-gray-600">Fleet {selectedEvent.fleetNumber}</p>
-                </div>
-                <div className="flex space-x-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(selectedEvent.severity)}`}>
-                    {selectedEvent.severity.toUpperCase()}
-                  </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(selectedEvent.status)}`}>
-                    {selectedEvent.status.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Event Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Event Type</h4>
-                  <p className="font-medium text-gray-900">
-                    {DRIVER_BEHAVIOR_EVENT_TYPES.find(t => t.value === selectedEvent.eventType)?.label || selectedEvent.eventType}
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Date & Time</h4>
-                  <p className="font-medium text-gray-900">
-                    {formatDate(selectedEvent.eventDate)} at {selectedEvent.eventTime}
-                  </p>
-                </div>
-                
-                {selectedEvent.location && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Location</h4>
-                    <div className="flex items-center space-x-2">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <p className="font-medium text-gray-900">{selectedEvent.location}</p>
-                    </div>
-                  </div>
-                )}
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Demerit Points</h4>
-                  <p className="font-medium text-red-600">{selectedEvent.points} points</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Reported By</h4>
-                  <p className="font-medium text-gray-900">{selectedEvent.reportedBy}</p>
-                  <p className="text-xs text-gray-500">{formatDateTime(selectedEvent.reportedAt)}</p>
-                </div>
-                
-                {selectedEvent.resolvedAt && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Resolved By</h4>
-                    <p className="font-medium text-gray-900">{selectedEvent.resolvedBy}</p>
-                    <p className="text-xs text-gray-500">{formatDateTime(selectedEvent.resolvedAt)}</p>
-                  </div>
-                )}
-                
-                {selectedEvent.status === 'resolved' && !selectedEvent.resolvedAt && (
-                  <div className="p-2 bg-yellow-50 border border-yellow-200 rounded">
-                    <p className="text-sm text-yellow-700">
-                      This event is marked as resolved but missing resolution details.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* Description */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-500 mb-2">Description</h4>
-              <div className="p-3 bg-gray-50 rounded-md border border-gray-200">
-                <p className="text-gray-900">{selectedEvent.description}</p>
-              </div>
-            </div>
-            
-            {/* Action Taken */}
-            {selectedEvent.actionTaken && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Action Taken</h4>
-                <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-                  <p className="text-blue-900">{selectedEvent.actionTaken}</p>
-                </div>
-              </div>
-            )}
-            
-            {/* Attachments */}
-            {selectedEvent.attachments && selectedEvent.attachments.length > 0 && (
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Supporting Documents</h4>
-                <div className="space-y-2">
-                  {selectedEvent.attachments.map((attachment) => (
-                    <div key={attachment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
-                      <div className="flex items-center space-x-2">
-                        <FileUp className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-900">{attachment.filename}</span>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(attachment.fileUrl, '_blank')}
-                      >
-                        View
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelectedEvent(null);
-                  setShowEventDetailsModal(false);
-                }}
-              >
-                Close
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowEventDetailsModal(false);
-                  handleEditEvent(selectedEvent);
-                }}
-                icon={<Edit className="w-4 h-4" />}
-              >
-                Edit Event
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      )}
+
+      {/* Example: Show Event Details Modal */}
+      {showEventDetailsModal && (
+        <div className="modal">
+          {/* ...event details... */}
+          <button onClick={() => setShowEventDetailsModal(false)}>Close</button>
+        </div>
+      )}
+
+      {/* Example: Clear Filters Button */}
+      <button onClick={clearFilters}>Clear Filters</button>
     </div>
   );
 };

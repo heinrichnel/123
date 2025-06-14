@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import Card, { CardContent, CardHeader } from '../ui/Card';
+import Card, { CardContent } from '../ui/Card';
 import { 
-  X, 
   AlertTriangle, 
   TrendingDown, 
-  TrendingUp, 
-  FileText, 
   Download,
   Flag,
   CheckCircle,
   Fuel,
   Printer,
   Calendar,
-  User,
   FileSignature
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
@@ -39,26 +35,17 @@ interface DieselRecord {
   tripId?: string;
 }
 
-interface DieselNorms {
-  fleetNumber: string;
-  expectedKmPerLitre: number;
-  tolerancePercentage: number;
-  lastUpdated: string;
-  updatedBy: string;
-}
 
 interface DieselDebriefModalProps {
   isOpen: boolean;
   onClose: () => void;
   records: DieselRecord[];
-  norms: DieselNorms[];
 }
 
 const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
   isOpen,
   onClose,
-  records,
-  norms
+  records
 }) => {
   const [selectedFleet, setSelectedFleet] = useState<string>('all');
   const [debriefNotes, setDebriefNotes] = useState<Record<string, string>>({});

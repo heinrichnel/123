@@ -1,5 +1,5 @@
 import React from 'react';
-import { Truck, Plus, Flag, CheckCircle, Activity, FileText, BarChart3, Settings, Target, Users, Calendar, DollarSign, Clock, TrendingDown, Upload, Fuel, Wifi, WifiOff, Database, User as UserRound, ClipboardList, Shield } from 'lucide-react';
+import { Truck, Plus, Flag, CheckCircle, Activity, BarChart3, Settings, Target, Users, Clock, TrendingDown, Fuel, Wifi, WifiOff, Database, ClipboardList, Shield } from 'lucide-react';
 import Button from '../ui/Button';
 import { useAppContext } from '../../context/AppContext';
 import SyncIndicator from '../ui/SyncIndicator';

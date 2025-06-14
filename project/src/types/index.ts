@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Base types for the application
 export interface Trip {
   id: string;
@@ -190,6 +191,7 @@ interface PaymentHistoryRecord {
 }
 
 // NEW: Truck Performance with Utilization
+ 
 interface TruckPerformance {
   fleetNumber: string;
   totalKilometers: number;
@@ -373,7 +375,7 @@ export interface SyncEvent {
   entityId: string;
   entityType: 'trip' | 'cost' | 'invoice' | 'payment';
   action: 'create' | 'update' | 'delete';
-  data: any;
+  data: unknown;
   timestamp: string;
   userId: string;
   version: number;
@@ -548,15 +550,6 @@ export const DELAY_REASON_TYPES = [
   { value: 'other', label: 'Other' }
 ];
 
-// NEW: Contact Methods
-const CONTACT_METHODS = [
-  { value: 'call', label: 'Phone Call' },
-  { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
-  { value: 'in_person', label: 'In Person' },
-  { value: 'sms', label: 'SMS' }
-];
-
 // NEW: Enhanced Missed Load Reasons
 export const MISSED_LOAD_REASONS = [
   { value: 'no_vehicle', label: 'No Vehicle Available' },
@@ -695,18 +688,6 @@ export const TRIP_EDIT_REASONS = [
   'Client type classification update', 'Other (specify in comments)'
 ];
 
-const COST_EDIT_REASONS = [
-  'Correction of amount entry error', 'Updated receipt information', 'Category reclassification',
-  'Currency correction', 'Reference number update', 'Investigation outcome update',
-  'Flag status change', 'Document upload after initial entry', 'Other (specify in comments)'
-];
-
-export const TRIP_DELETION_REASONS = [
-  'Duplicate entry', 'Trip cancelled before execution', 'Data entry error - trip never occurred',
-  'Merged with another trip record', 'Client contract cancellation', 'Regulatory compliance requirement',
-  'Other (specify in comments)'
-];
-
 // NEW: Invoice Aging Thresholds
 export const AGING_THRESHOLDS = {
   ZAR: {
@@ -729,17 +710,78 @@ export const FOLLOW_UP_THRESHOLDS = {
   USD: 12  // days
 };
 
-// NEW: Timeline Validation Statuses
-const TIMELINE_VALIDATION_STATUSES = [
-  { value: 'pending', label: 'Pending Validation', color: 'yellow' },
-  { value: 'validated', label: 'Validated', color: 'green' },
-  { value: 'discrepancy', label: 'Has Discrepancies', color: 'red' }
-];
+// System Notification Types
+export interface SystemNotification {
+  id: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+  timestamp: string;
+  read: boolean;
+  data: unknown; // Changed from any to unknown
+  actionLink?: string;
+}
 
-// NEW: Invoice Submission Statuses
-const INVOICE_SUBMISSION_STATUSES = [
-  { value: 'draft', label: 'Draft', color: 'gray' },
-  { value: 'submitted', label: 'Submitted', color: 'blue' },
-  { value: 'approved', label: 'Approved', color: 'green' },
-  { value: 'rejected', label: 'Rejected', color: 'red' }
+// User Authentication and Profile (Example - expand as needed)
+/* Remove this interface
+export interface User {
+  id: string;
+  email: string;
+  displayName?: string;
+  role: 'admin' | 'manager' | 'planner' | 'driver'; // Example roles
+  // Add other relevant user properties
+  // e.g., preferences, lastLogin, etc.
+}
+*/
+
+// Contact and Communication
+export type ContactMethod = 'email' | 'phone' | 'sms' | 'appNotification';
+
+/* Remove this constant
+export const CONTACT_METHODS: ContactMethod[] = [
+  'email',
+  'phone',
+  'sms',
+  'appNotification',
 ];
+*/
+
+// Cost Edit Reasons
+export type CostEditReason =
+  | 'dataEntryError'
+  | 'priceChange'
+  | 'scopeChange'
+  | 'other';
+
+/* Remove this constant
+export const COST_EDIT_REASONS: { value: CostEditReason; label: string }[] = [
+  { value: 'dataEntryError', label: 'Data Entry Error' },
+  { value: 'priceChange', label: 'Price Change/Update' },
+  { value: 'scopeChange', label: 'Scope Change (e.g., quantity, service)' },
+  { value: 'other', label: 'Other (Specify)' },
+];
+*/
+
+// Timeline Validation Status
+export type TimelineValidationStatus = 'pending' | 'validated' | 'discrepancy' | 'autoValidated';
+
+/* Remove this constant
+export const TIMELINE_VALIDATION_STATUSES: { value: TimelineValidationStatus; label: string }[] = [
+  { value: 'pending', label: 'Pending Validation' },
+  { value: 'validated', label: 'Validated' },
+  { value: 'discrepancy', label: 'Discrepancy Found' },
+  { value: 'autoValidated', label: 'Auto-Validated' },
+];
+*/
+
+// Invoice Submission Status
+export type InvoiceSubmissionStatus = 'pending' | 'submitted' | 'approved' | 'rejected' | 'paid';
+
+/* Remove this constant
+export const INVOICE_SUBMISSION_STATUSES: { value: InvoiceSubmissionStatus; label: string }[] = [
+  { value: 'pending', label: 'Pending Submission' },
+  { value: 'submitted', label: 'Submitted to Client' },
+  { value: 'approved', label: 'Approved by Client' },
+  { value: 'rejected', label: 'Rejected by Client' },
+  { value: 'paid', label: 'Paid' },
+];
+*/

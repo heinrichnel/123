@@ -48,7 +48,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   // Enhanced handleAddCost with file support
   const handleAddCost = (costData: Omit<CostEntry, 'id' | 'attachments'>, files?: FileList) => {
     try {
-      const costId = addCostEntry(costData, files);
+      addCostEntry(costData, files);
       setShowCostForm(false);
       
       // Show success message with cost details

@@ -6,12 +6,8 @@ import {
   Edit, 
   X, 
   AlertTriangle, 
-  CheckCircle, 
-  Calendar, 
-  Clock, 
   MapPin, 
   FileUp, 
-  Shield, 
   FileText 
 } from 'lucide-react';
 import { formatDate, formatDateTime } from '../../utils/helpers';

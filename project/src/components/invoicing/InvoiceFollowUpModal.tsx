@@ -3,8 +3,8 @@ import { Trip } from '../../types';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, TextArea, Select } from '../ui/FormElements';
-import { Save, X, Phone, Calendar, User } from 'lucide-react';
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { Save, X } from 'lucide-react';
+// Follow-up input only, no helpers needed here
 
 interface InvoiceFollowUpModalProps {
   isOpen: boolean;

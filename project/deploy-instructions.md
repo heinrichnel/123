@@ -84,7 +84,7 @@ npm run deploy
 
 After successful deployment, you'll see a URL where your application is hosted, typically in the format:
 
-```
+```text
 https://your-project-id.web.app
 ```
 

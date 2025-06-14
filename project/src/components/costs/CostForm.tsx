@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CostEntry, COST_CATEGORIES } from '../../types';
 import { Input, TextArea, FileUpload, Select } from '../ui/FormElements';
 import Button from '../ui/Button';
-import { Save, X, Upload, Flag, AlertTriangle, Calculator } from 'lucide-react';
+import { Save, X, Upload, Flag, AlertTriangle } from 'lucide-react';
 
 interface CostFormProps {
   tripId: string;
@@ -95,7 +95,6 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
 
     // Document attachment validation - MANDATORY REQUIREMENT
     const hasFiles = selectedFiles && selectedFiles.length > 0;
-    const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
     const hasNoDocumentReason = formData.noDocumentReason.trim().length > 0;
 
     if (!cost && !hasFiles && !hasNoDocumentReason) {
@@ -165,8 +164,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
   };
 
   const hasFiles = selectedFiles && selectedFiles.length > 0;
-  const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
-  const hasDocumentation = hasFiles || hasExistingAttachments;
+  const hasDocumentation = hasFiles || (cost && cost.attachments && cost.attachments.length > 0);
   const isHighRiskCategory = ['Non-Value-Added Costs', 'Border Costs'].includes(formData.category);
 
   return (

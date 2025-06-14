@@ -287,7 +287,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
     change: { value: number; percentage: number };
     format?: 'number' | 'currency' | 'percentage';
     suffix?: string;
-    icon: any;
+    icon: React.ElementType;
     colorClass?: string;
   }) => {
     const formatValue = (value: number) => {
@@ -555,7 +555,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {weeklyMetrics.slice(0, 12).map((week, index) => (
+                  {weeklyMetrics.slice(0, 12).map((week) => (
                     <tr key={`${week.weekStart}-${week.weekNumber}`} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 text-sm font-medium text-gray-900">
                         Week {week.weekNumber}

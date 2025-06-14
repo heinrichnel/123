@@ -5,21 +5,16 @@ import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
 import { 
   FileSpreadsheet, 
-  TrendingUp, 
-  TrendingDown, 
   AlertTriangle, 
   DollarSign,
   Filter,
   Building,
-  Users,
-  Calendar
+  Users
 } from 'lucide-react';
 import { 
-  formatDate, 
   formatCurrency, 
   generateCurrencyFleetReport,
-  downloadCurrencyFleetReport,
-  calculateTotalCosts
+  downloadCurrencyFleetReport
 } from '../../utils/helpers';
 
 interface CurrencyFleetReportProps {
@@ -66,12 +61,46 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
 
   const uniqueDrivers = [...new Set(trips.map(trip => trip.driverName))];
 
+  interface CurrencyFleetReportData {
+    totalTrips: number;
+    activeTrips: number;
+    completedTrips: number;
+    totalRevenue: number;
+    avgRevenuePerTrip: number;
+    totalExpenses: number;
+    avgCostPerTrip: number;
+    netProfit: number;
+    profitMargin: number;
+    internalTrips: number;
+    internalRevenue: number;
+    internalProfitMargin: number;
+    externalTrips: number;
+    externalRevenue: number;
+    externalProfitMargin: number;
+    tripsWithInvestigations: number;
+    investigationRate: number;
+    totalFlags: number;
+    avgFlagsPerTrip: number;
+    unresolvedFlags: number;
+    avgResolutionTime: number;
+    driverStats: {
+      [driver: string]: {
+        trips: number;
+        revenue: number;
+        expenses: number;
+        flags: number;
+        internalTrips: number;
+        externalTrips: number;
+      };
+    };
+  }
+
   const CurrencyReportSection = ({ 
     report, 
     currency, 
     trips: currencyTrips 
   }: { 
-    report: any, 
+    report: CurrencyFleetReportData, 
     currency: 'USD' | 'ZAR', 
     trips: Trip[] 
   }) => (
@@ -247,8 +276,8 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                     </thead>
                     <tbody>
                       {Object.entries(report.driverStats)
-                        .sort(([,a], [,b]) => (b as any).revenue - (a as any).revenue)
-                        .map(([driver, stats]: [string, any]) => {
+                        .sort(([, a], [, b]) => (b as CurrencyFleetReportData['driverStats'][string]).revenue - (a as CurrencyFleetReportData['driverStats'][string]).revenue)
+                        .map(([driver, stats]: [string, CurrencyFleetReportData['driverStats'][string]]) => {
                           const netProfit = stats.revenue - stats.expenses;
                           const profitMargin = stats.revenue > 0 ? (netProfit / stats.revenue) * 100 : 0;
                           return (

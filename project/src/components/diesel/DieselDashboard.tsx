@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import DieselImportModal from './DieselImportModal';
 import DieselDebriefModal from './DieselDebriefModal';
@@ -8,7 +8,7 @@ import TripLinkageModal from './TripLinkageModal';
 import ProbeVerificationModal from './ProbeVerificationModal';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
-import { Input, Select } from '../ui/FormElements';
+import { Select } from '../ui/FormElements';
 import SyncIndicator from '../ui/SyncIndicator';
 import { 
   Upload, 
@@ -27,8 +27,6 @@ import {
   CheckCircle,
   Plus,
   Link,
-  FileText,
-  Printer,
   Database
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
@@ -323,7 +321,6 @@ const DieselDashboard: React.FC = () => {
   });
 
   const averageKmPerLitre = fleetSummary.totalLitres > 0 ? fleetSummary.totalDistance / fleetSummary.totalLitres : 0;
-  const averageCostPerKm = fleetSummary.totalDistance > 0 ? fleetSummary.totalCost / fleetSummary.totalDistance : 0;
 
   // Get unique drivers and fleets for filters
   const uniqueFleets = [...new Set(enhancedRecords.map(r => r.fleetNumber))].sort();

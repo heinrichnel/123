@@ -10,11 +10,12 @@ interface DieselImportModalProps {
   onClose: () => void;
 }
 
+
 const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }) => {
   const { importDieselFromCSV, connectionStatus } = useAppContext();
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<Record<string, string>[]>([]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
@@ -32,15 +33,15 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
     }
   };
 
-  const parseCSV = (text: string) => {
+  const parseCSV = (text: string): Record<string, string>[] => {
     const lines = text.split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
-    const data = [];
+    const data: Record<string, string>[] = [];
     
     for (let i = 1; i < lines.length; i++) {
       if (lines[i].trim()) {
         const values = lines[i].split(',').map(v => v.trim());
-        const row: any = {};
+        const row: Record<string, string> = {};
         headers.forEach((header, index) => {
           row[header] = values[index] || '';
         });
@@ -60,7 +61,7 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
       const text = await csvFile.text();
       const data = parseCSV(text);
       
-      const records = data.map((row: any) => {
+      const records = data.map((row: Record<string, string>) => {
         const kmReading = parseFloat(row.kmReading || row.km || '0');
         const previousKmReading = parseFloat(row.previousKmReading || row.previousKm || '0');
         const litresFilled = parseFloat(row.litresFilled || row.litres || '0');
@@ -284,13 +285,13 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
                   <tbody>
                     {previewData.map((row, rowIndex) => (
                       <tr key={rowIndex} className="border-b">
-                        {Object.entries(row).slice(0, 5).map(([key, value], colIndex) => (
+                        {Object.entries(row).slice(0, 5).map(([, value], colIndex) => (
                           <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1 text-gray-600">
                             {String(value)}
                           </td>
                         ))}
                         {Object.keys(row).length > 5 && (
-                          <td className="px-2 py-1 text-gray-600">...</td>
+                          <td className="px-2 py-1 text-gray-400">...</td>
                         )}
                       </tr>
                     ))}

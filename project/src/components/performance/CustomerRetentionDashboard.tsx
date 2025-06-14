@@ -2,14 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Trip, CustomerPerformance } from '../../types';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
-import { Input, Select } from '../ui/FormElements';
+import { Select } from '../ui/FormElements';
 import { 
   Users, 
   TrendingUp, 
-  TrendingDown, 
   AlertTriangle, 
   Award, 
-  Calendar,
   DollarSign,
   Clock,
   Filter,
@@ -52,9 +50,23 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
       }
       
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, {
+      trips: Trip[];
+      totalRevenue: number;
+      totalPaymentDays: number;
+      paidTrips: number;
+      clientType: string;
+    }>);
 
-    return Object.entries(customerStats).map(([customerName, stats]: [string, any]) => {
+    type CustomerStats = {
+      trips: Trip[];
+      totalRevenue: number;
+      totalPaymentDays: number;
+      paidTrips: number;
+      clientType: string;
+    };
+
+    return Object.entries(customerStats).map(([customerName, stats]: [string, CustomerStats]) => {
       const lastTripDate = Math.max(...stats.trips.map((t: Trip) => new Date(t.endDate).getTime()));
       const daysSinceLastTrip = Math.floor((Date.now() - lastTripDate) / (1000 * 60 * 60 * 24));
       

@@ -4,8 +4,7 @@ import { useAppContext } from '../../context/AppContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
-import { Save, X, AlertTriangle, Shield, Calendar, Clock, MapPin, FileUp } from 'lucide-react';
-import { formatDate } from '../../utils/helpers';
+import { Save, X, AlertTriangle, Shield } from 'lucide-react';
 
 interface DriverBehaviorEventFormProps {
   isOpen: boolean;
@@ -77,7 +76,7 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
   }, [event, isOpen]);
   
   // Handle form changes
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | number) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
       

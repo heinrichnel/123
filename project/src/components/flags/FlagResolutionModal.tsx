@@ -3,7 +3,7 @@ import { CostEntry } from '../../types';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, TextArea, FileUpload } from '../ui/FormElements';
-import { Save, X, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 
 interface FlagResolutionModalProps {

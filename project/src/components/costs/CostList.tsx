@@ -3,7 +3,7 @@ import { CostEntry } from '../../types';
 import Card, { CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import { Edit, Trash2, FileText, Image, Paperclip, Flag, AlertTriangle, Calculator, Lock, Download, Eye } from 'lucide-react';
-import { formatDate, formatCurrency, getFileIcon } from '../../utils/helpers';
+import { formatDate, formatCurrency } from '../../utils/helpers';
 
 interface CostListProps {
   costs: CostEntry[];
@@ -44,7 +44,16 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
   };
 
   // FIXED: Enhanced attachment viewing functionality
-  const handleViewAttachment = (attachment: any) => {
+  interface Attachment {
+    id: string;
+    filename: string;
+    fileType: string;
+    fileSize?: number;
+    uploadedAt: string;
+    fileUrl?: string;
+  }
+
+  const handleViewAttachment = (attachment: Attachment) => {
     if (attachment.fileUrl) {
       // In a real app, this would open the file in a new tab or download it
       window.open(attachment.fileUrl, '_blank');
@@ -53,7 +62,7 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
     }
   };
 
-  const handleDownloadAttachment = (attachment: any) => {
+  const handleDownloadAttachment = (attachment: Attachment) => {
     if (attachment.fileUrl) {
       // Create a temporary download link
       const link = document.createElement('a');

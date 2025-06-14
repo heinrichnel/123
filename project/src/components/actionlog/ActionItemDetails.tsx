@@ -8,7 +8,6 @@ import {
   Clock, 
   Calendar, 
   User, 
-  MessageSquare, 
   Send, 
   FileUp, 
   AlertTriangle,

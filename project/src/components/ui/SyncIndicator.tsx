@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { RefreshCw, Check, Clock } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface SyncIndicatorProps {
   className?: string;

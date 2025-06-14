@@ -1,45 +1,37 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Trip, CLIENTS, DRIVERS } from '../../types';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import { 
-  TrendingUp, 
-  Truck, 
-  FileText, 
-  Calendar, 
-  DollarSign, 
-  TrendingDown,
-  Navigation,
-  Filter,
-  Download,
-  FileSpreadsheet,
-  AlertTriangle,
-  Flag,
-  Clock,
-  CheckCircle,
-  Users,
-  Eye,
+import {
   BarChart3,
-  User
+  DollarSign,
+  Filter,
+  Users,
+  Truck,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Download,
 } from 'lucide-react';
-import { 
-  formatCurrency, 
-  calculateTotalCosts, 
+import {
+  formatCurrency,
   calculateKPIs,
+  getUnresolvedFlagsCount,
+  getAllFlaggedCosts,
   filterTripsByDateRange,
   filterTripsByClient,
   filterTripsByCurrency,
   filterTripsByDriver,
-  getAllFlaggedCosts,
-  getUnresolvedFlagsCount,
-  canCompleteTrip,
-  formatDate
+  generateCurrencyFleetReport,
 } from '../../utils/helpers';
 
 interface DashboardProps {
   trips: Trip[];
 }
+
 
 const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
   const [filters, setFilters] = useState({
@@ -51,32 +43,44 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<Record<string, unknown>>({});
 
   const filteredTrips = useMemo(() => {
-    let filtered = trips;
-    
-    if (filters.startDate || filters.endDate) {
-      filtered = filterTripsByDateRange(filtered, filters.startDate, filters.endDate);
+    let result = trips;
+    if (activeFilters.startDate && activeFilters.endDate) {
+      result = filterTripsByDateRange(result, activeFilters.startDate as string, activeFilters.endDate as string);
     }
-    if (filters.client) {
-      filtered = filterTripsByClient(filtered, filters.client);
+    if (activeFilters.clientName) {
+      result = filterTripsByClient(result, activeFilters.clientName as string);
     }
-    if (filters.currency) {
-      filtered = filterTripsByCurrency(filtered, filters.currency);
+    if (activeFilters.revenueCurrency) {
+      result = filterTripsByCurrency(result, activeFilters.revenueCurrency as string);
     }
-    if (filters.driver) {
-      filtered = filterTripsByDriver(filtered, filters.driver);
+    if (activeFilters.driverName) {
+      result = filterTripsByDriver(result, activeFilters.driverName as string);
     }
-    
-    return filtered;
-  }, [trips, filters]);
+    return result;
+  }, [trips, activeFilters]);
+
+  const zarTrips = useMemo(() => {
+    return filteredTrips.filter(trip => trip.revenueCurrency === 'ZAR');
+  }, [filteredTrips]);
+
+  const usdTrips = useMemo(() => {
+    return filteredTrips.filter(trip => trip.revenueCurrency === 'USD');
+  }, [filteredTrips]);
+  
+  const zarReport = getZarReport();
+
+  return (
+    <div>
+      <h1>ZAR Report</h1>
+      <pre>{JSON.stringify(zarReport, null, 2)}</pre>
+    </div>
+  );
 
   const stats = useMemo(() => {
     const totalTrips = filteredTrips.length;
-    
-    // Separate by currency
-    const zarTrips = filteredTrips.filter(trip => trip.revenueCurrency === 'ZAR');
-    const usdTrips = filteredTrips.filter(trip => trip.revenueCurrency === 'USD');
     
     const zarRevenue = zarTrips.reduce((sum, trip) => sum + (trip.baseRevenue || 0), 0);
     const zarCosts = zarTrips.reduce((sum, trip) => sum + calculateTotalCosts(trip.costs), 0);
@@ -133,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       }
       
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
 
     // Calculate percentages and performance scores
     Object.keys(driverStats).forEach(driver => {
@@ -145,8 +149,21 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
     });
 
     // Top 5 drivers with highest flags
+    type DriverStats = {
+      trips: number;
+      flags: number;
+      unresolvedFlags: number;
+      investigations: number;
+      revenue: number;
+      expenses: number;
+      tripsWithFlags: number;
+      flagPercentage?: number;
+      avgFlagsPerTrip?: number;
+      netProfit?: number;
+      profitPerTrip?: number;
+    };
     const topDriversByFlags = Object.entries(driverStats)
-      .sort(([,a], [,b]) => (b as any).flags - (a as any).flags)
+      .sort(([,a], [,b]) => (b as DriverStats).flags - (a as DriverStats).flags)
       .slice(0, 5);
 
     // Most flagged cost categories
@@ -188,10 +205,10 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       tripsReadyForCompletion,
       tripsWithUnresolvedFlags
     };
-  }, [filteredTrips]);
+  }, [filteredTrips, usdTrips, zarTrips]);
 
-  const handleFilterChange = (field: string, value: string) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+  const handleFilterChange = (key: string, value: string | null) => {
+    setActiveFilters((prev: Record<string, unknown>) => ({ ...prev, [key]: value }));
   };
 
   const clearFilters = () => {
@@ -210,6 +227,11 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       : 'Dashboard Excel report is being generated...';
     alert(message);
   };
+
+  // Remove unused handleImport function if present
+  useEffect(() => {
+    generateCurrencyFleetReport();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -231,7 +253,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
                 size="sm"
                 variant="outline"
                 onClick={() => exportDashboard('excel')}
-                icon={<FileSpreadsheet className="w-4 h-4" />}
+                icon={<Download className="w-4 h-4" />}
               >
                 Export Excel
               </Button>
@@ -560,7 +582,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
           <CardContent>
             {stats.topDriversByFlags.length > 0 ? (
               <div className="space-y-3">
-                {stats.topDriversByFlags.map(([driverName, driverStats]: [string, any], index) => (
+                {stats.topDriversByFlags.map(([driverName, driverStats]: [string, unknown], index) => (
                   <div key={driverName} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center justify-center w-8 h-8 bg-red-100 rounded-full">
@@ -641,9 +663,9 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
                 </thead>
                 <tbody>
                   {Object.entries(stats.driverStats)
-                    .sort(([,a], [,b]) => (a as any).flagPercentage - (b as any).flagPercentage)
-                    .map(([driver, driverStats]: [string, any]) => {
-                      const performanceScore = Math.max(0, 100 - (driverStats.flagPercentage * 2));
+                    .sort(([,a], [,b]) => (a as DriverStats).flagPercentage - (b as DriverStats).flagPercentage)
+                    .map(([driver, driverStats]: [string, unknown]) => {
+                      const performanceScore = Math.max(0, 100 - (driverStats.flagPercentage as number) * 2);
                       const performanceColor = performanceScore >= 80 ? 'text-green-600' : 
                                              performanceScore >= 60 ? 'text-yellow-600' : 'text-red-600';
                       

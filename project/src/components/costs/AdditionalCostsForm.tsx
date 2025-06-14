@@ -58,7 +58,7 @@ const AdditionalCostsForm: React.FC<AdditionalCostsFormProps> = ({
 
     const costData: Omit<AdditionalCost, 'id'> = {
       tripId,
-      costType: formData.costType as any,
+      costType: formData.costType as AdditionalCost['costType'],
       amount: Number(formData.amount),
       currency: formData.currency,
       supportingDocuments: [], // Will be populated by the parent component

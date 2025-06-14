@@ -3,9 +3,9 @@ import { Trip, FlaggedCost } from '../../types';
 import { useAppContext } from '../../context/AppContext';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
-import { Input, Select } from '../ui/FormElements';
+import { Select } from '../ui/FormElements';
 import FlagResolutionModal from './FlagResolutionModal';
-import { AlertTriangle, Eye, CheckCircle, Clock, Play, Flag, Upload, Edit } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, Play, Flag, Upload, Edit } from 'lucide-react';
 import { formatCurrency, formatDate, getAllFlaggedCosts } from '../../utils/helpers';
 
 interface FlagsInvestigationsProps {
@@ -27,7 +27,7 @@ const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
     return true;
   });
 
-  const handleResolveFlag = (updatedCost: any, resolutionComment: string) => {
+  const handleResolveFlag = (updatedCost: FlaggedCost, resolutionComment: string) => {
     updateCostEntry(updatedCost);
     setShowResolutionModal(false);
     setSelectedCost(null);

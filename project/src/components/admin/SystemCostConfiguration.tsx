@@ -4,7 +4,7 @@ import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input } from '../ui/FormElements';
 import Modal from '../ui/Modal';
-import { Settings, Save, X, AlertTriangle, DollarSign, Clock, Navigation, History, Shield, Bell, Calendar } from 'lucide-react';
+import { Settings, Save, X, AlertTriangle, Clock, Navigation, History, Shield, Bell, Calendar } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
 
 interface SystemCostConfigurationProps {

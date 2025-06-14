@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { useAppContext } from '../../context/AppContext';
-import { Input } from '../ui/FormElements';
-import { Upload, X, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+import { Upload, X, Wifi, WifiOff } from 'lucide-react';
 
 interface LoadImportModalProps {
   isOpen: boolean;
@@ -14,7 +13,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
   const { importTripsFromCSV, connectionStatus } = useAppContext();
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [previewData, setPreviewData] = useState<Record<string, string>[]>([]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
@@ -32,15 +31,15 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
     }
   };
 
-  const parseCSV = (text: string) => {
+  const parseCSV = (text: string): Record<string, string>[] => {
     const lines = text.split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
-    const data = [];
+    const data: Record<string, string>[] = [];
     
     for (let i = 1; i < lines.length; i++) {
       if (lines[i].trim()) {
         const values = lines[i].split(',').map(v => v.trim());
-        const row: any = {};
+        const row: Record<string, string> = {};
         headers.forEach((header, index) => {
           row[header] = values[index] || '';
         });
@@ -51,6 +50,9 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
     return data;
   };
 
+  // Define a type for the CSV row
+  type CsvRow = Record<string, string>;
+
   const handleImport = async () => {
     if (!csvFile) return;
 
@@ -60,7 +62,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
       const text = await csvFile.text();
       const data = parseCSV(text);
       
-      const trips = data.map((row: any) => ({
+      const trips = data.map((row: CsvRow) => ({
         fleetNumber: row.fleetNumber || row.fleet || '',
         route: row.route || '',
         clientName: row.clientName || row.client || '',
@@ -186,7 +188,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
                   <tbody>
                     {previewData.map((row, rowIndex) => (
                       <tr key={rowIndex} className="border-b">
-                        {Object.entries(row).slice(0, 5).map(([key, value], colIndex) => (
+                        {Object.entries(row).slice(0, 5).map(([, value], colIndex) => (
                           <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1 text-gray-600">
                             {String(value)}
                           </td>

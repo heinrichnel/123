@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
@@ -126,7 +125,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
       route: formData.route.trim(),
       estimatedRevenue: Number(formData.estimatedRevenue),
       currency: formData.currency,
-      reason: formData.reason as any,
+      reason: formData.reason,
       reasonDescription: formData.reasonDescription.trim() || undefined,
       resolutionStatus: formData.resolutionStatus,
       followUpRequired: formData.followUpRequired,

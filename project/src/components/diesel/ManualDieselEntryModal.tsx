@@ -5,7 +5,6 @@ import { Input, Select, TextArea } from '../ui/FormElements';
 import { 
   Save, 
   X, 
-  Plus, 
   Calculator,
   AlertTriangle,
   Fuel,
@@ -77,7 +76,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       const costPerLitre = changedField === 'costPerLitre' ? numValue : parseFloat(prev.costPerLitre) || 0;
       const totalCost = changedField === 'totalCost' ? numValue : parseFloat(prev.totalCost) || 0;
 
-      let newData = { ...prev };
+      const newData = { ...prev };
 
       if (changedField === 'litresFilled' && costPerLitre > 0) {
         newData.totalCost = (litres * costPerLitre).toFixed(2);
