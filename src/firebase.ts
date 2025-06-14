@@ -1,7 +1,7 @@
-import { db } from "../../firebase"; // Correct path if firebase.ts is in src/
+import { db } from "../../firebase";
 
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableFirestoreNetwork, disableFirestoreNetwork } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
@@ -15,6 +15,9 @@ const app = initializeApp(firebaseConfig);
 
 // ✅ Firestore and Auth
 export const db = getFirestore(app);
+
+// Add these exports:
+export { enableFirestoreNetwork, disableFirestoreNetwork };
 
 /* 🔁 LISTENERS & FIRESTORE INTERACTION FUNCTIONS */
 
@@ -58,3 +61,6 @@ export const deleteCARReportFromFirebase = () => {};
 
 // Connectivity Monitor (basic placeholder)
 export const monitorConnectionStatus = () => {};
+
+// Only one default export
+export default CostForm;

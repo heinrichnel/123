@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Trip } from "../types/Trip";
 import { collection, onSnapshot, addDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import { useAppContext } from "../../context/AppContext";
 
 const TripDashboard: React.FC = () => {
