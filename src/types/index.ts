@@ -3,22 +3,69 @@
 //
 
 // Base types for the application
+export interface Attachment {
+  id: string;
+  // add other fields if needed
+}
+
 export interface CostData {
-  fuel: number;
-  tolls: number;
-  other: number;
+  id: string;
+  amount: number;
+  category: string;
+  referenceNumber?: string;
+  isFlagged?: boolean;
+  isSystemGenerated?: boolean;
+  investigationStatus?: string;
+  flaggedAt?: string;
+  resolvedAt?: string;
+  attachments?: Attachment[];
+  // ...add any other fields used in your code
+}
+
+export interface DelayReason {
+  delayDuration: number;
+  reason: string;
+  delayType?: string;
+  description?: string;
+  id?: string;
 }
 
 export type TripStatus = "active" | "flagged" | "completed";
 
 export interface Trip {
   id: string;
-  destination: string;
-  date: string;
-  cost: CostData;
-  status: TripStatus;
-  flagReason?: string;
-  resolved?: boolean;
+  driverName: string;
+  fleetNumber: string;
+  clientName: string;
+  route: string;
+  startDate: string;
+  endDate: string;
+  baseRevenue: number;
+  revenueCurrency: "USD" | "ZAR";
+  distanceKm: number;
+  clientType: 'internal' | 'external';
+  costs: CostData[];
+  additionalCosts: CostData[];
+  delayReasons: DelayReason[];
+  investigationNotes?: string;
+  plannedArrivalDateTime?: string;
+  actualArrivalDateTime?: string;
+  followUpHistory?: any[];
+  status?: string; // Add this!
+  description?: string;
+  invoiceNumber?: string;
+  invoiceSubmittedAt?: string;
+  invoiceSubmittedBy?: string;
+  invoiceDueDate?: string;
+  paymentStatus?: string;
+  timelineValidated?: boolean;
+  timelineValidatedAt?: string;
+  autoCompletedAt?: string;
+  autoCompletedReason?: string;
+  completedAt?: string;
+  completedBy?: string;
+  invoiceDate?: string;
+  // ...add any other fields referenced in your code
 }
 
 // System Cost Configuration Types
@@ -364,7 +411,8 @@ const INVOICE_SUBMISSION_STATUSES = [
   { value: 'rejected', label: 'Rejected', color: 'red' }
 ];
 
+export type Currency = "USD" | "ZAR";
+
 //
 // Removed App component and default export - this file should only contain types and constants.
-//
 
