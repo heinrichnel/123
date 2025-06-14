@@ -23,7 +23,7 @@ import SystemCostConfiguration from './components/admin/SystemCostConfiguration'
 import ActionLog from './components/actionlog/ActionLog';
 import TripDashboard from './components/TripDashboard';
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
-import { db } from "./firebase"; // jou Firebase config
+import { db } from "./firebase";
 
 const AppContent: React.FC = () => {
   const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad, connectionStatus, setTrips } = useAppContext();
