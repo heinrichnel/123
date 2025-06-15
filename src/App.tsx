@@ -11,7 +11,6 @@ import InvoiceAgingDashboard from "./components/invoicing/InvoiceAgingDashboard.
 import CustomerRetentionDashboard from "./components/performance/CustomerRetentionDashboard.js";
 import MissedLoadsTracker from "./components/trips/MissedLoadsTracker.js";
 import DieselDashboard from "./components/diesel/DieselDashboard.js";
-import Admin from "./pages/Admin.js";
 import Modal from "./components/ui/Modal.js";
 import ConnectionStatus from "./components/ui/ConnectionStatus.js";
 import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.js";
@@ -217,8 +216,6 @@ const AppContent: React.FC = () => {
         return <DriverBehaviorPage />;
       case "action-log":
         return <ActionLog />;
-      case "admin":
-        return <Admin />;
       default:
         return <YearToDateKPIs trips={trips} />;
     }
