@@ -10,8 +10,8 @@ import TripReport from '../reports/TripReport.tsx';
 import SystemCostGenerator from '../costs/SystemCostGenerator.tsx';
 import InvoiceSubmissionModal from './InvoiceSubmissionModal.tsx';
 import TripPlanningForm from '../planning/TripPlanningForm.tsx';
-import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield } from 'lucide-react';
-import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts, getFileIcon } from '../../utils/helpers.ts';
+import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield, Send, Calculator, ArrowLeft, BarChart3 } from 'lucide-react';
+import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts, getFileIcon, calculateKPIs, getFlaggedCostsCount, getUnresolvedFlagsCount, canCompleteTrip } from '../../utils/helpers.ts';
 
 interface TripDetailsProps {
   trip: Trip;
