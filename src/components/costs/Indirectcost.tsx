@@ -35,15 +35,8 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
       const systemCost = mostRecentTrip.costs.find(c => c.isSystemGenerated);
       
       if (systemCost && systemCost.calculationDetails) {
-        // Extract rate information from the calculation details
-        try {
-          // This is a simplified approach - in a real app, you'd store the actual rates
-          // For now, we'll use the default rates but in a real implementation,
-          // you would extract the actual rates from the system costs
-          console.log('Found system costs from recent trip:', mostRecentTrip.id);
-        } catch (error) {
-          console.error('Error parsing system cost rates:', error);
-        }
+        // For now, we'll just keep default rates; extend here if needed
+        console.log('Found system costs from recent trip:', mostRecentTrip.id);
       }
     }
   }, [trips, trip.revenueCurrency]);
@@ -54,16 +47,11 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
     const tripStartDate = new Date(trip.startDate);
     const rateEffectiveDate = new Date(rates.effectiveDate);
     
-    // If trip starts on or after the rate effective date, use current rates
-    // Otherwise, use historical rates (for now, we'll use current rates as fallback)
-    // In a real system, you'd store historical rate versions
     if (tripStartDate >= rateEffectiveDate) {
       return rates;
     }
     
-    // For demo purposes, return current rates
-    // In production, you'd fetch historical rates based on trip start date
-    return rates;
+    return rates; // Simplified fallback
   };
   
   const rates = getApplicableRates(trip.revenueCurrency);

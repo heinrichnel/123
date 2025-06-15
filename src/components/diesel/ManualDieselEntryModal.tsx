@@ -8,8 +8,8 @@ import {
   Calculator,
   AlertTriangle,
   Fuel,
-  Link,
-  Database
+  Database,
+  Link
 } from 'lucide-react';
 import { FLEET_NUMBERS, DRIVERS, TRUCKS_WITH_PROBES } from '../../types';
 import { useAppContext } from '../../context/AppContext';
@@ -36,21 +36,31 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     fuelStation: '',
     driverName: '',
     notes: '',
-    tripId: '',
+    tripId: '', // Link to trip
     currency: 'ZAR' as 'USD' | 'ZAR',
-    probeReading: ''
+    probeReading: '' // Probe reading field
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoCalculate, setAutoCalculate] = useState(true);
 
+  // Check if selected fleet has a probe
   const hasProbe = TRUCKS_WITH_PROBES.includes(formData.fleetNumber);
-  const availableTrips = trips.filter(trip => trip.fleetNumber === formData.fleetNumber && trip.status === 'active');
+
+  // Get available trips for the selected fleet
+  const availableTrips = trips.filter(trip => 
+    trip.fleetNumber === formData.fleetNumber && 
+    trip.status === 'active'
+  );
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
+    
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
 
+    // Auto-calculate when relevant fields change
     if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost'].includes(field)) {
       autoCalculateFields(field, value);
     }
@@ -64,6 +74,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       const litres = changedField === 'litresFilled' ? numValue : parseFloat(prev.litresFilled) || 0;
       const costPerLitre = changedField === 'costPerLitre' ? numValue : parseFloat(prev.costPerLitre) || 0;
       const totalCost = changedField === 'totalCost' ? numValue : parseFloat(prev.totalCost) || 0;
+
       let newData = { ...prev };
 
       if (changedField === 'litresFilled' && costPerLitre > 0) {
@@ -80,6 +91,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
+
     if (!formData.fleetNumber) newErrors.fleetNumber = 'Fleet number is required';
     if (!formData.date) newErrors.date = 'Date is required';
     if (!formData.kmReading) newErrors.kmReading = 'KM reading is required';
@@ -88,20 +100,36 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     if (!formData.fuelStation) newErrors.fuelStation = 'Fuel station is required';
     if (!formData.driverName) newErrors.driverName = 'Driver name is required';
 
-    if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) newErrors.kmReading = 'Must be a valid positive number';
-    if (formData.previousKmReading && (isNaN(Number(formData.previousKmReading)) || Number(formData.previousKmReading) < 0)) newErrors.previousKmReading = 'Must be a valid number';
-    if (formData.litresFilled && (isNaN(Number(formData.litresFilled)) || Number(formData.litresFilled) <= 0)) newErrors.litresFilled = 'Must be a valid positive number';
-    if (formData.totalCost && (isNaN(Number(formData.totalCost)) || Number(formData.totalCost) <= 0)) newErrors.totalCost = 'Must be a valid positive number';
+    // Validate numbers
+    if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) {
+      newErrors.kmReading = 'Must be a valid positive number';
+    }
+    if (formData.previousKmReading && (isNaN(Number(formData.previousKmReading)) || Number(formData.previousKmReading) < 0)) {
+      newErrors.previousKmReading = 'Must be a valid number';
+    }
+    if (formData.litresFilled && (isNaN(Number(formData.litresFilled)) || Number(formData.litresFilled) <= 0)) {
+      newErrors.litresFilled = 'Must be a valid positive number';
+    }
+    if (formData.totalCost && (isNaN(Number(formData.totalCost)) || Number(formData.totalCost) <= 0)) {
+      newErrors.totalCost = 'Must be a valid positive number';
+    }
 
+    // Validate KM readings
     if (formData.kmReading && formData.previousKmReading) {
-      if (Number(formData.kmReading) <= Number(formData.previousKmReading)) {
+      const current = Number(formData.kmReading);
+      const previous = Number(formData.previousKmReading);
+      if (current <= previous) {
         newErrors.kmReading = 'Current KM must be greater than previous KM';
       }
     }
 
+    // Validate probe reading if truck has probe
     if (hasProbe) {
-      if (!formData.probeReading) newErrors.probeReading = 'Probe reading is required for this truck';
-      else if (isNaN(Number(formData.probeReading)) || Number(formData.probeReading) < 0) newErrors.probeReading = 'Must be a valid number';
+      if (!formData.probeReading) {
+        newErrors.probeReading = 'Probe reading is required for this truck';
+      } else if (isNaN(Number(formData.probeReading)) || Number(formData.probeReading) < 0) {
+        newErrors.probeReading = 'Must be a valid number';
+      }
     }
 
     setErrors(newErrors);
@@ -117,6 +145,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const totalCost = Number(formData.totalCost);
     const costPerLitre = formData.costPerLitre ? Number(formData.costPerLitre) : totalCost / litresFilled;
     const probeReading = formData.probeReading ? Number(formData.probeReading) : undefined;
+
     const distanceTravelled = previousKmReading ? kmReading - previousKmReading : undefined;
     const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
     const probeDiscrepancy = probeReading && litresFilled ? litresFilled - probeReading : undefined;
@@ -193,8 +222,10 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
   const calculateProbeDiscrepancy = () => {
     if (!hasProbe || !formData.probeReading || !formData.litresFilled) return null;
+    
     const probeReading = Number(formData.probeReading);
     const litresFilled = Number(formData.litresFilled);
+    
     return litresFilled - probeReading;
   };
 
@@ -209,6 +240,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       maxWidth="lg"
     >
       <div className="space-y-6">
+        {/* Connection Status Warning */}
         {connectionStatus !== 'connected' && (
           <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
@@ -223,6 +255,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
+        {/* Header Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex items-start space-x-3">
             <Fuel className="w-5 h-5 text-blue-600 mt-0.5" />
@@ -236,6 +269,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         </div>
 
+        {/* Auto-Calculate Toggle */}
         <div className="flex items-center space-x-3">
           <input
             type="checkbox"
@@ -250,6 +284,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </label>
         </div>
 
+        {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
             label="Fleet Number *"
@@ -376,7 +411,10 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             onChange={(e) => handleChange('tripId', e.target.value)}
             options={[
               { label: 'No trip linkage', value: '' },
-              ...availableTrips.map(trip => ({ label: `${trip.route} (${trip.startDate} - ${trip.endDate})`, value: trip.id }))
+              ...availableTrips.map(trip => ({ 
+                label: `${trip.route} (${trip.startDate} - ${trip.endDate})`, 
+                value: trip.id 
+              }))
             ]}
             disabled={!formData.fleetNumber}
           />
@@ -390,6 +428,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           rows={3}
         />
 
+        {/* Calculation Preview */}
         {(formData.kmReading && formData.previousKmReading && formData.litresFilled) && (
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <h4 className="text-sm font-medium text-green-800 mb-2">Calculated Metrics</h4>
@@ -412,6 +451,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
+        {/* Probe Verification Preview */}
         {hasProbe && formData.probeReading && formData.litresFilled && (
           <div className={`border rounded-md p-4 ${hasLargeDiscrepancy ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
             <h4 className={`text-sm font-medium mb-2 ${hasLargeDiscrepancy ? 'text-red-800' : 'text-green-800'}`}>
@@ -433,6 +473,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
                 </p>
               </div>
             </div>
+            
             {hasLargeDiscrepancy && (
               <div className="mt-3 flex items-start space-x-2">
                 <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
@@ -445,6 +486,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
+        {/* Trip Linkage Info */}
         {formData.tripId && (
           <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
@@ -460,6 +502,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
+        {/* Validation Warnings */}
         {Object.keys(errors).length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
@@ -476,9 +519,21 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
+        {/* Action Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} icon={<X className="w-4 h-4" />}>Cancel</Button>
-          <Button onClick={handleSubmit} icon={<Save className="w-4 h-4" />}>Add Diesel Record</Button>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            icon={<X className="w-4 h-4" />}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            icon={<Save className="w-4 h-4" />}
+          >
+            Add Diesel Record
+          </Button>
         </div>
       </div>
     </Modal>

@@ -3,7 +3,7 @@ import { CostEntry } from '../../types/index.js';
 import Card, { CardContent } from '../ui/Card.tsx';
 import Button from '../ui/Button.tsx';
 import { Edit, Trash2, FileText, Image, Paperclip, Flag, AlertTriangle, Calculator, Lock, Download, Eye } from 'lucide-react';
-import { formatDate, formatCurrency, getFileIcon } from '../../utils/helpers.ts';
+import { formatDate, formatCurrency } from '../../utils/helpers.ts';
 
 interface CostListProps {
   costs: CostEntry[];
@@ -43,10 +43,8 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
     }
   };
 
-  // FIXED: Enhanced attachment viewing functionality
   const handleViewAttachment = (attachment: any) => {
     if (attachment.fileUrl) {
-      // In a real app, this would open the file in a new tab or download it
       window.open(attachment.fileUrl, '_blank');
     } else {
       alert(`Viewing ${attachment.filename}\n\nIn a production system, this would open or download the file.`);
@@ -55,7 +53,6 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
 
   const handleDownloadAttachment = (attachment: any) => {
     if (attachment.fileUrl) {
-      // Create a temporary download link
       const link = document.createElement('a');
       link.href = attachment.fileUrl;
       link.download = attachment.filename;
@@ -67,7 +64,6 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
     }
   };
 
-  // Separate system costs from manual costs
   const systemCosts = costs.filter(cost => cost.isSystemGenerated);
   const manualCosts = costs.filter(cost => !cost.isSystemGenerated);
 
@@ -142,7 +138,6 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
                       </div>
                     )}
 
-                    {/* FIXED: Enhanced attachment display with view/download options */}
                     <div className="mb-3">
                       <p className="text-xs font-medium text-gray-500 mb-2">
                         Documentation ({cost.attachments.length} files)
