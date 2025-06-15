@@ -1,7 +1,7 @@
 // src/components/trips/TripForm.tsx
 import React, { useState, useEffect } from 'react';
 import { Trip, CLIENTS, DRIVERS } from '../../types';
-import { Input, Select, Textarea } from '../ui/FormElements.tsx';
+import { Input, Select, TextArea } from '../ui/FormElements.tsx';
 import Button from '../ui/Button';
 
 interface TripFormProps {
@@ -97,7 +97,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         />
       </div>
 
-      <Textarea
+      <TextArea
         label="Trip Notes"
         value={tripNotes}
         onChange={e => setTripNotes(e.target.value)}
