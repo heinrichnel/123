@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { useAppContext } from '../../context/AppContext';
-import { Input } from '../ui/FormElements';
+import Modal from '../ui/Modal.tsx';
+import Button from '../ui/Button.tsx';
+import { useAppContext } from '../../context/AppContext.js';
+import { Input } from '../ui/FormElements.tsx';
 import { Upload, X, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
-import TripDashboard from './components/TripDashboard';
+import TripDashboard from './components/TripDashboard.tsx';
 
 interface LoadImportModalProps {
   isOpen: boolean;

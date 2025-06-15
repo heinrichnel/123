@@ -1,35 +1,17 @@
 import React, { useState } from 'react';
-import { Trip, CostEntry, AdditionalCost } from '../../types';
-import { useAppContext } from '../../context/AppContext';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import CostForm from '../costs/CostForm';
-import CostList from '../costs/CostList';
-import TripReport from '../reports/TripReport';
-import SystemCostGenerator from '../costs/SystemCostGenerator';
-import InvoiceSubmissionModal from './InvoiceSubmissionModal';
-import TripPlanningForm from '../planning/TripPlanningForm';
-import { 
-  Plus, 
-  ArrowLeft, 
-  BarChart3, 
-  CheckCircle, 
-  AlertTriangle, 
-  Flag, 
-  Calculator,
-  Send,
-  Clock,
-  Calendar
-} from 'lucide-react';
-import { 
-  formatCurrency, 
-  calculateKPIs, 
-  getFlaggedCostsCount, 
-  getUnresolvedFlagsCount, 
-  canCompleteTrip,
-  formatDateTime
-} from '../../utils/helpers';
+import { Trip, CostEntry, AdditionalCost } from '../../types/index.js';
+import { useAppContext } from '../../context/AppContext.js';
+import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
+import Button from '../ui/Button.tsx';
+import Modal from '../ui/Modal.tsx';
+import CostForm from '../costs/CostForm.tsx';
+import CostList from '../costs/CostList.tsx';
+import TripReport from '../reports/TripReport.tsx';
+import SystemCostGenerator from '../costs/SystemCostGenerator.tsx';
+import InvoiceSubmissionModal from './InvoiceSubmissionModal.tsx';
+import TripPlanningForm from '../planning/TripPlanningForm.tsx';
+import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield } from 'lucide-react';
+import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts, getFileIcon } from '../../utils/helpers.ts';
 
 interface TripDetailsProps {
   trip: Trip;

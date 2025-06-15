@@ -1,38 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { AppProvider, useAppContext } from './context/AppContext';
-import Header from './components/layout/Header';
-import Dashboard from './components/dashboard/Dashboard';
-import YearToDateKPIs from './components/dashboard/YearToDateKPIs';
-import ActiveTrips from './components/trips/ActiveTrips';
-import CompletedTrips from './components/trips/CompletedTrips';
-import FlagsInvestigations from './components/flags/FlagsInvestigations';
-import CurrencyFleetReport from './components/reports/CurrencyFleetReport';
-import InvoiceAgingDashboard from './components/invoicing/InvoiceAgingDashboard';
-import CustomerRetentionDashboard from './components/performance/CustomerRetentionDashboard';
-import MissedLoadsTracker from './components/trips/MissedLoadsTracker';
-import DieselDashboard from './components/diesel/DieselDashboard';
-import Admin from './pages/Admin';
-import Modal from './components/ui/Modal';
-import ConnectionStatus from './components/ui/ConnectionStatus';
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from './types';
-import { Database, Loader2 } from 'lucide-react';
-import DriverBehaviorPage from './pages/DriverBehaviorPage';
-import TripDetails from './components/trips/TripDetails';
-import TripForm from './components/trips/TripForm';
-import SystemCostConfiguration from './components/admin/SystemCostConfiguration';
-import ActionLog from './components/actionlog/ActionLog';
-import TripDashboard from './components/TripDashboard';
+import React, { useState, useEffect } from "react";
+import { AppProvider, useAppContext } from "./context/AppContext";
+import Header from "./components/layout/Header";
+import Dashboard from "./components/dashboard/Dashboard";
+import YearToDateKPIs from "./components/dashboard/YearToDateKPIs";
+import ActiveTrips from "./components/trips/ActiveTrips";
+import CompletedTrips from "./components/trips/CompletedTrips";
+import FlagsInvestigations from "./components/flags/FlagsInvestigations";
+import CurrencyFleetReport from "./components/reports/CurrencyFleetReport";
+import InvoiceAgingDashboard from "./components/invoicing/InvoiceAgingDashboard";
+import CustomerRetentionDashboard from "./components/performance/CustomerRetentionDashboard";
+import MissedLoadsTracker from "./components/trips/MissedLoadsTracker";
+import DieselDashboard from "./components/diesel/DieselDashboard";
+import Admin from "./pages/Admin";
+import Modal from "./components/ui/Modal";
+import ConnectionStatus from "./components/ui/ConnectionStatus";
+import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types";
+import { Database } from "lucide-react";
+import DriverBehaviorPage from "./pages/DriverBehaviorPage";
+import TripDetails from "./components/trips/TripDetails";
+import TripForm from "./components/trips/TripForm";
+import SystemCostConfiguration from "./components/admin/SystemCostConfiguration";
+import ActionLog from "./components/actionlog/ActionLog";
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 
 const AppContent: React.FC = () => {
-  const { trips, addTrip, updateTrip, deleteTrip, missedLoads, addMissedLoad, updateMissedLoad, deleteMissedLoad, connectionStatus, setTrips } = useAppContext();
+  const {
+    trips,
+    addTrip,
+    updateTrip,
+    deleteTrip,
+    missedLoads,
+    addMissedLoad,
+    updateMissedLoad,
+    deleteMissedLoad,
+    connectionStatus,
+    setTrips,
+  } = useAppContext();
 
-  const [currentView, setCurrentView] = useState('ytd-kpis');
+  const [currentView, setCurrentView] = useState("ytd-kpis");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | undefined>();
-  const [systemCostRates, setSystemCostRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
+  const [systemCostRates, setSystemCostRates] = useState<
+    Record<"USD" | "ZAR", SystemCostRates>
+  >(DEFAULT_SYSTEM_COST_RATES);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Set initial load state after data is loaded
@@ -40,77 +52,73 @@ const AppContent: React.FC = () => {
     if (trips.length > 0 && isInitialLoad) {
       setIsInitialLoad(false);
     }
-    
     // If no data after 5 seconds, assume it's loaded but empty
     const timer = setTimeout(() => {
       if (isInitialLoad) {
         setIsInitialLoad(false);
       }
     }, 5000);
-    
+
     return () => clearTimeout(timer);
   }, [trips, isInitialLoad]);
 
   // Listen for trips collection changes
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'trips'), (snapshot) => {
-      const tripsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setTrips(tripsData);
+    const unsub = onSnapshot(collection(db, "trips"), (snapshot) => {
+      const tripsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setTrips(tripsData as Trip[]);
     });
     return () => unsub();
   }, [setTrips]);
 
-  const handleAddTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>) => {
+  const handleAddTrip = async (tripData: Omit<Trip, "id" | "costs" | "status">) => {
     try {
       const newTrip = {
         ...tripData,
-        status: 'active', // Stel eksplisiet die status
+        status: "active",
         costs: [],
       };
-      await addDoc(collection(db, "trips"), newTrip); // Maak seker addTrip is async as jy Firestore gebruik
+      await addDoc(collection(db, "trips"), newTrip);
       setShowTripForm(false);
       setEditingTrip(undefined);
       alert(`Trip created successfully!\n\nFleet: ${tripData.fleetNumber}`);
     } catch (error) {
-      console.error('Error adding trip:', error);
-      alert('Error creating trip. Please try again.');
+      console.error("Error adding trip:", error);
+      alert("Error creating trip. Please try again.");
     }
   };
 
-  const handleUpdateTrip = (tripData: Omit<Trip, 'id' | 'costs' | 'status'>) => {
+  const handleUpdateTrip = (tripData: Omit<Trip, "id" | "costs" | "status">) => {
     if (editingTrip) {
-      const updatedTrip = { 
-        ...editingTrip, 
+      const updatedTrip = {
+        ...editingTrip,
         ...tripData,
-        // Preserve existing fields that shouldn't be overwritten
         costs: editingTrip.costs,
         status: editingTrip.status,
         additionalCosts: editingTrip.additionalCosts || [],
         delayReasons: editingTrip.delayReasons || [],
-        followUpHistory: editingTrip.followUpHistory || []
+        followUpHistory: editingTrip.followUpHistory || [],
       };
       updateTrip(updatedTrip);
       setEditingTrip(undefined);
       setShowTripForm(false);
-      
-      alert('Trip updated successfully!');
+      alert("Trip updated successfully!");
     }
   };
 
   const handleEditTrip = (trip: Trip) => {
-    console.log('Setting editing trip:', trip);
     setEditingTrip(trip);
     setShowTripForm(true);
   };
 
   const handleDeleteTrip = (id: string) => {
-    const trip = trips.find(t => t.id === id);
+    const trip = trips.find((t) => t.id === id);
     if (trip && confirm(`Delete trip for fleet ${trip.fleetNumber}? This cannot be undone.`)) {
       deleteTrip(id);
       if (selectedTrip?.id === id) {
         setSelectedTrip(null);
       }
-      alert('Trip deleted successfully.');
+      alert("Trip deleted successfully.");
     }
   };
 
@@ -129,7 +137,6 @@ const AppContent: React.FC = () => {
   };
 
   const renderContent = () => {
-    // Show loading state during initial data fetch
     if (isInitialLoad) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -151,29 +158,38 @@ const AppContent: React.FC = () => {
     }
 
     switch (currentView) {
-      case 'ytd-kpis':
+      case "ytd-kpis":
         return <YearToDateKPIs trips={trips} />;
-      case 'dashboard':
+      case "dashboard":
         return <Dashboard trips={trips} />;
-      case 'active-trips':
-        return <ActiveTrips
-          trips={trips.filter(t => t.status === 'active')}
-          onEdit={handleEditTrip}
-          onDelete={handleDeleteTrip}
-          onView={handleViewTrip}
-        />;
-      case 'completed-trips':
-        return <CompletedTrips trips={trips.filter(t => ['completed', 'invoiced', 'paid'].includes(t.status))} onView={handleViewTrip} />;
-      case 'flags':
+      case "active-trips":
+        return (
+          <ActiveTrips
+            trips={trips.filter((t) => t.status === "active")}
+            onEdit={handleEditTrip}
+            onDelete={handleDeleteTrip}
+            onView={handleViewTrip}
+          />
+        );
+      case "completed-trips":
+        return (
+          <CompletedTrips
+            trips={trips.filter((t) =>
+              ["completed", "invoiced", "paid"].includes(t.status)
+            )}
+            onView={setSelectedTrip}
+          />
+        );
+      case "flags":
         return <FlagsInvestigations trips={trips} />;
-      case 'reports':
+      case "reports":
         return <CurrencyFleetReport trips={trips} />;
-      case 'system-costs':
+      case "system-costs":
         return (
           <SystemCostConfiguration
             currentRates={systemCostRates}
             onUpdateRates={(currency, rates) => {
-              setSystemCostRates(prev => ({
+              setSystemCostRates((prev) => ({
                 ...prev,
                 [currency]: rates,
               }));
@@ -181,22 +197,31 @@ const AppContent: React.FC = () => {
             userRole="admin"
           />
         );
-      case 'invoice-aging':
-        return <InvoiceAgingDashboard
-          trips={trips}
-          onViewTrip={setSelectedTrip}
-        />;
-      case 'customer-retention':
+      case "invoice-aging":
+        return (
+          <InvoiceAgingDashboard
+            trips={trips}
+            onViewTrip={setSelectedTrip}
+          />
+        );
+      case "customer-retention":
         return <CustomerRetentionDashboard trips={trips} />;
-      case 'missed-loads':
-        return <MissedLoadsTracker missedLoads={missedLoads} onAddMissedLoad={addMissedLoad} onUpdateMissedLoad={updateMissedLoad} onDeleteMissedLoad={deleteMissedLoad} />;
-      case 'diesel-dashboard':
+      case "missed-loads":
+        return (
+          <MissedLoadsTracker
+            missedLoads={missedLoads}
+            onAddMissedLoad={addMissedLoad}
+            onUpdateMissedLoad={updateMissedLoad}
+            onDeleteMissedLoad={deleteMissedLoad}
+          />
+        );
+      case "diesel-dashboard":
         return <DieselDashboard />;
-      case 'driver-behavior':
+      case "driver-behavior":
         return <DriverBehaviorPage />;
-      case 'action-log':
+      case "action-log":
         return <ActionLog />;
-      case 'admin':
+      case "admin":
         return <Admin />;
       default:
         return <YearToDateKPIs trips={trips} />;
@@ -205,18 +230,16 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <Header 
-        currentView={currentView} 
-        onNavigate={setCurrentView} 
-        onNewTrip={handleNewTrip} 
+      <Header
+        currentView={currentView}
+        onNavigate={setCurrentView}
+        onNewTrip={handleNewTrip}
       />
-      <main className="flex-1 p-8 ml-64 w-full">
-        {renderContent()}
-      </main>
+      <main className="flex-1 p-8 ml-64 w-full">{renderContent()}</main>
       <Modal
         isOpen={showTripForm}
         onClose={handleCloseTripForm}
-        title={editingTrip ? 'Edit Trip' : 'Create New Trip'}
+        title={editingTrip ? "Edit Trip" : "Create New Trip"}
         maxWidth="lg"
       >
         <TripForm

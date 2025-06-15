@@ -1,32 +1,14 @@
 import React, { useState } from 'react';
-import { Trip, TripDeletionRecord } from '../../types';
-import { useAppContext } from '../../context/AppContext';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Input, Select } from '../ui/FormElements';
-import CompletedTripEditModal from './CompletedTripEditModal';
-import TripDeletionModal from './TripDeletionModal';
-import SyncIndicator from '../ui/SyncIndicator';
-import { 
-  Eye, 
-  Download, 
-  FileSpreadsheet, 
-  Filter, 
-  Calendar, 
-  User, 
-  Edit, 
-  Trash2,
-  History,
-  AlertTriangle
-} from 'lucide-react';
-import { 
-  formatCurrency, 
-  calculateTotalCosts, 
-  formatDate, 
-  downloadTripPDF, 
-  downloadTripExcel,
-  formatDateTime
-} from '../../utils/helpers';
+import { Trip, TripDeletionRecord } from '../../types/index.js';
+import { useAppContext } from '../../context/AppContext.js';
+import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
+import Button from '../ui/Button.tsx';
+import { Input, Select } from '../ui/FormElements.tsx';
+import CompletedTripEditModal from './CompletedTripEditModal.tsx';
+import TripDeletionModal from './TripDeletionModal.tsx';
+import SyncIndicator from '../ui/SyncIndicator.tsx';
+import { Edit, Trash2, FileSpreadsheet, Eye, History, AlertTriangle, User, Calendar } from 'lucide-react';
+import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts } from '../../utils/helpers.ts';
 
 interface CompletedTripsProps {
   trips: Trip[];
@@ -47,7 +29,6 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
   const [deletingTrip, setDeletingTrip] = useState<Trip | null>(null);
   const [showEditHistory, setShowEditHistory] = useState<string | null>(null);
 
-  // Mock user role - in real app, get from auth context
   const userRole: 'admin' | 'manager' | 'operator' = 'admin';
 
   const filteredTrips = trips.filter(trip => {
@@ -80,7 +61,6 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
   };
 
   const handleDelete = (trip: Trip, deletionRecord: Omit<TripDeletionRecord, 'id'>) => {
-    // In real app, save deletion record to audit log before deleting
     console.log('Deletion Record:', deletionRecord);
     deleteTrip(trip.id);
     setDeletingTrip(null);
@@ -116,14 +96,13 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
             size="sm"
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            icon={<Filter className="w-4 h-4" />}
+            icon={<History className="w-4 h-4" />}
           >
             {showFilters ? 'Hide Filters' : 'Show Filters'}
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
       {showFilters && (
         <Card>
           <CardHeader title="Filter Completed Trips" />
@@ -179,7 +158,6 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
         </Card>
       )}
 
-      {/* Offline warning */}
       {connectionStatus !== 'connected' && (
         <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-4">
           <div className="flex items-start space-x-3">
@@ -204,158 +182,152 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
           return (
             <Card key={trip.id} className="hover:shadow-md transition-shadow">
               <CardHeader 
-              title={`Fleet ${trip.fleetNumber} - ${trip.route}`}
-              subtitle={
-                <div className="flex items-center space-x-4 text-sm">
-                <span>{trip.clientName} • Completed {formatDate(trip.completedAt || trip.endDate)}</span>
-                {hasEditHistory && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800">
-                  <History className="w-3 h-3 mr-1" />
-                  Edited
-                  </span>
-                )}
-                </div>
-              }
+                title={`Fleet ${trip.fleetNumber} - ${trip.route}`}
+                subtitle={
+                  <div className="flex items-center space-x-4 text-sm">
+                    <span>{trip.clientName} • Completed {formatDate(trip.completedAt || trip.endDate)}</span>
+                    {hasEditHistory && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800">
+                        <History className="w-3 h-3 mr-1" />
+                        Edited
+                      </span>
+                    )}
+                  </div>
+                }
               />
               <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm text-gray-500">Driver</p>
-                  <p className="font-medium">{trip.driverName}</p>
-                </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <div>
-                  <p className="text-sm text-gray-500">Duration</p>
-                  <p className="font-medium">{formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
-                </div>
-                </div>
-                <div>
-                <p className="text-sm text-gray-500">Revenue</p>
-                <p className="font-medium text-green-600">
-                  {formatCurrency(trip.baseRevenue || 0, currency)}
-                </p>
-                </div>
-                <div>
-                <p className="text-sm text-gray-500">Total Costs</p>
-                <p className="font-medium text-red-600">
-                  {formatCurrency(totalCosts, currency)}
-                </p>
-                </div>
-                <div>
-                <p className="text-sm text-gray-500">Net Profit</p>
-                <p className={`font-medium ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(profit, currency)}
-                </p>
-                </div>
-              </div>
-
-              {/* Edit History Preview */}
-              {hasEditHistory && (
-                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                <div className="flex items-center justify-between">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                   <div className="flex items-center space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm font-medium text-amber-800">
-                    This trip has been edited {trip.editHistory!.length} time{trip.editHistory!.length !== 1 ? 's' : ''} after completion
-                  </span>
-                  </div>
-                  <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowEditHistory(showEditHistory === trip.id ? null : trip.id)}
-                  icon={<History className="w-3 h-3" />}
-                  >
-                  {showEditHistory === trip.id ? 'Hide' : 'View'} History
-                  </Button>
-                </div>
-                
-                {showEditHistory === trip.id && (
-                  <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
-                  {trip.editHistory!.map((edit, index) => (
-                    <div key={index} className="text-sm bg-white p-2 rounded border">
-                    <div className="flex justify-between items-start">
-                      <div>
-                      <p className="font-medium">{edit.fieldChanged}: {edit.oldValue} → {edit.newValue}</p>
-                      <p className="text-gray-600">Reason: {edit.reason}</p>
-                      </div>
-                      <div className="text-right text-xs text-gray-500">
-                      <p>{edit.editedBy}</p>
-                      <p>{formatDateTime(edit.editedAt)}</p>
-                      </div>
+                    <User className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Driver</p>
+                      <p className="font-medium">{trip.driverName}</p>
                     </div>
-                    </div>
-                  ))}
                   </div>
-                )}
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <p className="text-sm text-gray-500">Duration</p>
+                      <p className="font-medium">{formatDate(trip.startDate)} - {formatDate(trip.endDate)}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Revenue</p>
+                    <p className="font-medium text-green-600">
+                      {formatCurrency(trip.baseRevenue || 0, currency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Costs</p>
+                    <p className="font-medium text-red-600">
+                      {formatCurrency(totalCosts, currency)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Net Profit</p>
+                    <p className={`font-medium ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(profit, currency)}
+                    </p>
+                  </div>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-500">
-                {trip.costs.length} cost entries
-                {trip.distanceKm && ` • ${trip.distanceKm} km`}
-                {trip.completedBy && ` • Completed by ${trip.completedBy}`}
-                </div>
-                <div className="flex space-x-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => onView(trip)}
-                  icon={<Eye className="w-3 h-3" />}
-                >
-                  View
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => downloadTripExcel(trip)}
-                  icon={<FileSpreadsheet className="w-3 h-3" />}
-                >
-                  Excel
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => downloadTripPDF(trip)}
-                  icon={<Download className="w-3 h-3" />}
-                >
-                  PDF
-                </Button>
-                
-                {/* Edit Button - Available for all users */}
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => setEditingTrip(trip)}
-                  icon={<Edit className="w-3 h-3" />}
-                >
-                  Edit
-                </Button>
-                
-                {/* Delete Button - Admin Only */}
-                {userRole === 'admin' && (
-                  <Button 
-                  size="sm" 
-                  variant="danger"
-                  onClick={() => setDeletingTrip(trip)}
-                  icon={<Trash2 className="w-3 h-3" />}
-                  >
-                  Delete
-                  </Button>
+                {hasEditHistory && (
+                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-medium text-amber-800">
+                          This trip has been edited {trip.editHistory!.length} time{trip.editHistory!.length !== 1 ? 's' : ''} after completion
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowEditHistory(showEditHistory === trip.id ? null : trip.id)}
+                        icon={<History className="w-3 h-3" />}
+                      >
+                        {showEditHistory === trip.id ? 'Hide' : 'View'} History
+                      </Button>
+                    </div>
+                    
+                    {showEditHistory === trip.id && (
+                      <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
+                        {trip.editHistory!.map((edit, index) => (
+                          <div key={index} className="text-sm bg-white p-2 rounded border">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium">{edit.fieldChanged}: {edit.oldValue} → {edit.newValue}</p>
+                                <p className="text-gray-600">Reason: {edit.reason}</p>
+                              </div>
+                              <div className="text-right text-xs text-gray-500">
+                                <p>{edit.editedBy}</p>
+                                <p>{formatDateTime(edit.editedAt)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    {trip.costs.length} cost entries
+                    {trip.distanceKm && ` • ${trip.distanceKm} km`}
+                    {trip.completedBy && ` • Completed by ${trip.completedBy}`}
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => onView(trip)}
+                      icon={<Eye className="w-3 h-3" />}
+                    >
+                      View
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => downloadTripExcel(trip)}
+                      icon={<FileSpreadsheet className="w-3 h-3" />}
+                    >
+                      Excel
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => downloadTripPDF(trip)}
+                      icon={<Download className="w-3 h-3" />}
+                    >
+                      PDF
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setEditingTrip(trip)}
+                      icon={<Edit className="w-3 h-3" />}
+                    >
+                      Edit
+                    </Button>
+                    {userRole === 'admin' && (
+                      <Button 
+                        size="sm" 
+                        variant="danger"
+                        onClick={() => setDeletingTrip(trip)}
+                        icon={<Trash2 className="w-3 h-3" />}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Edit Modal */}
       {editingTrip && (
         <CompletedTripEditModal
           isOpen={!!editingTrip}
@@ -365,7 +337,6 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
         />
       )}
 
-      {/* Deletion Modal */}
       {deletingTrip && (
         <TripDeletionModal
           isOpen={!!deletingTrip}

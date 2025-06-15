@@ -3,16 +3,28 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],    // ✅ Ensures DOM + ESNext types are included
-    "allowJs": true,                              // ✅ Supports JS interop if needed
-    "resolveJsonModule": true,                    // ✅ Allows importing JSON files directly
-    "isolatedModules": true,                      // ✅ Required for tools like Vite (and for `.tsx`)
-    "noEmit": true,                               // ✅ Prevents TypeScript from outputting `.js` files (Vite handles this)
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext"
+    ],
+    "allowJs": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
     "strict": true,
     "jsx": "react-jsx",
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true
   },
-  "include": ["src"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

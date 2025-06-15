@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Trip, TripDeletionRecord, TRIP_DELETION_REASONS } from '../../types';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Select, TextArea } from '../ui/FormElements';
+import { Trip, TripDeletionRecord, TRIP_DELETION_REASONS } from '../../types/index.js';
+import Modal from '../ui/Modal.tsx';
+import Button from '../ui/Button.tsx';
+import { Select, TextArea } from '../ui/FormElements.tsx';
 import { Trash2, X, AlertTriangle, Shield } from 'lucide-react';
-import { formatCurrency, calculateTotalCosts } from '../../utils/helpers';
+import { formatCurrency, calculateTotalCosts } from '../../utils/helpers.ts';
 
 interface TripDeletionModalProps {
   isOpen: boolean;

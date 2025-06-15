@@ -244,37 +244,11 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
           />
         </div>
 
-        {/* Existing Edit History */}
-        {trip.editHistory && trip.editHistory.length > 0 && (
-          <div className="space-y-4 border-t pt-4">
-            <h3 className="text-lg font-medium text-gray-900">Previous Edit History</h3>
-            <div className="bg-gray-50 rounded-md p-4 max-h-40 overflow-y-auto">
-              {trip.editHistory.map((edit, index) => (
-                <div key={index} className="text-sm border-b border-gray-200 pb-2 mb-2 last:border-0">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{edit.fieldChanged}: {edit.oldValue} → {edit.newValue}</p>
-                      <p className="text-gray-600">Reason: {edit.reason}</p>
-                    </div>
-                    <div className="text-right text-xs text-gray-500">
-                      <p>{edit.editedBy}</p>
-                      <p>{formatDateTime(edit.editedAt)}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {errors.general && (
-          <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md">
-            {errors.general}
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
+        {/* Buttons */}
+        <div className="flex justify-end space-x-3 pt-6 border-t">
+          {errors.general && (
+            <p className="text-red-600 text-sm mr-auto">{errors.general}</p>
+          )}
           <Button
             variant="outline"
             onClick={onClose}
@@ -286,7 +260,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
             onClick={handleSave}
             icon={<Save className="w-4 h-4" />}
           >
-            Save Changes & Log Edit
+            Save Changes
           </Button>
         </div>
       </div>

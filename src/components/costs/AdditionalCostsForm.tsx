@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types';
-import { Input, Select, TextArea, FileUpload } from '../ui/FormElements';
-import Button from '../ui/Button';
-import Card, { CardContent, CardHeader } from '../ui/Card';
+import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index.js';
+import { Input, Select, TextArea, FileUpload } from '../ui/FormElements.tsx';
+import Button from '../ui/Button.tsx';
+import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
 import { Plus, X, DollarSign, Upload } from 'lucide-react';
-import { formatCurrency } from '../../utils/helpers';
+import { formatCurrency } from '../../utils/helpers.ts';
 
 interface AdditionalCostsFormProps {
   tripId: string;

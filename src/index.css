@@ -2,11 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global body styles */
 body {
   background-color: #f3f4f6; /* Tailwind bg-gray-100 */
   color: #111827;            /* Tailwind text-gray-900 */
 }
 
+/* Button primary */
 .btn-primary {
   background-color: #2563eb; /* Tailwind bg-blue-600 */
   color: #fff;               /* Tailwind text-white */

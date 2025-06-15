@@ -1,10 +1,8 @@
-// src/components/trips/ActiveTrips.tsx
-
 import React, { useState, useEffect } from "react";
-import { Trip } from "../types/Trip";
+import { Trip } from '../../types/index.js';
 import { collection, onSnapshot, addDoc } from "firebase/firestore";
-import { db } from "../../firebase";
-import { useAppContext } from "../../context/AppContext";
+import { db } from "../../firebase.js";
+import { useAppContext } from "../../context/AppContext.js";
 
 const TripDashboard: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);

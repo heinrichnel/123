@@ -1,11 +1,11 @@
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
-import SystemCostConfiguration from '../components/admin/SystemCostConfiguration';
-import FirestoreStatus from '../components/admin/FirestoreStatus';
-import DeploymentStatus from '../components/admin/DeploymentStatus';
-import SyncStatus from '../components/ui/SyncStatus';
-import Card, { CardContent, CardHeader } from '../components/ui/Card';
-import Button from '../components/ui/Button';
+import { useAppContext } from '../context/AppContext.js';
+import SystemCostConfiguration from '../components/admin/SystemCostConfiguration.tsx';
+import FirestoreStatus from '../components/admin/FirestoreStatus.tsx';
+import DeploymentStatus from '../components/admin/DeploymentStatus.tsx';
+import SyncStatus from '../components/ui/SyncStatus.tsx';
+import Card, { CardContent, CardHeader } from '../components/ui/Card.tsx';
+import Button from '../components/ui/Button.tsx';
 import { Settings, Database, Globe, Shield, Users, Key } from 'lucide-react';
 
 const Admin: React.FC = () => {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ActionItem } from '../../types';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { TextArea } from '../ui/FormElements';
+import { ActionItem } from '../../types/index.js';
+import Modal from '../ui/Modal.tsx';
+import Button from '../ui/Button.tsx';
+import { TextArea } from '../ui/FormElements.tsx';
 import { 
   CheckCircle, 
   Clock, 
@@ -14,8 +14,8 @@ import {
   AlertTriangle,
   X
 } from 'lucide-react';
-import { formatDate, formatDateTime } from '../../utils/helpers';
-import { useAppContext } from '../../context/AppContext';
+import { formatDate, formatDateTime } from '../../utils/helpers.ts';
+import { useAppContext } from '../../context/AppContext.js';
 
 interface ActionItemDetailsProps {
   isOpen: boolean;

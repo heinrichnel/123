@@ -1,4 +1,4 @@
-import { Trip, CostEntry, FlaggedCost, Driver, SystemCostRates, InvoiceAging, AGING_THRESHOLDS } from '../types';
+import { Trip, CostEntry, FlaggedCost, Driver, SystemCostRates, InvoiceAging, AGING_THRESHOLDS } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // Date formatting
@@ -606,6 +606,37 @@ export const getFileIcon = (fileType: string) => {
     console.error('Error getting file icon:', error);
     return 'Paperclip';
   }
+};
+
+// Utility stubs for missing functions
+export const downloadTripExcel = (trip: any) => {
+  // Stub: Implement Excel download logic
+  console.log('downloadTripExcel called', trip);
+};
+
+export const downloadTripPDF = (trip: any) => {
+  // Stub: Implement PDF download logic
+  console.log('downloadTripPDF called', trip);
+};
+
+export const calculateKPIs = (trips: any[]) => {
+  // Stub: Implement KPI calculation logic
+  return {};
+};
+
+export const getFlaggedCostsCount = (costs: any[]) => {
+  // Stub: Implement flagged costs count logic
+  return 0;
+};
+
+export const getUnresolvedFlagsCount = (flags: any[]) => {
+  // Stub: Implement unresolved flags count logic
+  return 0;
+};
+
+export const canCompleteTrip = (trip: any) => {
+  // Stub: Implement trip completion logic
+  return true;
 };
 
 // Export functions with error handling

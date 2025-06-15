@@ -1,44 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Trip, CostEntry, Attachment, AdditionalCost, DelayReason, MissedLoad, DieselConsumptionRecord, DriverBehaviorEvent, ActionItem, CARReport } from '../types';
+import { Trip, CostEntry, Attachment, AdditionalCost, DelayReason, MissedLoad, DieselConsumptionRecord, DriverBehaviorEvent, ActionItem, CARReport } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  db, 
-  tripsCollection, 
-  dieselCollection, 
-  missedLoadsCollection,
-  driverBehaviorCollection,
-  actionItemsCollection,
-  carReportsCollection,
-  listenToTrips,
-  listenToDieselRecords,
-  listenToMissedLoads,
-  listenToDriverBehaviorEvents,
-  listenToActionItems,
-  listenToCARReports,
-  addTripToFirebase,
-  updateTripInFirebase,
-  deleteTripFromFirebase,
-  addDieselToFirebase,
-  updateDieselInFirebase,
-  deleteDieselFromFirebase,
-  addMissedLoadToFirebase,
-  updateMissedLoadInFirebase,
-  deleteMissedLoadFromFirebase,
-  addDriverBehaviorEventToFirebase,
-  updateDriverBehaviorEventToFirebase,
-  deleteDriverBehaviorEventToFirebase,
-  addActionItemToFirebase,
-  updateActionItemInFirebase,
-  deleteActionItemFromFirebase,
-  addCARReportToFirebase,
-  updateCARReportInFirebase,
-  deleteCARReportFromFirebase,
-  monitorConnectionStatus,
-  enableFirestoreNetwork,
-  disableFirestoreNetwork
-} from '../firebase';
-import { doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
-import { generateTripId, shouldAutoCompleteTrip, isOnline } from '../utils/helpers';
+import { enableFirestoreNetwork, disableFirestoreNetwork } from '../firebase.js';
+import { generateTripId, shouldAutoCompleteTrip, isOnline } from '../utils/helpers.ts';
 
 interface AppContextType {
   trips: Trip[];

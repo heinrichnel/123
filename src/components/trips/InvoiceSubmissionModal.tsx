@@ -1,21 +1,16 @@
 import React, { useState } from 'react';
-import { Trip, AdditionalCost, DelayReason } from '../../types';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Input, TextArea, FileUpload } from '../ui/FormElements';
-import AdditionalCostsForm from '../costs/AdditionalCostsForm';
+import { Trip, AdditionalCost } from '../../types/index.js';
+import Modal from '../ui/Modal.tsx';
+import Button from '../ui/Button.tsx';
+import { Input, TextArea, FileUpload } from '../ui/FormElements.tsx';
+import AdditionalCostsForm from '../costs/AdditionalCostsForm.tsx';
 import { 
   Send, 
   X, 
   AlertTriangle, 
-  Clock, 
-  CheckCircle, 
-  FileText, 
-  DollarSign,
-  Calendar,
   Flag
 } from 'lucide-react';
-import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
+import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers.ts';
 
 interface InvoiceSubmissionModalProps {
   isOpen: boolean;
@@ -343,129 +338,45 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
         {trip.delayReasons && trip.delayReasons.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-md p-4">
             <h4 className="text-sm font-medium text-red-800 mb-2">Recorded Delays ({trip.delayReasons.length})</h4>
-            <div className="space-y-2">
-              {trip.delayReasons.map((delay, index) => (
-                <div key={index} className="text-sm bg-white p-2 rounded border border-red-200">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <span className="font-medium text-red-800">{delay.delayType.replace(/_/g, ' ').toUpperCase()}</span>
-                      <p className="text-red-700">{delay.description}</p>
-                    </div>
-                    <span className="text-red-600 font-medium">{delay.delayDuration}h</span>
-                  </div>
-                </div>
+            <ul className="list-disc list-inside text-sm text-red-700 max-h-32 overflow-y-auto">
+              {trip.delayReasons.map((delay) => (
+                <li key={delay.id}>
+                  {formatDate(delay.date)} - {delay.reason} ({delay.duration} minutes) - {delay.notes}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
 
-        {/* Additional Costs */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">Additional Costs</h3>
-          <AdditionalCostsForm
-            tripId={trip.id}
-            additionalCosts={trip.additionalCosts || []}
-            onAddCost={onAddAdditionalCost}
-            onRemoveCost={onRemoveAdditionalCost}
+        {/* Proof of Delivery & Signed Invoice Upload */}
+        <div className="space-y-6">
+          <FileUpload
+            label="Upload Proof of Delivery *"
+            accept="image/*,application/pdf"
+            multiple={true}
+            onFileSelect={setProofOfDelivery}
+            className="max-w-lg"
+            error={errors.proofOfDelivery}
+          />
+          <FileUpload
+            label="Upload Signed Invoice (optional)"
+            accept="image/*,application/pdf"
+            multiple={true}
+            onFileSelect={setSignedInvoice}
+            className="max-w-lg"
           />
         </div>
 
-        {/* Invoice Details */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">Invoice Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Invoice Number *"
-              value={formData.invoiceNumber}
-              onChange={(e) => handleChange('invoiceNumber', e.target.value)}
-              placeholder="INV-2025-001"
-              error={errors.invoiceNumber}
-            />
-            <Input
-              label="Invoice Date *"
-              type="date"
-              value={formData.invoiceDate}
-              onChange={(e) => handleChange('invoiceDate', e.target.value)}
-              error={errors.invoiceDate}
-            />
-            <Input
-              label={`Due Date * (${trip.revenueCurrency === 'USD' ? '14' : '30'} days default)`}
-              type="date"
-              value={formData.invoiceDueDate}
-              onChange={(e) => handleChange('invoiceDueDate', e.target.value)}
-              error={errors.invoiceDueDate}
-            />
-          </div>
-        </div>
-
-        {/* Required Documents */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">Required Documents</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <FileUpload
-                label="Proof of Delivery (POD) *"
-                accept=".pdf,.jpg,.jpeg,.png"
-                multiple
-                onFileSelect={setProofOfDelivery}
-              />
-              {errors.proofOfDelivery && (
-                <p className="text-sm text-red-600 mt-1">{errors.proofOfDelivery}</p>
-              )}
-              {proofOfDelivery && proofOfDelivery.length > 0 && (
-                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                  <p className="text-sm font-medium text-green-800">
-                    Selected: {proofOfDelivery.length} file(s)
-                  </p>
-                  <ul className="text-sm text-green-700 mt-1">
-                    {Array.from(proofOfDelivery).map((file, index) => (
-                      <li key={index}>• {file.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            <div>
-              <FileUpload
-                label="Signed Invoice (Optional)"
-                accept=".pdf,.jpg,.jpeg,.png"
-                multiple
-                onFileSelect={setSignedInvoice}
-              />
-              {signedInvoice && signedInvoice.length > 0 && (
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                  <p className="text-sm font-medium text-blue-800">
-                    Selected: {signedInvoice.length} file(s)
-                  </p>
-                  <ul className="text-sm text-blue-700 mt-1">
-                    {Array.from(signedInvoice).map((file, index) => (
-                      <li key={index}>• {file.name}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Submission Summary */}
-        <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
-          <h4 className="text-sm font-medium text-gray-800 mb-2">Submission Summary</h4>
-          <div className="text-sm text-gray-700 space-y-1">
-            <p>• Trip will be marked as <strong>INVOICED</strong></p>
-            <p>• Invoice aging tracking will begin automatically</p>
-            <p>• Payment follow-up alerts will be scheduled based on currency thresholds</p>
-            <p>• Timeline validation will be recorded for compliance reporting</p>
-            {hasDiscrepancies && (
-              <p className="text-amber-700">• Timeline discrepancies will be flagged for review</p>
-            )}
-          </div>
-        </div>
+        {/* Additional Costs Form */}
+        <AdditionalCostsForm
+          tripId={trip.id}
+          onAddAdditionalCost={onAddAdditionalCost}
+          onRemoveAdditionalCost={onRemoveAdditionalCost}
+          additionalCosts={trip.additionalCosts || []}
+        />
 
         {/* Actions */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
+        <div className="flex justify-end space-x-3 pt-6 border-t">
           <Button
             variant="outline"
             onClick={onClose}
@@ -477,7 +388,7 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
             onClick={handleSubmit}
             icon={<Send className="w-4 h-4" />}
           >
-            Submit for Invoicing
+            Submit Invoice
           </Button>
         </div>
       </div>
