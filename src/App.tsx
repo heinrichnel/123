@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { AppProvider, useAppContext } from "./context/AppContext.js";
+import { ReplitAuthProvider, useReplitAuth } from "./context/ReplitAuthContext.js";
 import Header from "./components/layout/Header.js";
+import LoginPage from "./components/auth/LoginPage.js";
 import Dashboard from "./components/dashboard/Dashboard.js";
 import YearToDateKPIs from "./components/dashboard/YearToDateKPIs.js";
 import ActiveTrips from "./components/trips/ActiveTrips.js";
@@ -23,6 +25,7 @@ import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase.js";
 
 const AppContent: React.FC = () => {
+  const { isAuthenticated, isLoading } = useReplitAuth();
   const {
     trips,
     addTrip,
@@ -36,6 +39,21 @@ const AppContent: React.FC = () => {
     connectionStatus,
     setTrips,
   } = useAppContext();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-lg font-medium text-gray-700">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   const [currentView, setCurrentView] = useState("ytd-kpis");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
@@ -247,9 +265,11 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <AppProvider>
-    <AppContent />
-  </AppProvider>
+  <ReplitAuthProvider>
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  </ReplitAuthProvider>
 );
 
 export default App;
