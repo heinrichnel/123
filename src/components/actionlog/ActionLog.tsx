@@ -27,7 +27,7 @@ import ActionItemDetails from './ActionItemDetails.tsx';
 
 const ActionLog: React.FC = () => {
   const { actionItems, addActionItem, updateActionItem, deleteActionItem, connectionStatus } = useAppContext();
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ActionItem | null>(null);
@@ -36,7 +36,7 @@ const ActionLog: React.FC = () => {
     responsiblePerson: '',
     overdue: false
   });
-  
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -45,10 +45,10 @@ const ActionLog: React.FC = () => {
     dueDate: '',
     status: 'initiated' as 'initiated' | 'in_progress' | 'completed'
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  
+
   // Calculate overdue status and days for each action item
   const enhancedActionItems = useMemo(() => {
     return actionItems.map(item => {
@@ -56,11 +56,11 @@ const ActionLog: React.FC = () => {
       const dueDate = new Date(item.dueDate);
       const isOverdue = today > dueDate && item.status !== 'completed';
       const overdueBy = isOverdue ? Math.floor((today.getTime() - dueDate.getTime()) / (86400000)) : 0;
-      
+
       // Check if overdue by 5 or 10 days
       const isOverdueBy5 = overdueBy >= 5;
       const isOverdueBy10 = overdueBy >= 10;
-      
+
       return {
         ...item,
         isOverdue,
@@ -71,7 +71,7 @@ const ActionLog: React.FC = () => {
       };
     });
   }, [actionItems]);
-  
+
   // Apply filters
   const filteredItems = useMemo(() => {
     return enhancedActionItems.filter(item => {
@@ -81,23 +81,23 @@ const ActionLog: React.FC = () => {
       return true;
     });
   }, [enhancedActionItems, filters]);
-  
+
   // Sort items: first by status (incomplete first), then by due date (overdue first)
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
       // Completed items at the bottom
       if (a.status === 'completed' && b.status !== 'completed') return 1;
       if (a.status !== 'completed' && b.status === 'completed') return -1;
-      
+
       // Then sort by due date (overdue first)
       if (a.isOverdue && !b.isOverdue) return -1;
       if (!a.isOverdue && b.isOverdue) return 1;
-      
+
       // Then by due date (earliest first)
       return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
   }, [filteredItems]);
-  
+
   // Calculate summary statistics
   const summary = useMemo(() => {
     const total = enhancedActionItems.length;
@@ -108,7 +108,7 @@ const ActionLog: React.FC = () => {
     const overdueBy5 = enhancedActionItems.filter(item => item.isOverdueBy5).length;
     const overdueBy10 = enhancedActionItems.filter(item => item.isOverdueBy10).length;
     const needReason = enhancedActionItems.filter(item => item.needsReason).length;
-    
+
     return {
       total,
       completed,
@@ -121,47 +121,47 @@ const ActionLog: React.FC = () => {
       completionRate: total > 0 ? (completed / total) * 100 : 0
     };
   }, [enhancedActionItems]);
-  
+
   // Handle form changes
   const handleFormChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
-  
+
   // Validate form
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.title.trim()) newErrors.title = 'Title is required';
     if (!formData.description.trim()) newErrors.description = 'Description is required';
     if (!formData.responsiblePerson) newErrors.responsiblePerson = 'Responsible person is required';
     if (!formData.dueDate) newErrors.dueDate = 'Due date is required';
-    
+
     // Validate due date is not in the past
     if (formData.dueDate) {
       const dueDate = new Date(formData.dueDate);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       if (dueDate < today) {
         newErrors.dueDate = 'Due date cannot be in the past';
       }
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+
   // Handle form submission
   const handleSubmit = () => {
     if (!validateForm()) return;
-    
+
     const today = new Date().toISOString().split('T')[0];
-    
+
     const actionItemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> = {
       title: formData.title.trim(),
       description: formData.description.trim(),
@@ -171,17 +171,17 @@ const ActionLog: React.FC = () => {
       status: formData.status,
       attachments: []
     };
-    
+
     // Add action item
     const newId = addActionItem(actionItemData);
-    
+
     // Reset form and close modal
     resetForm();
     setShowAddModal(false);
-    
+
     alert(`Action item created successfully!\n\nTitle: ${actionItemData.title}\nResponsible: ${actionItemData.responsiblePerson}\nDue Date: ${formatDate(actionItemData.dueDate)}`);
   };
-  
+
   // Reset form
   const resetForm = () => {
     setFormData({
@@ -194,40 +194,40 @@ const ActionLog: React.FC = () => {
     setSelectedFiles(null);
     setErrors({});
   };
-  
+
   // Handle adding overdue reason
   const handleAddOverdueReason = (item: ActionItem, reason: string) => {
     if (!reason.trim()) {
       alert('Please provide a reason for the overdue action item');
       return;
     }
-    
+
     updateActionItem({
       ...item,
       overdueReason: reason
     });
-    
+
     alert('Overdue reason added successfully');
   };
-  
+
   // Handle status change
   const handleStatusChange = (item: ActionItem, newStatus: 'initiated' | 'in_progress' | 'completed') => {
     const updates: Partial<ActionItem> = {
       status: newStatus
     };
-    
+
     // If marking as completed, add completion date and user
     if (newStatus === 'completed') {
       updates.completedAt = new Date().toISOString();
       updates.completedBy = 'Current User'; // In a real app, use the logged-in user
     }
-    
+
     updateActionItem({
       ...item,
       ...updates
     });
   };
-  
+
   // Handle delete action item
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this action item? This action cannot be undone.')) {
@@ -235,13 +235,13 @@ const ActionLog: React.FC = () => {
       alert('Action item deleted successfully');
     }
   };
-  
+
   // Handle view details
   const handleViewDetails = (item: ActionItem) => {
     setSelectedItem(item);
     setShowDetailsModal(true);
   };
-  
+
   // Get status badge class
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -250,7 +250,7 @@ const ActionLog: React.FC = () => {
       default: return 'bg-yellow-100 text-yellow-800';
     }
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -273,7 +273,7 @@ const ActionLog: React.FC = () => {
           Add Action Item
         </Button>
       </div>
-      
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -290,7 +290,7 @@ const ActionLog: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -305,7 +305,7 @@ const ActionLog: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -320,7 +320,7 @@ const ActionLog: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -336,7 +336,7 @@ const ActionLog: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       {/* Filters */}
       <Card>
         <CardHeader title="Filter Action Items" />
@@ -353,7 +353,7 @@ const ActionLog: React.FC = () => {
                 { label: 'Completed', value: 'completed' }
               ]}
             />
-            
+
             <Select
               label="Responsible Person"
               value={filters.responsiblePerson}
@@ -363,7 +363,7 @@ const ActionLog: React.FC = () => {
                 ...RESPONSIBLE_PERSONS.map(person => ({ label: person, value: person }))
               ]}
             />
-            
+
             <div className="flex items-center space-x-3 pt-8">
               <input
                 type="checkbox"
@@ -377,7 +377,7 @@ const ActionLog: React.FC = () => {
               </label>
             </div>
           </div>
-          
+
           <div className="mt-4 flex justify-end">
             <Button
               size="sm"
@@ -389,7 +389,7 @@ const ActionLog: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Action Items List */}
       <Card>
         <CardHeader 
@@ -460,7 +460,7 @@ const ActionLog: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div className="flex items-center space-x-2">
                           <User className="w-4 h-4 text-gray-400" />
@@ -486,19 +486,19 @@ const ActionLog: React.FC = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="mb-3">
                         <p className="text-sm text-gray-500">Description</p>
                         <p className="text-sm">{item.description}</p>
                       </div>
-                      
+
                       {item.overdueReason && (
                         <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded">
                           <p className="text-sm font-medium text-amber-800">Overdue Reason:</p>
                           <p className="text-sm text-amber-700">{item.overdueReason}</p>
                         </div>
                       )}
-                      
+
                       {item.completedAt && (
                         <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
                           <p className="text-sm font-medium text-green-800">Completed:</p>
@@ -507,7 +507,7 @@ const ActionLog: React.FC = () => {
                           </p>
                         </div>
                       )}
-                      
+
                       {/* Overdue Reason Input for items overdue by 10+ days */}
                       {item.needsReason && (
                         <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded">
@@ -533,7 +533,7 @@ const ActionLog: React.FC = () => {
                           </div>
                         </div>
                       )}
-                      
+
                       {/* Comments count */}
                       {item.comments && item.comments.length > 0 && (
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
@@ -541,7 +541,7 @@ const ActionLog: React.FC = () => {
                           <span>{item.comments.length} comment{item.comments.length !== 1 ? 's' : ''}</span>
                         </div>
                       )}
-                      
+
                       {/* Attachments count */}
                       {item.attachments && item.attachments.length > 0 && (
                         <div className="flex items-center space-x-2 text-sm text-gray-500 ml-4">
@@ -550,7 +550,7 @@ const ActionLog: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="flex flex-col space-y-2 ml-4">
                       <Button
                         size="sm"
@@ -560,7 +560,7 @@ const ActionLog: React.FC = () => {
                       >
                         View
                       </Button>
-                      
+
                       {item.status !== 'completed' && (
                         <Button
                           size="sm"
@@ -572,7 +572,7 @@ const ActionLog: React.FC = () => {
                           {item.status === 'initiated' ? 'Start' : 'Complete'}
                         </Button>
                       )}
-                      
+
                       <Button
                         size="sm"
                         variant="danger"
@@ -590,7 +590,7 @@ const ActionLog: React.FC = () => {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Add Action Item Modal */}
       <Modal
         isOpen={showAddModal}
@@ -614,7 +614,7 @@ const ActionLog: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             <Input
               label="Title *"
@@ -623,7 +623,7 @@ const ActionLog: React.FC = () => {
               placeholder="Enter action item title..."
               error={errors.title}
             />
-            
+
             <TextArea
               label="Description *"
               value={formData.description}
@@ -632,7 +632,7 @@ const ActionLog: React.FC = () => {
               rows={3}
               error={errors.description}
             />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
                 label="Responsible Person *"
@@ -644,7 +644,7 @@ const ActionLog: React.FC = () => {
                 ]}
                 error={errors.responsiblePerson}
               />
-              
+
               <Input
                 label="Due Date *"
                 type="date"
@@ -654,7 +654,7 @@ const ActionLog: React.FC = () => {
                 error={errors.dueDate}
               />
             </div>
-            
+
             <Select
               label="Initial Status"
               value={formData.status}
@@ -664,7 +664,7 @@ const ActionLog: React.FC = () => {
                 { label: 'In Progress', value: 'in_progress' }
               ]}
             />
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Attachments (Optional)
@@ -687,7 +687,7 @@ const ActionLog: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           <div className="flex justify-end space-x-3 pt-4 border-t">
             <Button
               variant="outline"
@@ -708,7 +708,7 @@ const ActionLog: React.FC = () => {
           </div>
         </div>
       </Modal>
-      
+
       {/* Action Item Details Modal */}
       {selectedItem && (
         <ActionItemDetails

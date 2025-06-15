@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
@@ -16,10 +16,12 @@ import { FLEET_NUMBERS } from '../../types';
 
 interface DieselNorms {
   fleetNumber: string;
-  expectedKmPerLitre: number;
+  expectedKmPerLitre: number;  // Used for normal trucks
+  expectedLitresPerHour?: number; // Used for reefers
   tolerancePercentage: number;
   lastUpdated: string;
   updatedBy: string;
+  isReefer?: boolean;
 }
 
 interface DieselNormsModalProps {
@@ -28,6 +30,8 @@ interface DieselNormsModalProps {
   norms: DieselNorms[];
   onUpdateNorms: (norms: DieselNorms[]) => void;
 }
+
+const REEFER_FLEETS = ['4F', '5F', '6F', '7F', '8F'];
 
 const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
   isOpen,
@@ -38,7 +42,23 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
   const [editedNorms, setEditedNorms] = useState<DieselNorms[]>(norms);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleNormChange = (fleetNumber: string, field: 'expectedKmPerLitre' | 'tolerancePercentage', value: string) => {
+  useEffect(() => {
+    // Initialize isReefer flag for fleets based on reefers list
+    setEditedNorms(norms.map(norm => ({
+      ...norm,
+      isReefer: REEFER_FLEETS.includes(norm.fleetNumber) ? true : norm.isReefer || false,
+      // Provide expectedLitresPerHour fallback if missing for reefers
+      expectedLitresPerHour: REEFER_FLEETS.includes(norm.fleetNumber) 
+        ? (norm.expectedLitresPerHour ?? norm.expectedKmPerLitre) 
+        : undefined
+    })));
+  }, [norms]);
+
+  const handleNormChange = (
+    fleetNumber: string, 
+    field: 'expectedKmPerLitre' | 'tolerancePercentage' | 'expectedLitresPerHour', 
+    value: string
+  ) => {
     const numValue = parseFloat(value);
     if (isNaN(numValue) || numValue <= 0) {
       setErrors(prev => {
@@ -47,7 +67,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       });
       return;
     }
-    
+
     if (field === 'tolerancePercentage' && numValue > 50) {
       setErrors(prev => {
         const key = `${fleetNumber}-${field}`;
@@ -62,7 +82,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       delete newErrors[key];
       return newErrors;
     });
-    
+
     setEditedNorms(prev => prev.map(norm => 
       norm.fleetNumber === fleetNumber 
         ? { 
@@ -75,22 +95,45 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
     ));
   };
 
+  const handleToggleReefer = (fleetNumber: string) => {
+    setEditedNorms(prev => prev.map(norm => {
+      if (norm.fleetNumber === fleetNumber) {
+        // Toggle isReefer
+        const newIsReefer = !norm.isReefer;
+
+        // If switching to reefer and expectedLitresPerHour is undefined, copy from expectedKmPerLitre
+        // If switching to non-reefer, we can reset expectedLitresPerHour or ignore
+        return {
+          ...norm,
+          isReefer: newIsReefer,
+          expectedLitresPerHour: newIsReefer ? (norm.expectedLitresPerHour ?? norm.expectedKmPerLitre) : undefined
+        };
+      }
+      return norm;
+    }));
+  };
+
   const addNewFleetNorm = () => {
     const availableFleets = FLEET_NUMBERS.filter(fleet => 
       !editedNorms.some(norm => norm.fleetNumber === fleet)
     );
-    
+
     if (availableFleets.length === 0) {
       alert('All fleets already have norms configured.');
       return;
     }
 
+    const fleet = availableFleets[0];
+    const isReefer = REEFER_FLEETS.includes(fleet);
+
     const newNorm: DieselNorms = {
-      fleetNumber: availableFleets[0],
-      expectedKmPerLitre: 3.0,
+      fleetNumber: fleet,
+      expectedKmPerLitre: isReefer ? 0 : 3.0,
+      expectedLitresPerHour: isReefer ? 3.0 : undefined,
       tolerancePercentage: 10,
       lastUpdated: new Date().toISOString(),
-      updatedBy: 'Current User'
+      updatedBy: 'Current User',
+      isReefer
     };
 
     setEditedNorms(prev => [...prev, newNorm]);
@@ -116,13 +159,18 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
 
   const resetToDefaults = () => {
     if (confirm('Reset all norms to default values? This will overwrite your current settings.')) {
-      const defaultNorms = FLEET_NUMBERS.map(fleet => ({
-        fleetNumber: fleet,
-        expectedKmPerLitre: fleet === 'UD' ? 2.8 : 3.2,
-        tolerancePercentage: fleet === 'UD' ? 15 : 10,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: 'System Default'
-      }));
+      const defaultNorms = FLEET_NUMBERS.map(fleet => {
+        const isReefer = REEFER_FLEETS.includes(fleet);
+        return {
+          fleetNumber: fleet,
+          expectedKmPerLitre: isReefer ? 0 : (fleet === 'UD' ? 2.8 : 3.2),
+          expectedLitresPerHour: isReefer ? 3.0 : undefined,
+          tolerancePercentage: isReefer ? 15 : (fleet === 'UD' ? 15 : 10),
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'System Default',
+          isReefer
+        };
+      });
       setEditedNorms(defaultNorms);
     }
   };
@@ -191,16 +239,33 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                 }
               />
               <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`reefer-${norm.fleetNumber}`}
+                    checked={norm.isReefer || false}
+                    onChange={() => handleToggleReefer(norm.fleetNumber)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label htmlFor={`reefer-${norm.fleetNumber}`} className="text-sm font-medium text-gray-700">
+                    Is Reefer (Litres per Hour)
+                  </label>
+                </div>
+
                 <div>
                   <Input
-                    label="Expected KM/L"
+                    label={norm.isReefer ? "Expected Litres per Hour (L/H)" : "Expected KM per Litre"}
                     type="number"
                     step="0.1"
                     min="0.1"
-                    max="10"
-                    value={norm.expectedKmPerLitre.toString()}
-                    onChange={(e) => handleNormChange(norm.fleetNumber, 'expectedKmPerLitre', e.target.value)}
-                    error={errors[`${norm.fleetNumber}-expectedKmPerLitre`]}
+                    max="100"
+                    value={norm.isReefer ? (norm.expectedLitresPerHour ?? 0).toString() : norm.expectedKmPerLitre.toString()}
+                    onChange={(e) => handleNormChange(
+                      norm.fleetNumber, 
+                      norm.isReefer ? 'expectedLitresPerHour' : 'expectedKmPerLitre', 
+                      e.target.value
+                    )}
+                    error={errors[`${norm.fleetNumber}-${norm.isReefer ? 'expectedLitresPerHour' : 'expectedKmPerLitre'}`]}
                   />
                 </div>
                 
@@ -221,7 +286,10 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                 <div className="bg-gray-50 rounded-md p-3">
                   <p className="text-xs font-medium text-gray-700 mb-1">Acceptable Range:</p>
                   <p className="text-sm font-mono text-gray-900">
-                    {(norm.expectedKmPerLitre * (1 - norm.tolerancePercentage/100)).toFixed(2)} - {(norm.expectedKmPerLitre * (1 + norm.tolerancePercentage/100)).toFixed(2)} KM/L
+                    {norm.isReefer 
+                      ? `${((norm.expectedLitresPerHour ?? 0) * (1 - norm.tolerancePercentage/100)).toFixed(2)} - ${((norm.expectedLitresPerHour ?? 0) * (1 + norm.tolerancePercentage/100)).toFixed(2)} L/H`
+                      : `${(norm.expectedKmPerLitre * (1 - norm.tolerancePercentage/100)).toFixed(2)} - ${(norm.expectedKmPerLitre * (1 + norm.tolerancePercentage/100)).toFixed(2)} KM/L`
+                    }
                   </p>
                 </div>
 
