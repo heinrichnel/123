@@ -14,7 +14,7 @@ import DieselDashboard from "./components/diesel/DieselDashboard.tsx";
 import Admin from "./pages/Admin.tsx";
 import Modal from "./components/ui/Modal.tsx";
 import ConnectionStatus from "./components/ui/ConnectionStatus.tsx";
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.tsx";
+import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.js";
 import { Database } from "lucide-react";
 import DriverBehaviorPage from "./pages/DriverBehaviorPage.tsx";
 import TripDetails from "./components/trips/TripDetails.tsx";
