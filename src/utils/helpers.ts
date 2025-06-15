@@ -1,184 +1,57 @@
-import { Trip, CostEntry, FlaggedCost, Driver, SystemCostRates, InvoiceAging, AGING_THRESHOLDS } from '../types/index.js';
-import { v4 as uuidv4 } from 'uuid';
+export const filterTripsByDateRange = (trips: Trip[], startDate?: string, endDate?: string): Trip[] => {
+  if (!trips || !Array.isArray(trips)) return [];
+  if (!startDate && !endDate) return trips;
 
-// Date formatting
-export const formatDate = (date: string | Date): string => {
-  if (!date) return 'N/A';
   try {
-    const d = new Date(date);
-    return d.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return trips.filter(trip => {
+      if (!trip.startDate || !trip.endDate) return false;
+
+      const tripStart = new Date(trip.startDate);
+      const tripEnd = new Date(trip.endDate);
+
+      if (startDate && tripStart < new Date(startDate)) return false;
+      if (endDate && tripEnd > new Date(endDate)) return false;
+
+      return true;
     });
   } catch (error) {
-    console.error('Date formatting error:', error);
-    return 'Invalid Date';
+    console.error('Error filtering trips by date range:', error);
+    return trips;
   }
 };
 
-export const formatDateTime = (date: string | Date): string => {
-  if (!date) return 'N/A';
-  try {
-    const d = new Date(date);
-    return d.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch (error) {
-    console.error('DateTime formatting error:', error);
-    return 'Invalid Date';
-  }
-};
-
-// Currency formatting
-export const formatCurrency = (amount: number, currency: 'USD' | 'ZAR' = 'ZAR'): string => {
-  if (amount === undefined || amount === null) return currency === 'USD' ? '$0.00' : 'R0.00';
+export const filterTripsByClient = (trips: Trip[], client: string): Trip[] => {
+  if (!trips || !Array.isArray(trips)) return [];
+  if (!client) return trips;
 
   try {
-    const symbol = currency === 'USD' ? '$' : 'R';
-    return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return trips.filter(trip => trip.clientName === client);
   } catch (error) {
-    console.error('Currency formatting error:', error);
-    return currency === 'USD' ? '$0.00' : 'R0.00';
+    console.error('Error filtering trips by client:', error);
+    return trips;
   }
 };
 
-// Trip ID generation
-export const generateTripId = (): string => {
-  const timestamp = new Date().getTime().toString(36);
-  const randomComponent = Math.random().toString(36).substring(2, 10);
-  return `trip_${timestamp}_${randomComponent}`;
-};
-
-// Cost total
-export const calculateTotalCosts = (costs: CostEntry[]): number => {
-  if (!costs || !Array.isArray(costs)) return 0;
+export const filterTripsByCurrency = (trips: Trip[], currency: string): Trip[] => {
+  if (!trips || !Array.isArray(trips)) return [];
+  if (!currency) return trips;
 
   try {
-    return costs.reduce((sum, cost) => {
-      const amount = typeof cost.amount === 'number' ? cost.amount : 0;
-      return sum + amount;
-    }, 0);
+    return trips.filter(trip => trip.revenueCurrency === currency);
   } catch (error) {
-    console.error('Error calculating total costs:', error);
-    return 0;
+    console.error('Error filtering trips by currency:', error);
+    return trips;
   }
 };
 
-export const calculateKPIs = (trip: Trip) => {
+export const filterTripsByDriver = (trips: Trip[], driver: string): Trip[] => {
+  if (!trips || !Array.isArray(trips)) return [];
+  if (!driver) return trips;
+
   try {
-    const totalRevenue = trip.baseRevenue || 0;
-    const totalExpenses = calculateTotalCosts(trip.costs);
-    const additionalCostsTotal = trip.additionalCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
-    const totalCosts = totalExpenses + additionalCostsTotal;
-    const netProfit = totalRevenue - totalCosts;
-    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-    const costPerKm = trip.distanceKm && trip.distanceKm > 0 ? totalCosts / trip.distanceKm : 0;
-    const currency = trip.revenueCurrency;
-
-    return {
-      totalRevenue,
-      totalExpenses: totalCosts,
-      netProfit,
-      profitMargin,
-      costPerKm,
-      currency
-    };
+    return trips.filter(trip => trip.driverName === driver);
   } catch (error) {
-    console.error('Error calculating KPIs:', error);
-    return {
-      totalRevenue: 0,
-      totalExpenses: 0,
-      netProfit: 0,
-      profitMargin: 0,
-      costPerKm: 0,
-      currency: trip.revenueCurrency || 'ZAR'
-    };
-  }
-};
-
-export const getFlaggedCostsCount = (costs: CostEntry[]): number => {
-  if (!costs || !Array.isArray(costs)) return 0;
-  try {
-    return costs.filter(cost => cost.isFlagged).length;
-  } catch (error) {
-    console.error('Error counting flagged costs:', error);
-    return 0;
-  }
-};
-
-export const getUnresolvedFlagsCount = (costs: CostEntry[]): number => {
-  if (!costs || !Array.isArray(costs)) return 0;
-  try {
-    return costs.filter(cost => cost.isFlagged && cost.investigationStatus !== 'resolved').length;
-  } catch (error) {
-    console.error('Error counting unresolved flags:', error);
-    return 0;
-  }
-};
-
-export const canCompleteTrip = (trip: Trip): boolean => {
-  try {
-    const unresolvedFlags = getUnresolvedFlagsCount(trip.costs);
-    return unresolvedFlags === 0;
-  } catch (error) {
-    console.error('Error checking if trip can be completed:', error);
-    return false;
-  }
-};
-
-// Trip Excel + PDF Download
-export const downloadTripPDF = async (tripId: string) => {
-  try {
-    alert(`Generating PDF for trip ${tripId}. This would download a PDF report in a production environment.`);
-  } catch (error) {
-    console.error('Error downloading trip PDF:', error);
-    alert('Failed to generate PDF. Please try again.');
-  }
-};
-
-export const downloadTripExcel = async (tripId: string) => {
-  try {
-    alert(`Generating Excel report for trip ${tripId}. This would download an Excel report in a production environment.`);
-  } catch (error) {
-    console.error('Error downloading trip Excel:', error);
-    alert('Failed to generate Excel report. Please try again.');
-  }
-};
-
-// Utility
-export const isOnline = (): boolean => navigator.onLine;
-
-export const retryOperation = async (
-  operation: () => Promise<any>,
-  maxRetries = 3,
-  delay = 1000
-): Promise<any> => {
-  let lastError;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await operation();
-    } catch (error) {
-      console.warn(`Operation failed, retrying (${i + 1}/${maxRetries})...`, error);
-      lastError = error;
-      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
-    }
-  }
-  throw lastError;
-};
-
-export const getFileIcon = (fileType: string) => {
-  if (!fileType) return 'Paperclip';
-  try {
-    if (fileType.includes('pdf')) return 'FileText';
-    if (fileType.includes('image')) return 'Image';
-    return 'Paperclip';
-  } catch (error) {
-    console.error('Error getting file icon:', error);
-    return 'Paperclip';
+    console.error('Error filtering trips by driver:', error);
+    return trips;
   }
 };
