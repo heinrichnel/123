@@ -29,17 +29,14 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
   const [selectedTripId, setSelectedTripId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Get the diesel record
   const dieselRecord = dieselRecords.find(r => r.id === dieselRecordId);
   if (!dieselRecord) return null;
 
-  // Get available trips for the selected fleet
   const availableTrips = trips.filter(trip => 
     trip.fleetNumber === dieselRecord.fleetNumber && 
     trip.status === 'active'
   );
 
-  // Check if already linked to a trip
   const currentLinkedTrip = dieselRecord.tripId ? trips.find(t => t.id === dieselRecord.tripId) : undefined;
 
   const handleChange = (tripId: string) => {
@@ -79,7 +76,6 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
       maxWidth="lg"
     >
       <div className="space-y-6">
-        {/* Diesel Record Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <h3 className="text-sm font-medium text-blue-800 mb-2">Diesel Record Details</h3>
           <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
@@ -96,7 +92,6 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
           </div>
         </div>
 
-        {/* Current Linkage Status */}
         {currentLinkedTrip && (
           <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
@@ -122,7 +117,6 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
           </div>
         )}
 
-        {/* Trip Selection */}
         {!currentLinkedTrip && (
           <>
             {availableTrips.length > 0 ? (
@@ -133,10 +127,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
                   onChange={(e) => handleChange(e.target.value)}
                   options={[
                     { label: 'Select a trip...', value: '' },
-                    ...availableTrips.map(trip => ({ 
-                      label: `${trip.route} (${formatDate(trip.startDate)} - ${formatDate(trip.endDate)})`, 
-                      value: trip.id 
-                    }))
+                    ...availableTrips.map(trip => ({ label: `${trip.route} (${formatDate(trip.startDate)} - ${formatDate(trip.endDate)})`, value: trip.id }))
                   ]}
                   error={errors.tripId}
                 />
@@ -148,7 +139,6 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
                       {(() => {
                         const trip = trips.find(t => t.id === selectedTripId);
                         if (!trip) return null;
-                        
                         return (
                           <>
                             <div className="flex items-center space-x-2">
@@ -208,23 +198,10 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
           </>
         )}
 
-        {/* Action Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            icon={<X className="w-4 h-4" />}
-          >
-            Cancel
-          </Button>
+          <Button variant="outline" onClick={onClose} icon={<X className="w-4 h-4" />}>Cancel</Button>
           {!currentLinkedTrip && availableTrips.length > 0 && (
-            <Button
-              onClick={handleSave}
-              icon={<Save className="w-4 h-4" />}
-              disabled={!selectedTripId}
-            >
-              Link to Trip
-            </Button>
+            <Button onClick={handleSave} icon={<Save className="w-4 h-4" />} disabled={!selectedTripId}>Link to Trip</Button>
           )}
         </div>
       </div>

@@ -3,12 +3,12 @@ import { Trip, CLIENTS, DRIVERS } from '../../types';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import { 
-  TrendingUp, 
-  Truck, 
-  FileText, 
-  Calendar, 
-  DollarSign, 
+import {
+  TrendingUp,
+  Truck,
+  FileText,
+  Calendar,
+  DollarSign,
   TrendingDown,
   Navigation,
   Filter,
@@ -23,9 +23,9 @@ import {
   BarChart3,
   User
 } from 'lucide-react';
-import { 
-  formatCurrency, 
-  calculateTotalCosts, 
+import {
+  formatCurrency,
+  calculateTotalCosts,
   calculateKPIs,
   filterTripsByDateRange,
   filterTripsByClient,
@@ -54,9 +54,12 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
   const [showFilters, setShowFilters] = useState(false);
   const [tripList, setTripList] = useState<Trip[]>(trips);
 
+  // Debounce filter updates to improve performance (optional)
+  // (You can implement debounce if desired with useEffect)
+
   const filteredTrips = useMemo(() => {
     let filtered = tripList;
-    
+
     if (filters.startDate || filters.endDate) {
       filtered = filterTripsByDateRange(filtered, filters.startDate, filters.endDate);
     }
@@ -69,42 +72,43 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
     if (filters.driver) {
       filtered = filterTripsByDriver(filtered, filters.driver);
     }
-    
+
     return filtered;
   }, [tripList, filters]);
 
   const stats = useMemo(() => {
     const totalTrips = filteredTrips.length;
-    
+
     // Separate by currency
     const zarTrips = filteredTrips.filter(trip => trip.revenueCurrency === 'ZAR');
     const usdTrips = filteredTrips.filter(trip => trip.revenueCurrency === 'USD');
-    
+
     const zarRevenue = zarTrips.reduce((sum, trip) => sum + (trip.baseRevenue || 0), 0);
     const zarCosts = zarTrips.reduce((sum, trip) => sum + calculateTotalCosts(trip.costs), 0);
     const zarProfit = zarRevenue - zarCosts;
-    
+
     const usdRevenue = usdTrips.reduce((sum, trip) => sum + (trip.baseRevenue || 0), 0);
     const usdCosts = usdTrips.reduce((sum, trip) => sum + calculateTotalCosts(trip.costs), 0);
     const usdProfit = usdRevenue - usdCosts;
-    
+
     const totalEntries = filteredTrips.reduce((sum, trip) => sum + trip.costs.length, 0);
-    
+
     // Compliance & Investigation Analytics
     const allFlaggedCosts = getAllFlaggedCosts(filteredTrips);
     const unresolvedFlags = allFlaggedCosts.filter(cost => cost.investigationStatus !== 'resolved');
     const resolvedFlags = allFlaggedCosts.filter(cost => cost.investigationStatus === 'resolved');
-    
-    // Calculate average resolution time (mock calculation for demo)
-    const avgResolutionTime = resolvedFlags.length > 0 ? 
-      resolvedFlags.reduce((sum, flag) => {
-        if (flag.flaggedAt && flag.resolvedAt) {
-          const flaggedDate = new Date(flag.flaggedAt);
-          const resolvedDate = new Date(flag.resolvedAt);
-          return sum + (resolvedDate.getTime() - flaggedDate.getTime()) / (1000 * 60 * 60 * 24);
-        }
-        return sum + 3; // Default 3 days for demo
-      }, 0) / resolvedFlags.length : 0;
+
+    // Calculate average resolution time (days)
+    const avgResolutionTime = resolvedFlags.length > 0
+      ? resolvedFlags.reduce((sum, flag) => {
+          if (flag.flaggedAt && flag.resolvedAt) {
+            const flaggedDate = new Date(flag.flaggedAt);
+            const resolvedDate = new Date(flag.resolvedAt);
+            return sum + (resolvedDate.getTime() - flaggedDate.getTime()) / (1000 * 60 * 60 * 24);
+          }
+          return sum + 3; // Default fallback 3 days
+        }, 0) / resolvedFlags.length
+      : 0;
 
     // Driver Performance Analytics
     const driverStats = filteredTrips.reduce((acc, trip) => {
@@ -119,25 +123,25 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
           tripsWithFlags: 0
         };
       }
-      
+
       const tripFlags = trip.costs.filter(c => c.isFlagged);
       const tripUnresolvedFlags = getUnresolvedFlagsCount(trip.costs);
-      
+
       acc[trip.driverName].trips++;
       acc[trip.driverName].flags += tripFlags.length;
       acc[trip.driverName].unresolvedFlags += tripUnresolvedFlags;
       acc[trip.driverName].investigations += tripFlags.length;
       acc[trip.driverName].revenue += trip.baseRevenue || 0;
       acc[trip.driverName].expenses += calculateTotalCosts(trip.costs);
-      
+
       if (tripFlags.length > 0) {
         acc[trip.driverName].tripsWithFlags++;
       }
-      
+
       return acc;
     }, {} as Record<string, any>);
 
-    // Calculate percentages and performance scores
+    // Calculate percentages and performance scores per driver
     Object.keys(driverStats).forEach(driver => {
       const stats = driverStats[driver];
       stats.flagPercentage = stats.trips > 0 ? (stats.tripsWithFlags / stats.trips) * 100 : 0;
@@ -148,7 +152,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
 
     // Top 5 drivers with highest flags
     const topDriversByFlags = Object.entries(driverStats)
-      .sort(([,a], [,b]) => (b as any).flags - (a as any).flags)
+      .sort(([, a], [, b]) => (b as any).flags - (a as any).flags)
       .slice(0, 5);
 
     // Most flagged cost categories
@@ -158,16 +162,16 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
     }, {} as Record<string, number>);
 
     const topFlaggedCategories = Object.entries(categoryFlags)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 5);
 
     // Trips ready for completion
-    const tripsReadyForCompletion = filteredTrips.filter(trip => 
+    const tripsReadyForCompletion = filteredTrips.filter(trip =>
       trip.status === 'active' && canCompleteTrip(trip)
     );
 
     // Trips with unresolved flags
-    const tripsWithUnresolvedFlags = filteredTrips.filter(trip => 
+    const tripsWithUnresolvedFlags = filteredTrips.filter(trip =>
       trip.status === 'active' && getUnresolvedFlagsCount(trip.costs) > 0
     );
 
@@ -207,7 +211,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
   };
 
   const exportDashboard = (format: 'pdf' | 'excel') => {
-    const message = format === 'pdf' 
+    // Replace alerts with real export logic as needed
+    const message = format === 'pdf'
       ? 'Dashboard PDF report is being generated...'
       : 'Dashboard Excel report is being generated...';
     alert(message);
@@ -221,8 +226,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
     <div className="space-y-6">
       {/* Filter Controls */}
       <Card>
-        <CardHeader 
-          title="Dashboard Overview & Analytics" 
+        <CardHeader
+          title="Dashboard Overview & Analytics"
           action={
             <div className="flex space-x-2">
               <Button
@@ -258,18 +263,18 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
                 label="Start Date"
                 type="date"
                 value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                onChange={e => handleFilterChange('startDate', e.target.value)}
               />
               <Input
                 label="End Date"
                 type="date"
                 value={filters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                onChange={e => handleFilterChange('endDate', e.target.value)}
               />
               <Select
                 label="Client"
                 value={filters.client}
-                onChange={(e) => handleFilterChange('client', e.target.value)}
+                onChange={e => handleFilterChange('client', e.target.value)}
                 options={[
                   { label: 'All Clients', value: '' },
                   ...CLIENTS.map(c => ({ label: c, value: c }))
@@ -278,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
               <Select
                 label="Currency"
                 value={filters.currency}
-                onChange={(e) => handleFilterChange('currency', e.target.value)}
+                onChange={e => handleFilterChange('currency', e.target.value)}
                 options={[
                   { label: 'All Currencies', value: '' },
                   { label: 'ZAR (R)', value: 'ZAR' },
@@ -288,7 +293,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
               <Select
                 label="Driver"
                 value={filters.driver}
-                onChange={(e) => handleFilterChange('driver', e.target.value)}
+                onChange={e => handleFilterChange('driver', e.target.value)}
                 options={[
                   { label: 'All Drivers', value: '' },
                   ...DRIVERS.map(d => ({ label: d, value: d }))
@@ -309,9 +314,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Truck className="h-8 w-8 text-blue-600" />
-              </div>
+              <Truck className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <div className="text-sm font-medium text-gray-500">Total Trips</div>
                 <div className="text-2xl font-bold text-gray-900">{stats.totalTrips}</div>
@@ -326,18 +329,12 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <DollarSign className="h-8 w-8 text-green-600" />
-              </div>
+              <DollarSign className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <div className="text-sm font-medium text-gray-500">Revenue</div>
                 <div className="text-lg font-bold text-gray-900">
-                  {stats.zarRevenue > 0 && (
-                    <div>{formatCurrency(stats.zarRevenue, 'ZAR')}</div>
-                  )}
-                  {stats.usdRevenue > 0 && (
-                    <div>{formatCurrency(stats.usdRevenue, 'USD')}</div>
-                  )}
+                  {stats.zarRevenue > 0 && <div>{formatCurrency(stats.zarRevenue, 'ZAR')}</div>}
+                  {stats.usdRevenue > 0 && <div>{formatCurrency(stats.usdRevenue, 'USD')}</div>}
                 </div>
               </div>
             </div>
@@ -347,18 +344,12 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <TrendingDown className="h-8 w-8 text-red-600" />
-              </div>
+              <TrendingDown className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <div className="text-sm font-medium text-gray-500">Total Costs</div>
                 <div className="text-lg font-bold text-gray-900">
-                  {stats.zarCosts > 0 && (
-                    <div>{formatCurrency(stats.zarCosts, 'ZAR')}</div>
-                  )}
-                  {stats.usdCosts > 0 && (
-                    <div>{formatCurrency(stats.usdCosts, 'USD')}</div>
-                  )}
+                  {stats.zarCosts > 0 && <div>{formatCurrency(stats.zarCosts, 'ZAR')}</div>}
+                  {stats.usdCosts > 0 && <div>{formatCurrency(stats.usdCosts, 'USD')}</div>}
                 </div>
               </div>
             </div>
@@ -368,9 +359,9 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <TrendingUp className={`h-8 w-8 ${(stats.zarProfit + stats.usdProfit) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
-              </div>
+              <TrendingUp
+                className={`h-8 w-8 ${(stats.zarProfit + stats.usdProfit) >= 0 ? 'text-green-600' : 'text-red-600'}`}
+              />
               <div className="ml-4">
                 <div className="text-sm font-medium text-gray-500">Net Profit</div>
                 <div className="text-lg font-bold text-gray-900">
@@ -449,8 +440,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       {/* Quick Action Widgets */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
-          <CardHeader 
-            title="Quick Actions" 
+          <CardHeader
+            title="Quick Actions"
             icon={<BarChart3 className="w-5 h-5 text-blue-600" />}
           />
           <CardContent>
@@ -484,14 +475,14 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         </Card>
 
         <Card>
-          <CardHeader 
-            title="Trips with Unresolved Flags" 
+          <CardHeader
+            title="Trips with Unresolved Flags"
             icon={<AlertTriangle className="w-5 h-5 text-red-600" />}
           />
           <CardContent>
             {stats.tripsWithUnresolvedFlags.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {stats.tripsWithUnresolvedFlags.slice(0, 5).map((trip) => {
+                {stats.tripsWithUnresolvedFlags.slice(0, 5).map(trip => {
                   const unresolvedCount = getUnresolvedFlagsCount(trip.costs);
                   return (
                     <div key={trip.id} className="flex justify-between items-center p-2 bg-red-50 rounded">
@@ -519,14 +510,14 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         </Card>
 
         <Card>
-          <CardHeader 
-            title="Trips Ready for Completion" 
+          <CardHeader
+            title="Trips Ready for Completion"
             icon={<CheckCircle className="w-5 h-5 text-green-600" />}
           />
           <CardContent>
             {stats.tripsReadyForCompletion.length > 0 ? (
               <div className="space-y-2 max-h-48 overflow-y-auto">
-                {stats.tripsReadyForCompletion.slice(0, 5).map((trip) => {
+                {stats.tripsReadyForCompletion.slice(0, 5).map(trip => {
                   const kpis = calculateKPIs(trip);
                   return (
                     <div key={trip.id} className="flex justify-between items-center p-2 bg-green-50 rounded">
@@ -535,9 +526,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
                         <p className="text-xs text-gray-600">{trip.driverName}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-green-600">
-                          {formatCurrency(kpis.netProfit, kpis.currency)}
-                        </p>
+                        <p className="text-sm font-bold text-green-600">{formatCurrency(kpis.netProfit, kpis.currency)}</p>
                         <p className="text-xs text-gray-500">profit</p>
                       </div>
                     </div>
@@ -559,8 +548,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       {/* Driver Performance Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader 
-            title="Top 5 Drivers with Highest Flags" 
+          <CardHeader
+            title="Top 5 Drivers with Highest Flags"
             icon={<Flag className="w-5 h-5 text-red-600" />}
           />
           <CardContent>
@@ -596,18 +585,23 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         </Card>
 
         <Card>
-          <CardHeader 
-            title="Most Flagged Cost Categories" 
+          <CardHeader
+            title="Most Flagged Cost Categories"
             icon={<BarChart3 className="w-5 h-5 text-orange-600" />}
           />
           <CardContent>
             {stats.topFlaggedCategories.length > 0 ? (
               <div className="space-y-3">
                 {stats.topFlaggedCategories.map(([category, count], index) => (
-                  <div key={category} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                  <div
+                    key={category}
+                    className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0"
+                  >
                     <div className="flex items-center">
-                      <div className="w-3 h-3 bg-orange-600 rounded-full mr-3" 
-                           style={{ backgroundColor: `hsl(${index * 72}, 70%, 50%)` }} />
+                      <div
+                        className="w-3 h-3 rounded-full mr-3"
+                        style={{ backgroundColor: `hsl(${index * 72}, 70%, 50%)` }}
+                      />
                       <span className="font-medium text-gray-900">{category}</span>
                     </div>
                     <div className="text-right">
@@ -626,8 +620,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
 
       {/* Driver Performance Summary Table */}
       <Card>
-        <CardHeader 
-          title="Driver Performance Summary" 
+        <CardHeader
+          title="Driver Performance Summary"
           icon={<Users className="w-5 h-5 text-blue-600" />}
         />
         <CardContent>
@@ -647,12 +641,16 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
                 </thead>
                 <tbody>
                   {Object.entries(stats.driverStats)
-                    .sort(([,a], [,b]) => (a as any).flagPercentage - (b as any).flagPercentage)
+                    .sort(([, a], [, b]) => (a as any).flagPercentage - (b as any).flagPercentage)
                     .map(([driver, driverStats]: [string, any]) => {
                       const performanceScore = Math.max(0, 100 - (driverStats.flagPercentage * 2));
-                      const performanceColor = performanceScore >= 80 ? 'text-green-600' : 
-                                             performanceScore >= 60 ? 'text-yellow-600' : 'text-red-600';
-                      
+                      const performanceColor =
+                        performanceScore >= 80
+                          ? 'text-green-600'
+                          : performanceScore >= 60
+                          ? 'text-yellow-600'
+                          : 'text-red-600';
+
                       return (
                         <tr key={driver} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 text-sm font-medium text-gray-900">{driver}</td>
@@ -686,9 +684,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
                             </span>
                           </td>
                           <td className="py-3 text-sm text-right">
-                            <span className={`font-medium ${performanceColor}`}>
-                              {performanceScore.toFixed(0)}
-                            </span>
+                            <span className={`font-medium ${performanceColor}`}>{performanceScore.toFixed(0)}</span>
                           </td>
                         </tr>
                       );
@@ -704,10 +700,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
 
       {/* Add Trip Form */}
       <Card>
-        <CardHeader 
-          title="Add New Trip" 
-          icon={<Truck className="w-5 h-5 text-blue-600" />}
-        />
+        <CardHeader title="Add New Trip" icon={<Truck className="w-5 h-5 text-blue-600" />} />
         <CardContent>
           <AddTripForm onAddTrip={handleAddTrip} />
         </CardContent>
@@ -716,12 +709,4 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
   );
 };
 
-function App() {
-  return (
-    <div>
-      <Dashboard trips={[]} />
-    </div>
-  );
-}
-
-export default App;
+export default Dashboard;

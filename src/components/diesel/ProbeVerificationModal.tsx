@@ -25,7 +25,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
   onClose,
   dieselRecordId
 }) => {
-  const { dieselRecords, updateDieselRecord } = useAppContext();
+  const { dieselRecords, updateDieselRecord, addDriverBehaviorEvent } = useAppContext();
   
   const [formData, setFormData] = useState({
     probeReading: '',
@@ -37,10 +37,8 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Get the diesel record
   const dieselRecord = dieselRecords.find(r => r.id === dieselRecordId);
   
-  // Initialize form data when record changes
   useEffect(() => {
     if (dieselRecord) {
       setFormData({
@@ -54,10 +52,8 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
   
   if (!dieselRecord) return null;
   
-  // Calculate discrepancy
   const calculateDiscrepancy = () => {
     if (!formData.probeReading) return null;
-    
     const probeReading = parseFloat(formData.probeReading);
     return dieselRecord.litresFilled - probeReading;
   };
@@ -67,26 +63,14 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
   
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   };
   
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.probeReading) {
-      newErrors.probeReading = 'Probe reading is required';
-    } else if (isNaN(parseFloat(formData.probeReading)) || parseFloat(formData.probeReading) < 0) {
-      newErrors.probeReading = 'Must be a valid positive number';
-    }
-    
-    if (hasLargeDiscrepancy && !formData.verificationNotes) {
-      newErrors.verificationNotes = 'Verification notes are required for large discrepancies';
-    }
-    
+    if (!formData.probeReading) newErrors.probeReading = 'Probe reading is required';
+    else if (isNaN(parseFloat(formData.probeReading)) || parseFloat(formData.probeReading) < 0) newErrors.probeReading = 'Must be a valid positive number';
+    if (hasLargeDiscrepancy && !formData.verificationNotes) newErrors.verificationNotes = 'Verification notes are required for large discrepancies';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -97,7 +81,6 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
     const probeReading = parseFloat(formData.probeReading);
     const probeDiscrepancy = dieselRecord.litresFilled - probeReading;
     
-    // Create attachments for any uploaded files
     const attachments = selectedFiles ? Array.from(selectedFiles).map((file, index) => ({
       id: `A${Date.now()}-${index}`,
       filename: file.name,
@@ -107,7 +90,6 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
       uploadedAt: new Date().toISOString()
     })) : [];
     
-    // Update the diesel record
     updateDieselRecord({
       ...dieselRecord,
       probeReading,
@@ -119,8 +101,18 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
       probeActionTaken: formData.actionTaken || undefined,
       probeAttachments: [...(dieselRecord.probeAttachments || []), ...attachments]
     });
-    
-    // Show success message
+
+    // If discrepancy or norm variance large, create driver behavior event automatically
+    if (hasLargeDiscrepancy) {
+      addDriverBehaviorEvent({
+        driverName: dieselRecord.driverName,
+        fleetNumber: dieselRecord.fleetNumber,
+        date: dieselRecord.date,
+        eventType: 'Fuel Probe Discrepancy',
+        notes: `Large discrepancy of ${Math.abs(probeDiscrepancy).toFixed(1)}L detected and flagged during probe verification.`
+      });
+    }
+
     alert(`Probe verification completed successfully.\n\nProbe Reading: ${probeReading}L\nFilled Amount: ${dieselRecord.litresFilled}L\nDiscrepancy: ${Math.abs(probeDiscrepancy).toFixed(1)}L${hasLargeDiscrepancy ? ' (SIGNIFICANT)' : ''}`);
     
     onClose();
@@ -134,7 +126,6 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
       maxWidth="lg"
     >
       <div className="space-y-6">
-        {/* Record Summary */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <h3 className="text-sm font-medium text-blue-800 mb-2">Diesel Record Details</h3>
           <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
@@ -150,8 +141,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
             </div>
           </div>
         </div>
-        
-        {/* Verification Form */}
+
         <div className="space-y-4">
           <Input
             label="Probe Reading (Litres) *"
@@ -164,11 +154,8 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
             error={errors.probeReading}
           />
           
-          {/* Discrepancy Display */}
           {discrepancy !== null && (
-            <div className={`p-4 rounded-md ${
-              hasLargeDiscrepancy ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'
-            }`}>
+            <div className={`p-4 rounded-md ${hasLargeDiscrepancy ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
               <div className="flex items-start space-x-3">
                 {hasLargeDiscrepancy ? (
                   <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
@@ -193,7 +180,6 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
                       </p>
                     </div>
                   </div>
-                  
                   {hasLargeDiscrepancy && (
                     <div className="mt-3 text-sm text-red-700">
                       <p className="font-medium">SIGNIFICANT DISCREPANCY DETECTED</p>
@@ -224,7 +210,6 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
             rows={2}
           />
           
-          {/* Supporting Documents */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Supporting Documents (Optional)
@@ -254,8 +239,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
               </div>
             )}
           </div>
-          
-          {/* Existing Attachments */}
+
           {dieselRecord.probeAttachments && dieselRecord.probeAttachments.length > 0 && (
             <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Existing Attachments</h4>
@@ -279,8 +263,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
             </div>
           )}
         </div>
-        
-        {/* Verification Guidelines */}
+
         <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
           <h4 className="text-sm font-medium text-gray-800 mb-2">Verification Guidelines</h4>
           <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
@@ -291,22 +274,10 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
             <li>Report suspected theft or fraud to management immediately</li>
           </ul>
         </div>
-        
-        {/* Actions */}
+
         <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            icon={<X className="w-4 h-4" />}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            icon={<CheckCircle className="w-4 h-4" />}
-          >
-            Complete Verification
-          </Button>
+          <Button variant="outline" onClick={onClose} icon={<X className="w-4 h-4" />}>Cancel</Button>
+          <Button onClick={handleSubmit} icon={<CheckCircle className="w-4 h-4" />}>Complete Verification</Button>
         </div>
       </div>
     </Modal>
