@@ -13,7 +13,7 @@ import {
   DocumentData,
   QuerySnapshot,
 } from "firebase/firestore";
-import { firebaseConfig } from "./firebaseConfig";
+import { firebaseConfig } from "./firebaseConfig.tsx";
 
 // 1️⃣ Initialize Firebase App and Firestore
 const app = initializeApp(firebaseConfig);
