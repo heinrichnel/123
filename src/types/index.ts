@@ -1,3 +1,5 @@
+import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.js";
+
 // src/types/index.ts
 
 // --- Attachments, CostData, and DelayReason ---
