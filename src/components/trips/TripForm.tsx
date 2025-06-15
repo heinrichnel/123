@@ -12,7 +12,7 @@ interface TripFormProps {
 
 const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
   const [fleetNumber, setFleetNumber] = useState('');
-  const [client, setClient] = useState('');
+  const [clientName, setClientName] = useState('');
   const [driver, setDriver] = useState('');
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
@@ -24,7 +24,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
   useEffect(() => {
     if (trip) {
       setFleetNumber(trip.fleetNumber || '');
-      setClient(trip.client || '');
+      setClientName(trip.clientName || '');
       setDriver(trip.driver || '');
       setOrigin(trip.origin || '');
       setDestination(trip.destination || '');
@@ -40,7 +40,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
 
     onSubmit({
       fleetNumber,
-      client,
+      clientName,
       driver,
       origin,
       destination,
@@ -57,8 +57,8 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         <Input label="Fleet Number" value={fleetNumber} onChange={e => setFleetNumber(e.target.value)} required />
         <Select
           label="Client"
-          value={client}
-          onChange={e => setClient(e.target.value)}
+          value={clientName}
+          onChange={e => setClientName(e.target.value)}
           options={CLIENTS.map(c => ({ label: c, value: c }))}
           required
         />
