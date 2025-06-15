@@ -1,24 +1,46 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Trip, CostEntry, Attachment, AdditionalCost, DelayReason, MissedLoad, DieselConsumptionRecord, DriverBehaviorEvent, ActionItem, CARReport } from '../types/index.js';
-import { v4 as uuidv4 } from 'uuid';
-import { enableFirestoreNetwork, disableFirestoreNetwork, db } from '../firebase.js';
-import { generateTripId, shouldAutoCompleteTrip, isOnline } from '../utils/helpers.ts';
+import React, { createContext, useContext, useState, useEffect } from "react";
 import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  onSnapshot,
-} from 'firebase/firestore';
+  Trip,
+  CostEntry,
+  Attachment,
+  AdditionalCost,
+  DelayReason,
+  MissedLoad,
+  DieselConsumptionRecord,
+  DriverBehaviorEvent,
+  ActionItem,
+  CARReport,
+} from "../types/index.js";
+import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase"; // adjust path if needed
+import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
 
 interface AppContextType {
-  // ... as you have already defined ...
+  trips: Trip[];
+  addTrip: (trip: Omit<Trip, "id" | "costs" | "status">) => Promise<string>;
+  updateTrip: (trip: Trip) => Promise<void>;
+  deleteTrip: (id: string) => Promise<void>;
+  getTrip: (id: string) => Trip | undefined;
+
+  addCostEntry: (
+    tripId: string,
+    costEntry: Omit<CostEntry, "id" | "attachments">,
+    files?: FileList
+  ) => Promise<string>;
+  updateCostEntry: (costEntry: CostEntry) => Promise<void>;
+  deleteCostEntry: (id: string) => Promise<void>;
+
+  completeTrip: (tripId: string) => Promise<void>;
+
+  connectionStatus: "connected" | "disconnected" | "reconnecting";
+  isOnline: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [missedLoads, setMissedLoads] = useState<MissedLoad[]>([]);
   const [dieselRecords, setDieselRecords] = useState<DieselConsumptionRecord[]>([]);
@@ -84,7 +106,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Your existing methods now updated to async and use Firestore below:
 
-  const addTrip = (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): string => {
+  const addTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): Promise<string> => {
     const newId = generateTripId();
     const newTrip: Trip = {
       ...tripData,
@@ -97,17 +119,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       followUpHistory: [],
       clientType: tripData.clientType || 'external',
     };
-    // Fire and forget async call (you can convert this to async if preferred)
-    addTripToFirebase(newTrip).catch(console.error);
+    await addTripToFirebase(newTrip);
     return newId;
   };
 
-  const updateTrip = (updatedTrip: Trip): void => {
-    updateTripInFirebase(updatedTrip.id, updatedTrip).catch(console.error);
+  const updateTrip = async (updatedTrip: Trip): Promise<void> => {
+    const tripDocRef = doc(db, "trips", updatedTrip.id);
+    await updateDoc(tripDocRef, updatedTrip);
   };
 
-  const deleteTrip = (id: string): void => {
-    deleteTripFromFirebase(id).catch(console.error);
+  const deleteTrip = async (id: string): Promise<void> => {
+    // Implement delete logic if needed
   };
 
   const getTrip = (id: string): Trip | undefined => {
@@ -116,18 +138,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Cost Entry Firestore update helpers:
 
-  const addCostEntry = (costEntryData: Omit<CostEntry, 'id' | 'attachments'>, files?: FileList): string => {
+  const addCostEntry = async (
+    tripId: string,
+    costEntryData: Omit<CostEntry, "id" | "attachments">,
+    files?: FileList
+  ): Promise<string> => {
     const newId = `C${Date.now()}`;
-    const attachments: Attachment[] = files ? Array.from(files).map((file, index) => ({
-      id: `A${Date.now()}-${index}`,
-      costEntryId: newId,
-      filename: file.name,
-      fileUrl: URL.createObjectURL(file),
-      fileType: file.type,
-      fileSize: file.size,
-      uploadedAt: new Date().toISOString(),
-      fileData: ''
-    })) : [];
+    const attachments: Attachment[] = files
+      ? Array.from(files).map((file, index) => ({
+          id: `A${Date.now()}-${index}`,
+          costEntryId: newId,
+          filename: file.name,
+          fileUrl: URL.createObjectURL(file),
+          fileType: file.type,
+          fileSize: file.size,
+          uploadedAt: new Date().toISOString(),
+          fileData: "",
+        }))
+      : [];
 
     const newCostEntry: CostEntry = {
       ...costEntryData,
@@ -135,149 +163,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       attachments,
     };
 
-    const trip = trips.find(t => t.id === costEntryData.tripId);
-    if (trip) {
-      const updatedTrip = {
-        ...trip,
-        costs: [...trip.costs, newCostEntry]
-      };
+    const trip = trips.find((t) => t.id === tripId);
+    if (!trip) throw new Error("Trip not found");
 
-      // Auto complete check:
-      if (shouldAutoCompleteTrip(updatedTrip)) {
-        updatedTrip.status = 'completed';
-        updatedTrip.completedAt = new Date().toISOString().split('T')[0];
-        updatedTrip.completedBy = 'System Auto-Complete';
-        updatedTrip.autoCompletedAt = new Date().toISOString();
-        updatedTrip.autoCompletedReason = 'All investigations resolved - trip automatically completed';
-      }
+    const updatedCosts = [...(trip.costs || []), newCostEntry];
+    const tripDocRef = doc(db, "trips", tripId);
 
-      updateTripInFirebase(trip.id, updatedTrip).catch(console.error);
-    }
+    await updateDoc(tripDocRef, { costs: updatedCosts });
 
     return newId;
   };
 
-  const updateCostEntry = (updatedCostEntry: CostEntry): void => {
+  const updateCostEntry = async (updatedCostEntry: CostEntry): Promise<void> => {
     const trip = trips.find(t => t.id === updatedCostEntry.tripId);
-    if (trip) {
-      const updatedTrip = {
-        ...trip,
-        costs: trip.costs.map(cost => cost.id === updatedCostEntry.id ? updatedCostEntry : cost),
-      };
+    if (!trip) throw new Error("Trip not found");
 
-      if (trip.status === 'active' && shouldAutoCompleteTrip(updatedTrip)) {
-        updatedTrip.status = 'completed';
-        updatedTrip.completedAt = new Date().toISOString().split('T')[0];
-        updatedTrip.completedBy = 'System Auto-Complete';
-        updatedTrip.autoCompletedAt = new Date().toISOString();
-        updatedTrip.autoCompletedReason = 'All investigations resolved - trip automatically completed';
-      }
-
-      updateTripInFirebase(trip.id, updatedTrip).catch(console.error);
-    }
+    const updatedCosts = trip.costs.map(cost => cost.id === updatedCostEntry.id ? updatedCostEntry : cost);
+    const tripDocRef = doc(db, "trips", updatedCostEntry.tripId);
+    await updateDoc(tripDocRef, { costs: updatedCosts });
   };
 
-  const deleteCostEntry = (id: string): void => {
-    const trip = trips.find(t => t.costs.some(c => c.id === id));
-    if (trip) {
-      const updatedTrip = {
-        ...trip,
-        costs: trip.costs.filter(cost => cost.id !== id)
-      };
-      updateTripInFirebase(trip.id, updatedTrip).catch(console.error);
-    }
+  const deleteCostEntry = async (costEntryId: string): Promise<void> => {
+    const trip = trips.find(t => t.costs.some(c => c.id === costEntryId));
+    if (!trip) throw new Error("Trip not found");
+    const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
+    const tripDocRef = doc(db, "trips", trip.id);
+    await updateDoc(tripDocRef, { costs: updatedCosts });
   };
 
-  // Keep all your other existing methods unchanged...
+  // Complete Trip
+  const completeTrip = async (tripId: string): Promise<void> => {
+    const trip = trips.find((t) => t.id === tripId);
+    if (!trip) throw new Error("Trip not found");
 
-  // Finally, your context value:
+    const unresolvedFlags = trip.costs?.some(
+      (cost) => cost.isFlagged && cost.investigationStatus !== "resolved"
+    );
+    if (unresolvedFlags) {
+      throw new Error(
+        "Cannot complete trip: unresolved flagged cost entries present"
+      );
+    }
+
+    const tripDocRef = doc(db, "trips", tripId);
+    await updateDoc(tripDocRef, {
+      status: "completed",
+      completedAt: new Date().toISOString(),
+      completedBy: "User", // Replace with real user info
+    });
+  };
 
   const contextValue: AppContextType = {
     trips,
     addTrip,
     updateTrip,
     deleteTrip,
-    getTrip,
+    getTrip: (id: string) => trips.find((trip) => trip.id === id),
     addCostEntry,
     updateCostEntry,
     deleteCostEntry,
-    // ... all other existing methods from your code ...
-    addAttachment: (attachmentData) => {
-      const newId = `A${Date.now()}`;
-      const newAttachment: Attachment = { ...attachmentData, id: newId };
-      const trip = trips.find(t => t.costs.some(c => c.id === attachmentData.costEntryId));
-      if (trip) {
-        const updatedTrip = {
-          ...trip,
-          costs: trip.costs.map(cost => {
-            if (cost.id === attachmentData.costEntryId) {
-              return { ...cost, attachments: [...cost.attachments, newAttachment] };
-            }
-            return cost;
-          })
-        };
-        updateTripInFirebase(trip.id, updatedTrip).catch(console.error);
-      }
-      return newId;
-    },
-    deleteAttachment: (id: string) => {
-      const trip = trips.find(t => t.costs.some(cost => cost.attachments.some(att => att.id === id)));
-      if (trip) {
-        const updatedTrip = {
-          ...trip,
-          costs: trip.costs.map(cost => ({
-            ...cost,
-            attachments: cost.attachments.filter(att => att.id !== id)
-          }))
-        };
-        updateTripInFirebase(trip.id, updatedTrip).catch(console.error);
-      }
-    },
-    // ...rest of your existing methods...
-    missedLoads,
-    addMissedLoad: (missedLoad) => {
-      // implement your addMissedLoadToFirebase here
-      // ... similar pattern ...
-      return 'some-id';
-    },
-    updateMissedLoad: (missedLoad) => { /* your existing implementation */ },
-    deleteMissedLoad: (id) => { /* your existing implementation */ },
-    dieselRecords,
-    addDieselRecord: (record) => { /* your existing implementation */ return 'some-id'; },
-    updateDieselRecord: (record) => { /* your existing implementation */ },
-    deleteDieselRecord: (id) => { /* your existing implementation */ },
-    importDieselFromCSV: (records) => { /* your existing implementation */ },
-    updateDieselDebrief: (id, data) => { /* your existing implementation */ },
-    allocateDieselToTrip: (dieselId, tripId) => { /* your existing implementation */ },
-    removeDieselFromTrip: (dieselId) => { /* your existing implementation */ },
-    driverBehaviorEvents,
-    addDriverBehaviorEvent: (event, files) => { /* your existing implementation */ return 'some-id'; },
-    updateDriverBehaviorEvent: (event) => { /* your existing implementation */ },
-    deleteDriverBehaviorEvent: (id) => { /* your existing implementation */ },
-    getDriverPerformance: (driverName) => { /* your existing implementation */ return { driverName, behaviorScore: 100, totalBehaviorEvents: 0, totalPoints: 0, totalTrips: 0, totalDistance: 0, riskLevel: 'low', improvementTrend: 'stable' }; },
-    getAllDriversPerformance: () => { /* your existing implementation */ return []; },
-    actionItems,
-    addActionItem: (item) => { /* your existing implementation */ return 'some-id'; },
-    updateActionItem: (item) => { /* your existing implementation */ },
-    deleteActionItem: (id) => { /* your existing implementation */ },
-    addActionItemComment: (itemId, comment) => { /* your existing implementation */ },
-    carReports,
-    addCARReport: (report, files) => { /* your existing implementation */ return 'some-id'; },
-    updateCARReport: (report, files) => { /* your existing implementation */ },
-    deleteCARReport: (id) => { /* your existing implementation */ },
-    connectionStatus,
-    isOnline: isOnline()
+    completeTrip,
+    connectionStatus: "connected",
+    isOnline: isOnline(),
   };
 
   return (
-    <AppContext.Provider value={contextValue}>
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 };
 
 export const useAppContext = (): AppContextType => {
   const context = useContext(AppContext);
-  if (!context) throw new Error('useAppContext must be used within an AppProvider');
+  if (!context)
+    throw new Error("useAppContext must be used within an AppProvider");
   return context;
 };

@@ -30,6 +30,7 @@ const AppContent: React.FC = () => {
     addTrip,
     updateTrip,
     deleteTrip,
+    completeTrip,
     missedLoads,
     addMissedLoad,
     updateMissedLoad,
@@ -117,6 +118,16 @@ const AppContent: React.FC = () => {
       deleteTrip(id);
       if (selectedTrip?.id === id) setSelectedTrip(null);
       alert("Trip deleted successfully.");
+    }
+  };
+
+  // Complete trip handler
+  const handleCompleteTrip = async (tripId: string) => {
+    try {
+      await completeTrip(tripId);
+      alert("Trip completed successfully!");
+    } catch (error: any) {
+      alert(error.message || "Failed to complete trip");
     }
   };
 
