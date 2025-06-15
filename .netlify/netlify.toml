@@ -1,0 +1,45 @@
+headers = []
+redirects = []
+
+[functions]
+
+[functions."*"]
+
+[[plugins]]
+origin = "config"
+package = "@netlify/plugin-lighthouse"
+pinned_version = "6"
+
+[plugins.inputs]
+
+[[plugins]]
+origin = "config"
+package = "netlify-plugin-formspree"
+
+[plugins.inputs]
+
+[[plugins]]
+origin = "config"
+package = "netlify-plugin-cloudinary"
+
+[plugins.inputs]
+
+[build]
+publish = "/home/codespace/123/dist"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "vite build"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
