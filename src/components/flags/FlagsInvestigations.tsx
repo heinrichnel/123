@@ -1,3 +1,5 @@
+// /src/components/flags/FlagsInvestigations.tsx
+
 import React, { useState } from 'react';
 import { Trip, FlaggedCost } from '../../types';
 import { useAppContext } from '../../context/AppContext';
@@ -13,26 +15,34 @@ interface FlagsInvestigationsProps {
 }
 
 const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
-  const { updateCostEntry } = useAppContext();
+  const { updateCostEntry, completeTrip } = useAppContext();
   const [selectedCost, setSelectedCost] = useState<FlaggedCost | null>(null);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [driverFilter, setDriverFilter] = useState<string>('');
 
   const flaggedCosts = getAllFlaggedCosts(trips);
-  
+
   const filteredCosts = flaggedCosts.filter(cost => {
     if (statusFilter && cost.investigationStatus !== statusFilter) return false;
     if (driverFilter && !trips.find(t => t.id === cost.tripId)?.driverName.includes(driverFilter)) return false;
     return true;
   });
 
-  const handleResolveFlag = (updatedCost: any, resolutionComment: string) => {
+  const handleResolveFlag = (updatedCost: CostEntry, resolutionComment: string) => {
     updateCostEntry(updatedCost);
     setShowResolutionModal(false);
     setSelectedCost(null);
-    
-    alert(`Flag resolved successfully!\n\nResolution: ${resolutionComment}\n\nThe cost entry has been updated and marked as resolved. If this was the last unresolved flag for the trip, it will be automatically moved to Completed Trips.`);
+
+    alert(`Flag resolved successfully!\n\nResolution: ${resolutionComment}\n\nThe cost entry has been updated and marked as resolved.`);
+
+    // Check if all flags for the trip are resolved - if yes, mark trip as completed
+    const unresolvedFlagsForTrip = flaggedCosts.filter(c => c.tripId === updatedCost.tripId && c.investigationStatus !== 'resolved');
+
+    if (unresolvedFlagsForTrip.length === 0) {
+      completeTrip(updatedCost.tripId);
+      alert(`All flags for Trip ${updatedCost.tripFleetNumber} are resolved. Trip marked as completed.`);
+    }
   };
 
   const handleOpenResolution = (cost: FlaggedCost) => {
@@ -181,7 +191,7 @@ const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
           {filteredCosts.map((cost) => {
             const trip = trips.find(t => t.id === cost.tripId);
             const canResolve = cost.investigationStatus !== 'resolved';
-            
+
             return (
               <Card key={cost.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
@@ -199,7 +209,7 @@ const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
                           </span>
                         )}
                       </div>
-                      
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                         <div>
                           <p className="text-sm text-gray-500">Trip</p>
@@ -264,11 +274,7 @@ const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
 
                       <div className="flex justify-end space-x-2">
                         {canResolve ? (
-                          <Button
-                            size="sm"
-                            onClick={() => handleOpenResolution(cost)}
-                            icon={<Edit className="w-3 h-3" />}
-                          >
+                          <Button size="sm" onClick={() => handleOpenResolution(cost)} icon={<Edit className="w-3 h-3" />}>
                             Resolve Flag
                           </Button>
                         ) : (
