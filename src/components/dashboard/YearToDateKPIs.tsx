@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Trip } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Input } from '../ui/FormElements';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
+import { Input } from '../ui/FormElements.js';
 import {
   TrendingUp,
   TrendingDown,
@@ -20,7 +20,7 @@ import {
   Download
 } from 'lucide-react';
 import { formatCurrency, calculateTotalCosts } from '../../utils/helpers';
-import Modal from '../ui/Modal';
+import Modal from '../ui/Modal.js';
 
 interface YTDMetrics {
   year: number;

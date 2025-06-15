@@ -142,7 +142,7 @@ const TripDeletionModal: React.FC<TripDeletionModalProps> = ({
           <Select
             label="Reason for Deletion *"
             value={deletionReason}
-            onChange={(e) => setDeletionReason(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setDeletionReason(e.target.value)}
             options={[
               { label: 'Select reason for deletion...', value: '' },
               ...TRIP_DELETION_REASONS.map(reason => ({ label: reason, value: reason }))
@@ -172,7 +172,7 @@ const TripDeletionModal: React.FC<TripDeletionModalProps> = ({
           <input
             type="text"
             value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmText(e.target.value)}
             placeholder={confirmationText}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
           />

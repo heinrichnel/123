@@ -361,7 +361,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             type="checkbox"
             id="manualFlag"
             checked={formData.isFlagged}
-            onChange={(e) => handleChange('isFlagged', e.target.checked)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('isFlagged', e.target.checked)}
             className="rounded border-gray-300 text-red-600 focus:ring-red-500"
           />
           <label htmlFor="manualFlag" className="flex items-center text-sm font-medium text-gray-700">

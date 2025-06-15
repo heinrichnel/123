@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Trip, DelayReason, DELAY_REASON_TYPES } from '../../types';
-import { Input, Select, TextArea } from '../ui/FormElements';
-import Button from '../ui/Button';
-import Card, { CardContent, CardHeader } from '../ui/Card';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
+import Button from '../ui/Button.js';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
 import { AlertTriangle, Plus, X } from 'lucide-react';
 import { formatDateTime } from '../../utils/helpers';
 

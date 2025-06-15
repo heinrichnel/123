@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import Modal from '../ui/Modal';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
+import Modal from '../ui/Modal.js';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
 import { 
   DollarSign, 
   Plus, 

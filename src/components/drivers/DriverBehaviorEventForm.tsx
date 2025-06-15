@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { DriverBehaviorEvent, DriverBehaviorEventType, DRIVER_BEHAVIOR_EVENT_TYPES, DRIVERS, FLEET_NUMBERS } from '../../types';
 import { useAppContext } from '../../context/AppContext';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
 import { Save, X, AlertTriangle, Shield, Calendar, Clock, MapPin, FileUp } from 'lucide-react';
 import { formatDate } from '../../utils/helpers';
 

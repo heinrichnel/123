@@ -185,7 +185,7 @@ const ActionItemDetails: React.FC<ActionItemDetailsProps> = ({
               <TextArea
                 label="Reason for Delay *"
                 value={overdueReason}
-                onChange={(e) => setOverdueReason(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOverdueReason(e.target.value)}
                 placeholder="Explain why this action item is overdue..."
                 rows={2}
               />

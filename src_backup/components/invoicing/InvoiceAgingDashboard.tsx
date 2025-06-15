@@ -411,7 +411,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Input
               label="Customer"
               value={filters.customer}
-              onChange={(e) => handleFilterChange('customer', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('customer', e.target.value)}
               placeholder="Search customer..."
             />
           </div>

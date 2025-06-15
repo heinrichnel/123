@@ -6,10 +6,10 @@ import DieselNormsModal from './DieselNormsModal.tsx';
 import ManualDieselEntryModal from './ManualDieselEntryModal.tsx';
 import TripLinkageModal from './TripLinkageModal.tsx';
 import ProbeVerificationModal from './ProbeVerificationModal.tsx';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Select } from '../ui/FormElements';
-import SyncIndicator from '../ui/SyncIndicator';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
+import { Select } from '../ui/FormElements.js';
+import SyncIndicator from '../ui/SyncIndicator.js';
 import { 
   Upload, 
   Trash2, 

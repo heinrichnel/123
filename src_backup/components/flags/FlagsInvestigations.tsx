@@ -156,7 +156,7 @@ const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
             <Select
               label="Investigation Status"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStatusFilter(e.target.value)}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Pending', value: 'pending' },
@@ -167,7 +167,7 @@ const FlagsInvestigations: React.FC<FlagsInvestigationsProps> = ({ trips }) => {
             <Select
               label="Driver"
               value={driverFilter}
-              onChange={(e) => setDriverFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDriverFilter(e.target.value)}
               options={[
                 { label: 'All Drivers', value: '' },
                 ...uniqueDrivers.map(d => ({ label: d, value: d }))

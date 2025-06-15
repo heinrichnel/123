@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
 import { useAppContext } from '../../context/AppContext';
 import { Upload, X, FileSpreadsheet, AlertTriangle, WifiOff, Wifi } from 'lucide-react';
 import { TRUCKS_WITH_PROBES } from '../../types';

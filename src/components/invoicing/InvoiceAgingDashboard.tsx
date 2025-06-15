@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Trip, InvoiceAging, AGING_THRESHOLDS, FOLLOW_UP_THRESHOLDS } from '../../types';
 import { useAppContext } from '../../context/AppContext';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Input, Select } from '../ui/FormElements';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
+import { Input, Select } from '../ui/FormElements.js';
 import InvoiceFollowUpModal from './InvoiceFollowUpModal.tsx';
 import PaymentUpdateModal from './PaymentUpdateModal.tsx';
 import { 

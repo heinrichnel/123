@@ -175,7 +175,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
                   min="0.01"
                   max={trip.baseRevenue}
                   value={formData.paymentAmount}
-                  onChange={(e) => handleChange('paymentAmount', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('paymentAmount', e.target.value)}
                   placeholder="0.00"
                   error={errors.paymentAmount}
                 />
@@ -183,7 +183,7 @@ const PaymentUpdateModal: React.FC<PaymentUpdateModalProps> = ({
                   label="Payment Received Date *"
                   type="date"
                   value={formData.paymentReceivedDate}
-                  onChange={(e) => handleChange('paymentReceivedDate', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('paymentReceivedDate', e.target.value)}
                   max={new Date().toISOString().split('T')[0]}
                   error={errors.paymentReceivedDate}
                 />

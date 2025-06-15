@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
 import { useAppContext } from '../../context/AppContext';
-import { Input, TextArea } from '../ui/FormElements';
+import { Input, TextArea } from '../ui/FormElements.js';
 import { 
   Save, 
   X, 

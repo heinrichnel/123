@@ -1,8 +1,8 @@
 import React from 'react';
 import { Truck, Plus, Flag, CheckCircle, Activity, FileText, BarChart3, Settings, Target, Users, Calendar, DollarSign, Clock, TrendingDown, Upload, Fuel, Wifi, WifiOff, Database, User as UserRound, ClipboardList, Shield } from 'lucide-react';
-import Button from '../ui/Button';
+import Button from '../ui/Button.js';
 import { useAppContext } from '../../context/AppContext';
-import SyncIndicator from '../ui/SyncIndicator';
+import SyncIndicator from '../ui/SyncIndicator.js';
 
 interface HeaderProps {
   currentView: string;

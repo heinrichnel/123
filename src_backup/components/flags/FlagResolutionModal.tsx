@@ -178,7 +178,7 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
               step="0.01"
               min="0.01"
               value={formData.amount}
-              onChange={(e) => handleChange('amount', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('amount', e.target.value)}
               error={errors.amount}
             />
             {hasAmountChange && (

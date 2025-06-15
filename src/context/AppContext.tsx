@@ -12,8 +12,8 @@ import {
   CARReport,
 } from "../types/index.js";
 import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
-import { db } from "../firebase"; // adjust path if needed
-import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
+import { db } from "../firebase.js"; // adjust path if needed
+import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers.js";
 
 interface AppContextType {
   trips: Trip[];

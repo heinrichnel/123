@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
 import { Globe, Clock, Code, GitBranch, CheckCircle, Upload } from 'lucide-react';
 import { formatDateTime } from '../../utils/helpers';
 

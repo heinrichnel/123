@@ -267,7 +267,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             label="Date of Incident *"
             type="date"
             value={formData.dateOfIncident}
-            onChange={(e) => handleChange('dateOfIncident', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('dateOfIncident', e.target.value)}
             error={errors.dateOfIncident}
           />
           
@@ -275,7 +275,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             label="Date Due *"
             type="date"
             value={formData.dateDue}
-            onChange={(e) => handleChange('dateDue', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('dateDue', e.target.value)}
             error={errors.dateDue}
           />
           

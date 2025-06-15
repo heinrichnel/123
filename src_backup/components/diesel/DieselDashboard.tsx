@@ -659,7 +659,7 @@ const DieselDashboard: React.FC = () => {
                         type="number"
                         className="border rounded px-2 py-1 w-full text-sm"
                         value={editData.kmReading}
-                        onChange={(e) => setEditData(prev => ({ ...prev, kmReading: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditData(prev => ({ ...prev, kmReading: e.target.value }))}
                       />
                     ) : (
                       <p className="font-medium">{record.kmReading.toLocaleString()}</p>
@@ -673,7 +673,7 @@ const DieselDashboard: React.FC = () => {
                         type="number"
                         className="border rounded px-2 py-1 w-full text-sm"
                         value={editData.previousKmReading}
-                        onChange={(e) => setEditData(prev => ({ ...prev, previousKmReading: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditData(prev => ({ ...prev, previousKmReading: e.target.value }))}
                       />
                     ) : (
                       <p className="font-medium">{record.previousKmReading?.toLocaleString() || 'N/A'}</p>
@@ -693,7 +693,7 @@ const DieselDashboard: React.FC = () => {
                         step="0.1"
                         className="border rounded px-2 py-1 w-full text-sm"
                         value={editData.litresFilled}
-                        onChange={(e) => setEditData(prev => ({ ...prev, litresFilled: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditData(prev => ({ ...prev, litresFilled: e.target.value }))}
                       />
                     ) : (
                       <p className="font-medium">{record.litresFilled}</p>
@@ -717,7 +717,7 @@ const DieselDashboard: React.FC = () => {
                           step="0.01"
                           className="border rounded px-2 py-1 w-full text-sm"
                           value={editData.totalCost}
-                          onChange={(e) => setEditData(prev => ({ ...prev, totalCost: e.target.value }))}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditData(prev => ({ ...prev, totalCost: e.target.value }))}
                         />
                       </div>
                     ) : (
@@ -764,7 +764,7 @@ const DieselDashboard: React.FC = () => {
                               step="0.1"
                               className="border rounded px-2 py-1 w-full text-sm"
                               value={editData.probeReading}
-                              onChange={(e) => setEditData(prev => ({ ...prev, probeReading: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditData(prev => ({ ...prev, probeReading: e.target.value }))}
                             />
                           </div>
                         )}

@@ -697,7 +697,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="1"
                 value={formData.totalKms?.toString() || ''}
-                onChange={e => handleChange('totalKms', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('totalKms', e.target.value)}
                 error={errors.totalKms}
               />
 
@@ -706,7 +706,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ipk?.toString() || ''}
-                onChange={e => handleChange('ipk', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('ipk', e.target.value)}
                 error={errors.ipk}
               />
 
@@ -715,7 +715,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.operationalCpk?.toString() || ''}
-                onChange={e => handleChange('operationalCpk', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('operationalCpk', e.target.value)}
                 error={errors.operationalCpk}
               />
 
@@ -724,7 +724,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.revenue?.toString() || ''}
-                onChange={e => handleChange('revenue', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('revenue', e.target.value)}
                 error={errors.revenue}
               />
 
@@ -733,7 +733,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ebit?.toString() || ''}
-                onChange={e => handleChange('ebit', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('ebit', e.target.value)}
               />
 
               <Input
@@ -741,7 +741,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ebitMargin?.toString() || ''}
-                onChange={e => handleChange('ebitMargin', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('ebitMargin', e.target.value)}
               />
 
               <Input
@@ -749,7 +749,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.netProfit?.toString() || ''}
-                onChange={e => handleChange('netProfit', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('netProfit', e.target.value)}
               />
 
               <Input
@@ -757,7 +757,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.netProfitMargin?.toString() || ''}
-                onChange={e => handleChange('netProfitMargin', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('netProfitMargin', e.target.value)}
               />
 
               <Input
@@ -765,7 +765,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.roe?.toString() || ''}
-                onChange={e => handleChange('roe', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('roe', e.target.value)}
               />
 
               <Input
@@ -773,7 +773,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.roic?.toString() || ''}
-                onChange={e => handleChange('roic', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('roic', e.target.value)}
               />
             </div>
 

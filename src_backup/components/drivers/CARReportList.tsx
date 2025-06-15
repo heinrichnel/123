@@ -279,13 +279,13 @@ const CARReportList: React.FC = () => {
                 label="From Date"
                 type="date"
                 value={filters.dateRange.start}
-                onChange={(e) => handleFilterChange('dateRange.start', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('dateRange.start', e.target.value)}
               />
               <Input
                 label="To Date"
                 type="date"
                 value={filters.dateRange.end}
-                onChange={(e) => handleFilterChange('dateRange.end', e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange('dateRange.end', e.target.value)}
               />
             </div>
           </div>

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Input } from '../ui/FormElements';
-import { 
-  Save, 
-  X, 
-  Settings, 
-  AlertTriangle, 
-  Plus, 
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
+import { formatCurrency, formatDate } from '../../utils/helpers.js';
+import {
+  Save,
+  X,
+  Settings,
+  AlertTriangle,
+  Plus,
   Trash2,
   History
 } from 'lucide-react';
@@ -47,7 +47,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       });
       return;
     }
-    
+
     if (field === 'tolerancePercentage' && numValue > 50) {
       setErrors(prev => {
         const key = `${fleetNumber}-${field}`;
@@ -62,24 +62,24 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       delete newErrors[key];
       return newErrors;
     });
-    
-    setEditedNorms(prev => prev.map(norm => 
-      norm.fleetNumber === fleetNumber 
-        ? { 
-            ...norm, 
-            [field]: numValue,
-            lastUpdated: new Date().toISOString(),
-            updatedBy: 'Current User'
-          }
+
+    setEditedNorms(prev => prev.map(norm =>
+      norm.fleetNumber === fleetNumber
+        ? {
+          ...norm,
+          [field]: numValue,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'Current User'
+        }
         : norm
     ));
   };
 
   const addNewFleetNorm = () => {
-    const availableFleets = FLEET_NUMBERS.filter(fleet => 
+    const availableFleets = FLEET_NUMBERS.filter(fleet =>
       !editedNorms.some(norm => norm.fleetNumber === fleet)
     );
-    
+
     if (availableFleets.length === 0) {
       alert('All fleets already have norms configured.');
       return;
@@ -175,7 +175,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
           {editedNorms.map(norm => (
             <Card key={norm.fleetNumber} className="relative">
-              <CardHeader 
+              <CardHeader
                 title={`Fleet ${norm.fleetNumber}`}
                 action={
                   <Button

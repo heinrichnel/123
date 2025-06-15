@@ -174,39 +174,39 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
             <Input
               label="Fleet Number"
               value={formData.fleetNumber}
-              onChange={(e) => handleChange('fleetNumber', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('fleetNumber', e.target.value)}
             />
 
             <Input
               label="Driver Name"
               value={formData.driverName}
-              onChange={(e) => handleChange('driverName', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('driverName', e.target.value)}
             />
 
             <Input
               label="Client Name"
               value={formData.clientName}
-              onChange={(e) => handleChange('clientName', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('clientName', e.target.value)}
             />
 
             <Input
               label="Route"
               value={formData.route}
-              onChange={(e) => handleChange('route', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('route', e.target.value)}
             />
 
             <Input
               label="Start Date"
               type="date"
               value={formData.startDate}
-              onChange={(e) => handleChange('startDate', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('startDate', e.target.value)}
             />
 
             <Input
               label="End Date"
               type="date"
               value={formData.endDate}
-              onChange={(e) => handleChange('endDate', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('endDate', e.target.value)}
             />
 
             <Select
@@ -224,7 +224,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
               type="number"
               step="0.01"
               value={formData.baseRevenue}
-              onChange={(e) => handleChange('baseRevenue', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('baseRevenue', e.target.value)}
             />
 
             <Input
@@ -232,7 +232,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
               type="number"
               step="0.1"
               value={formData.distanceKm}
-              onChange={(e) => handleChange('distanceKm', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('distanceKm', e.target.value)}
             />
           </div>
 

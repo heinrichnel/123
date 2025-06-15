@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CARReport, DriverBehaviorEvent, RESPONSIBLE_PERSONS } from '../../types';
 import { useAppContext } from '../../context/AppContext';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
 import { Save, X, AlertTriangle, FileText, Calendar, User, FileUp } from 'lucide-react';
 import { formatDate } from '../../utils/helpers';
 

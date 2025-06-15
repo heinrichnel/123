@@ -1,7 +1,7 @@
 import React from 'react';
 import { DriverBehaviorEvent, DRIVER_BEHAVIOR_EVENT_TYPES } from '../../types';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
 import { 
   Edit, 
   X, 

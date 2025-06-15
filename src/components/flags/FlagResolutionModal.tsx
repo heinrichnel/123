@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { CostEntry } from '../../types';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Input, TextArea, FileUpload } from '../ui/FormElements';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import { Input, TextArea, FileUpload } from '../ui/FormElements.js';
 import { Save, X, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 

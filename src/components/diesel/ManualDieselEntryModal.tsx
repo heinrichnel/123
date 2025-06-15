@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
 import { 
   Save, 
   X, 
@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { FLEET_NUMBERS, DRIVERS, TRUCKS_WITH_PROBES } from '../../types';
 import { useAppContext } from '../../context/AppContext';
+import { formatCurrency, formatDate } from '../../utils/helpers.js';
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;

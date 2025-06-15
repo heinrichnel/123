@@ -644,7 +644,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                 type="checkbox"
                 id="followUpRequired"
                 checked={formData.followUpRequired}
-                onChange={(e) => handleChange('followUpRequired', e.target.checked)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('followUpRequired', e.target.checked)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="followUpRequired" className="text-sm font-medium text-gray-700">
@@ -657,7 +657,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                 type="checkbox"
                 id="competitorWon"
                 checked={formData.competitorWon}
-                onChange={(e) => handleChange('competitorWon', e.target.checked)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('competitorWon', e.target.checked)}
                 className="rounded border-gray-300 text-red-600 focus:ring-red-500"
               />
               <label htmlFor="competitorWon" className="text-sm font-medium text-gray-700">

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Trip } from '../../types';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import { Input, Select, TextArea } from '../ui/FormElements.js';
 import { Save, X, DollarSign, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 

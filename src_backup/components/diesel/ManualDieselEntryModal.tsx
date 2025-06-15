@@ -314,7 +314,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="1"
             min="0"
             value={formData.kmReading}
-            onChange={(e) => handleChange('kmReading', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('kmReading', e.target.value)}
             placeholder="125000"
             error={errors.kmReading}
           />
@@ -325,7 +325,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="1"
             min="0"
             value={formData.previousKmReading}
-            onChange={(e) => handleChange('previousKmReading', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('previousKmReading', e.target.value)}
             placeholder="123560"
             error={errors.previousKmReading}
           />
@@ -336,7 +336,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="0.1"
             min="0.1"
             value={formData.litresFilled}
-            onChange={(e) => handleChange('litresFilled', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('litresFilled', e.target.value)}
             placeholder="450"
             error={errors.litresFilled}
           />
@@ -348,7 +348,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
               step="0.1"
               min="0"
               value={formData.probeReading}
-              onChange={(e) => handleChange('probeReading', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('probeReading', e.target.value)}
               placeholder="e.g., 445.5"
               error={errors.probeReading}
             />
@@ -370,7 +370,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="0.01"
             min="0"
             value={formData.costPerLitre}
-            onChange={(e) => handleChange('costPerLitre', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('costPerLitre', e.target.value)}
             placeholder="18.50"
             error={errors.costPerLitre}
           />
@@ -381,7 +381,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="0.01"
             min="0.01"
             value={formData.totalCost}
-            onChange={(e) => handleChange('totalCost', e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('totalCost', e.target.value)}
             placeholder="8325.00"
             error={errors.totalCost}
           />

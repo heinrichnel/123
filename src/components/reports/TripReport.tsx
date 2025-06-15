@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trip } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
 import { Download, FileSpreadsheet, Calendar, User, Truck, MapPin, DollarSign, TrendingUp, AlertTriangle, FileX } from 'lucide-react';
 import { 
   formatDate, 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
 import { Database, RefreshCw, CheckCircle, AlertTriangle, Clock, Server, HardDrive } from 'lucide-react';
 import { formatDateTime } from '../../utils/helpers';
 

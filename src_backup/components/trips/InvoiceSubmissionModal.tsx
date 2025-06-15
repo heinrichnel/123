@@ -303,21 +303,21 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
               label="Final Arrival Date & Time *"
               type="datetime-local"
               value={formData.finalArrivalDateTime}
-              onChange={(e) => handleChange('finalArrivalDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('finalArrivalDateTime', e.target.value)}
               error={errors.finalArrivalDateTime}
             />
             <Input
               label="Final Offload Date & Time *"
               type="datetime-local"
               value={formData.finalOffloadDateTime}
-              onChange={(e) => handleChange('finalOffloadDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('finalOffloadDateTime', e.target.value)}
               error={errors.finalOffloadDateTime}
             />
             <Input
               label="Final Departure Date & Time *"
               type="datetime-local"
               value={formData.finalDepartureDateTime}
-              onChange={(e) => handleChange('finalDepartureDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('finalDepartureDateTime', e.target.value)}
               error={errors.finalDepartureDateTime}
             />
           </div>

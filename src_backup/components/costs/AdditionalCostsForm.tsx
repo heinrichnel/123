@@ -184,7 +184,7 @@ const AdditionalCostsForm: React.FC<AdditionalCostsFormProps> = ({
                   step="0.01"
                   min="0.01"
                   value={formData.amount}
-                  onChange={(e) => handleChange('amount', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('amount', e.target.value)}
                   placeholder="0.00"
                   error={errors.amount}
                 />

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { SystemCostRates, DEFAULT_SYSTEM_COST_RATES, SystemCostReminder, DEFAULT_SYSTEM_COST_REMINDER } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Input } from '../ui/FormElements';
-import Modal from '../ui/Modal';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
+import { Input } from '../ui/FormElements.js';
+import Modal from '../ui/Modal.js';
 import { Settings, Save, X, AlertTriangle, DollarSign, Clock, Navigation, History, Shield, Bell, Calendar } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
 

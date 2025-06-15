@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Trip } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card';
-import Button from '../ui/Button';
-import { Input, Select } from '../ui/FormElements';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
+import Button from '../ui/Button.js';
+import { Input, Select } from '../ui/FormElements.js';
 import { 
   FileSpreadsheet, 
   TrendingUp, 

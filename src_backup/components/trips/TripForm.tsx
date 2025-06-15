@@ -174,7 +174,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           label="Start Date *"
           type="date"
           value={formData.startDate}
-          onChange={(e) => handleChange('startDate', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('startDate', e.target.value)}
           error={errors.startDate}
         />
 
@@ -182,7 +182,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           label="End Date *"
           type="date"
           value={formData.endDate}
-          onChange={(e) => handleChange('endDate', e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('endDate', e.target.value)}
           error={errors.endDate}
         />
 

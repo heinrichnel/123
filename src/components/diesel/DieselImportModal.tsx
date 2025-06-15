@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
-import Card, { CardContent, CardHeader } from '../ui/Card';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
+import Card, { CardContent, CardHeader } from '../ui/Card.js';
 import { 
   AlertTriangle, 
   TrendingDown, 

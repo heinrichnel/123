@@ -528,7 +528,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   step="0.01"
                   min="0"
                   value={formData.perKmCosts.repairMaintenance.toString()}
-                  onChange={(e) => handleChange('perKmCosts', 'repairMaintenance', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('perKmCosts', 'repairMaintenance', e.target.value)}
                   error={errors['perKmCosts.repairMaintenance']}
                 />
                 <Input
@@ -537,7 +537,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   step="0.01"
                   min="0"
                   value={formData.perKmCosts.tyreCost.toString()}
-                  onChange={(e) => handleChange('perKmCosts', 'tyreCost', e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('perKmCosts', 'tyreCost', e.target.value)}
                   error={errors['perKmCosts.tyreCost']}
                 />
               </div>
@@ -555,7 +555,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                     step="0.01"
                     min="0"
                     value={value.toString()}
-                    onChange={(e) => handleChange('perDayCosts', key, e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('perDayCosts', key, e.target.value)}
                     error={errors[`perDayCosts.${key}`]}
                   />
                 ))}

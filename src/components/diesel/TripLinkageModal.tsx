@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Modal from '../ui/Modal';
-import Button from '../ui/Button';
+import Modal from '../ui/Modal.js';
+import Button from '../ui/Button.js';
 import { useAppContext } from '../../context/AppContext';
-import { Select } from '../ui/FormElements';
+import { Select } from '../ui/FormElements.js';
 import { 
   Link, 
   X, 
