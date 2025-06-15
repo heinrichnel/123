@@ -7,7 +7,7 @@ import Modal from '../ui/Modal.tsx';
 import CostForm from '../costs/CostForm.tsx';
 import CostList from '../costs/CostList.tsx';
 import TripReport from '../reports/TripReport.tsx';
-import SystemCostGenerator from '../costs/SystemCostGenerator.js';
+import SystemCostGenerator from '../costs/IndirectCost'; // ✅ CORRECT
 import InvoiceSubmissionModal from './InvoiceSubmissionModal.tsx';
 import TripPlanningForm from '../planning/TripPlanningForm.tsx';
 import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield, Send, Calculator, ArrowLeft, BarChart3 } from 'lucide-react';
