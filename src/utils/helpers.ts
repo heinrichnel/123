@@ -218,3 +218,35 @@ export const downloadTripExcel = async (tripId: string) => {
     console.error('Error downloading trip Excel:', error);
   }
 };
+
+export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
+  if (!trips || !Array.isArray(trips)) return [];
+
+  try {
+    const flaggedCosts: FlaggedCost[] = [];
+
+    trips.forEach(trip => {
+      if (!trip.costs || !Array.isArray(trip.costs)) return;
+
+      trip.costs.forEach(cost => {
+        if (cost.isFlagged) {
+          flaggedCosts.push({
+            ...cost,
+            tripFleetNumber: trip.fleetNumber,
+            tripRoute: trip.route,
+            tripDriverName: trip.driverName,
+          });
+        }
+      });
+    });
+
+    return flaggedCosts.sort((a, b) => {
+      if (a.investigationStatus === 'pending' && b.investigationStatus !== 'pending') return -1;
+      if (a.investigationStatus !== 'pending' && b.investigationStatus === 'pending') return 1;
+      return new Date(b.flaggedAt || b.date).getTime() - new Date(a.flaggedAt || a.date).getTime();
+    });
+  } catch (error) {
+    console.error('Error getting all flagged costs:', error);
+    return [];
+  }
+};
