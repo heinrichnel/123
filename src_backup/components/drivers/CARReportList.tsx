@@ -20,8 +20,8 @@ import {
   FileUp 
 } from 'lucide-react';
 import { formatDate } from '../../utils/helpers';
-import CARReportForm from './CARReportForm.tsx';
-import CARReportDetails from './CARReportDetails.tsx';
+import CARReportForm from './CARReportForm';
+import CARReportDetails from './CARReportDetails';
 
 const CARReportList: React.FC = () => {
   const { carReports, deleteCARReport } = useAppContext();

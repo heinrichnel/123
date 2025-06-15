@@ -36,7 +36,7 @@ import {
   canCompleteTrip,
   formatDate
 } from '../../utils/helpers';
-import AddTripForm from './AddTripForm.tsx';
+import AddTripForm from './AddTripForm';
 
 interface DashboardProps {
   trips: Trip[];

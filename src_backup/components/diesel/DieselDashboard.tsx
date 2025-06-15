@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import DieselImportModal from './DieselImportModal.tsx';
-import DieselDebriefModal from './DieselDebriefModal.tsx';
-import DieselNormsModal from './DieselNormsModal.tsx';
-import ManualDieselEntryModal from './ManualDieselEntryModal.tsx';
-import TripLinkageModal from './TripLinkageModal.tsx';
-import ProbeVerificationModal from './ProbeVerificationModal.tsx';
+import DieselImportModal from './DieselImportModal';
+import DieselDebriefModal from './DieselDebriefModal';
+import DieselNormsModal from './DieselNormsModal';
+import ManualDieselEntryModal from './ManualDieselEntryModal';
+import TripLinkageModal from './TripLinkageModal';
+import ProbeVerificationModal from './ProbeVerificationModal';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Select } from '../ui/FormElements';

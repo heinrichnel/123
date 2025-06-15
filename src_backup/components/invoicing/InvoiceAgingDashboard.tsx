@@ -4,8 +4,8 @@ import { useAppContext } from '../../context/AppContext';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import InvoiceFollowUpModal from './InvoiceFollowUpModal.tsx';
-import PaymentUpdateModal from './PaymentUpdateModal.tsx';
+import InvoiceFollowUpModal from './InvoiceFollowUpModal';
+import PaymentUpdateModal from './PaymentUpdateModal';
 import { 
   DollarSign,
   Filter,
