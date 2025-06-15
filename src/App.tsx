@@ -47,22 +47,18 @@ const AppContent: React.FC = () => {
   >(DEFAULT_SYSTEM_COST_RATES);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Set initial load state after data is loaded
+  // Initial load detection
   useEffect(() => {
-    if (trips.length > 0 && isInitialLoad) {
-      setIsInitialLoad(false);
-    }
-    // If no data after 5 seconds, assume it's loaded but empty
+    if (trips.length > 0 && isInitialLoad) setIsInitialLoad(false);
+
     const timer = setTimeout(() => {
-      if (isInitialLoad) {
-        setIsInitialLoad(false);
-      }
+      if (isInitialLoad) setIsInitialLoad(false);
     }, 5000);
 
     return () => clearTimeout(timer);
   }, [trips, isInitialLoad]);
 
-  // Listen for trips collection changes
+  // Real-time Firestore listener for trips
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "trips"), (snapshot) => {
       const tripsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -71,6 +67,7 @@ const AppContent: React.FC = () => {
     return () => unsub();
   }, [setTrips]);
 
+  // Add Trip handler
   const handleAddTrip = async (tripData: Omit<Trip, "id" | "costs" | "status">) => {
     try {
       const newTrip = {
@@ -88,6 +85,7 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Update Trip handler
   const handleUpdateTrip = (tripData: Omit<Trip, "id" | "costs" | "status">) => {
     if (editingTrip) {
       const updatedTrip = {
@@ -106,36 +104,40 @@ const AppContent: React.FC = () => {
     }
   };
 
+  // Edit trip form open
   const handleEditTrip = (trip: Trip) => {
     setEditingTrip(trip);
     setShowTripForm(true);
   };
 
+  // Delete trip handler
   const handleDeleteTrip = (id: string) => {
     const trip = trips.find((t) => t.id === id);
     if (trip && confirm(`Delete trip for fleet ${trip.fleetNumber}? This cannot be undone.`)) {
       deleteTrip(id);
-      if (selectedTrip?.id === id) {
-        setSelectedTrip(null);
-      }
+      if (selectedTrip?.id === id) setSelectedTrip(null);
       alert("Trip deleted successfully.");
     }
   };
 
+  // View trip details handler
   const handleViewTrip = (trip: Trip) => {
     setSelectedTrip(trip);
   };
 
+  // Add new trip handler (open form)
   const handleNewTrip = () => {
     setEditingTrip(undefined);
     setShowTripForm(true);
   };
 
+  // Close trip form modal
   const handleCloseTripForm = () => {
     setShowTripForm(false);
     setEditingTrip(undefined);
   };
 
+  // Content renderer by view
   const renderContent = () => {
     if (isInitialLoad) {
       return (
@@ -199,10 +201,7 @@ const AppContent: React.FC = () => {
         );
       case "invoice-aging":
         return (
-          <InvoiceAgingDashboard
-            trips={trips}
-            onViewTrip={setSelectedTrip}
-          />
+          <InvoiceAgingDashboard trips={trips} onViewTrip={setSelectedTrip} />
         );
       case "customer-retention":
         return <CustomerRetentionDashboard trips={trips} />;
