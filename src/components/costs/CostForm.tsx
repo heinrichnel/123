@@ -6,8 +6,7 @@ import { CostEntry, COST_CATEGORIES } from '../../types/index';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
-import { FileUpload, Input, Select, TextArea } from '../ui/FormElements';
-
+import { Input, Select, Textarea } from '../ui/FormElements';
 // ─── Icons ───────────────────────────────────────────────────────
 import {
   AlertTriangle,

@@ -10,7 +10,7 @@ import { formatCurrency, formatDate } from '../../utils/helpers';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import { Input, Select, Textarea } from '../ui/FormElements';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import {

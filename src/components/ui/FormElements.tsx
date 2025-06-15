@@ -1,161 +1,80 @@
 import React from 'react';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  className?: string;
-}
-
-export const Input: React.FC<InputProps> = ({ 
-  label, 
-  error, 
-  className = '', 
-  ...props 
-}) => {
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
-      )}
-      <input
-        className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-          ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
-          ${className}`}
-        {...props}
-      />
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
-    </div>
-  );
-};
-
-interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string;
-  error?: string;
-  options: { value: string; label: string }[];
+interface InputProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
   placeholder?: string;
-  className?: string;
 }
 
-export const Select: React.FC<SelectProps> = ({ 
-  label, 
-  error, 
-  options,
-  placeholder,
-  className = '', 
-  ...props 
-}) => {
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
-      )}
-      <select
-        className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-          ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
-          ${className}`}
-        {...props}
-      >
-        {placeholder && (
-          <option value="">{placeholder}</option>
-        )}
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
-    </div>
-  );
-};
+export const Input: React.FC<InputProps> = ({ label, value, onChange, type = 'text', placeholder }) => (
+  <div className="mb-4">
+    <label className="block font-medium mb-1">{label}</label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full border rounded px-3 py-2"
+    />
+  </div>
+);
 
-interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string;
-  error?: string;
-  className?: string;
+interface SelectOption {
+  value: string;
+  label: string;
 }
 
-export const TextArea: React.FC<TextAreaProps> = ({ 
-  label, 
-  error, 
-  className = '', 
-  ...props 
-}) => {
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
-      )}
-      <textarea
-        className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm 
-          focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500
-          ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
-          ${className}`}
-        rows={3}
-        {...props}
-      />
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
-    </div>
-  );
-};
-
-interface FileUploadProps {
-  label?: string;
-  error?: string;
-  accept?: string;
-  multiple?: boolean;
-  onFileSelect: (files: FileList | null) => void;
-  className?: string;
+interface SelectProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: SelectOption[];
 }
 
-export const FileUpload: React.FC<FileUploadProps> = ({ 
-  label, 
-  error, 
-  accept,
-  multiple = false,
-  onFileSelect,
-  className = ''
-}) => {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFileSelect(e.target.files);
-  };
+export const Select: React.FC<SelectProps> = ({ label, value, onChange, options }) => (
+  <div className="mb-4">
+    <label className="block font-medium mb-1">{label}</label>
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full border rounded px-3 py-2"
+    >
+      <option value="">Select...</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
+  </div>
+);
 
-  return (
-    <div className="space-y-1">
-      {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
-      )}
-      <div className={`relative ${className}`}>
-        <input
-          type="file"
-          accept={accept}
-          multiple={multiple}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileChange(e)}
-          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
-            file:rounded-md file:border-0 file:text-sm file:font-medium 
-            file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100
-            file:cursor-pointer cursor-pointer"
-        />
-      </div>
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
-    </div>
-  );
+interface TextAreaProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}
+
+export const Textarea: React.FC<TextAreaProps> = ({ label, value, onChange, placeholder, rows = 4 }) => (
+  <div className="mb-4">
+    <label className="block font-medium mb-1">{label}</label>
+    <textarea
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      rows={rows}
+      className="w-full border rounded px-3 py-2"
+    />
+  </div>
+);
+
+// Default export optional
+export default {
+  Input,
+  Select,
+  Textarea,
 };

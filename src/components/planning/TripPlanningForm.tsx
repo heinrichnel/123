@@ -7,7 +7,7 @@ import { Trip, DelayReason, DELAY_REASON_TYPES } from '../../types';
 // ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import { Input, Select, Textarea } from '../ui/FormElements';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import { AlertTriangle, Plus, X } from 'lucide-react';

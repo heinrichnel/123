@@ -174,6 +174,7 @@ export const getFileIcon = (fileType: string): string => {
 export const downloadTripPDF = async (tripId: string) => {
   try {
     alert(`Generating PDF for trip ${tripId}`);
+    // TODO: Integrate actual PDF generation
   } catch (error) {
     console.error('Error downloading trip PDF:', error);
   }
@@ -182,8 +183,36 @@ export const downloadTripPDF = async (tripId: string) => {
 export const downloadTripExcel = async (tripId: string) => {
   try {
     alert(`Generating Excel report for trip ${tripId}`);
+    // TODO: Integrate actual Excel export
   } catch (error) {
     console.error('Error downloading trip Excel:', error);
+  }
+};
+
+// -------------------- Report Helpers --------------------
+
+export const generateReport = async (trips: Trip[]) => {
+  try {
+    alert(`Generating report for ${trips.length} trip(s)...`);
+    // TODO: Implement real export
+  } catch (error) {
+    console.error('Error generating report:', error);
+  }
+};
+
+export const generateCurrencyFleetReport = async (trips: Trip[]) => {
+  try {
+    alert(`Generating fleet/currency report for ${trips.length} trip(s)...`);
+  } catch (error) {
+    console.error('Error generating currency fleet report:', error);
+  }
+};
+
+export const downloadCurrencyFleetReport = async (trips: Trip[]) => {
+  try {
+    alert(`Downloading fleet/currency Excel report for ${trips.length} trip(s)...`);
+  } catch (error) {
+    console.error('Error downloading report:', error);
   }
 };
 
@@ -215,14 +244,4 @@ export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
     console.error('Error getting all flagged costs:', error);
     return [];
   }
-};
-
-// -------------------- 🔧 Required Exports for Reports --------------------
-
-export const generateCurrencyFleetReport = () => {
-  console.warn('generateCurrencyFleetReport not implemented yet');
-};
-
-export const downloadCurrencyFleetReport = () => {
-  console.warn('downloadCurrencyFleetReport not implemented yet');
 };

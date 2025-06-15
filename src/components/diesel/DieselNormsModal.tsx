@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
+import { Input, Select, Textarea } from '../ui/FormElements';
 
 // ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';

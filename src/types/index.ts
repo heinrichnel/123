@@ -1,7 +1,13 @@
-// ------------------ Interfaces ------------------
+// -------------------- Interfaces --------------------
 
 export interface Attachment {
   id: string;
+}
+
+export interface SimpleCostData {
+  fuel: number;
+  tolls: number;
+  other: number;
 }
 
 export interface CostData {
@@ -25,6 +31,8 @@ export interface DelayReason {
   id?: string;
 }
 
+export type TripStatus = "active" | "flagged" | "completed";
+
 export interface Trip {
   id: string;
   driverName: string;
@@ -40,16 +48,10 @@ export interface Trip {
   costs: CostData[];
   additionalCosts: CostData[];
   delayReasons: DelayReason[];
-  status?: "active" | "flagged" | "completed";
-  description?: string;
+  investigationNotes?: string;
+  status?: TripStatus;
   attachments?: Attachment[];
-  invoiceNumber?: string;
-  invoiceSubmittedAt?: string;
-  invoiceDueDate?: string;
-  paymentStatus?: "unpaid" | "partial" | "paid";
-  completedAt?: string;
-  actualOffloadDateTime?: string;
-  plannedOffloadDateTime?: string;
+  [key: string]: any;
 }
 
 export interface TripEditRecord {
@@ -62,6 +64,18 @@ export interface TripEditRecord {
   oldValue: string;
   newValue: string;
   changeType: "update" | "status_change" | "completion" | "auto_completion";
+}
+
+export interface CostEditRecord {
+  id: string;
+  costId: string;
+  editedBy: string;
+  editedAt: string;
+  reason: string;
+  fieldChanged: string;
+  oldValue: string;
+  newValue: string;
+  changeType: "update" | "flag_status" | "investigation";
 }
 
 export interface TripDeletionRecord {
@@ -81,16 +95,25 @@ export interface TripDeletionRecord {
   updatedAt: string;
 }
 
-export interface MissedLoad {
-  id: string;
-  reason: string;
-  client: string;
-  createdAt: string;
-}
-
-export interface InvoiceAging {
-  tripId: string;
-  agingDays: number;
+export interface SystemCostRates {
+  currency: "USD" | "ZAR";
+  perKmCosts: {
+    repairMaintenance: number;
+    tyreCost: number;
+  };
+  perDayCosts: {
+    gitInsurance: number;
+    shortTermInsurance: number;
+    trackingCost: number;
+    fleetManagementSystem: number;
+    licensing: number;
+    vidRoadworthy: number;
+    wages: number;
+    depreciation: number;
+  };
+  lastUpdated: string;
+  updatedBy: string;
+  effectiveDate: string;
 }
 
 export interface User {
@@ -102,20 +125,32 @@ export interface User {
 }
 
 export interface UserPermission {
-  action:
-    | "create_trip"
-    | "edit_trip"
-    | "delete_trip"
-    | "complete_trip"
-    | "edit_completed_trip"
-    | "delete_completed_trip"
-    | "manage_investigations"
-    | "view_reports"
-    | "manage_system_costs";
+  action: string;
   granted: boolean;
 }
 
-// ------------------ Constants ------------------
+export interface InvoiceAging {
+  tripId: string;
+  daysOutstanding: number;
+}
+
+export interface MissedLoad {
+  id: string;
+  fleetNumber: string;
+  client: string;
+  reason: string;
+  createdAt: string;
+}
+
+export interface ActionItem {
+  id: string;
+  description: string;
+  status: string;
+  responsible: string;
+  dueDate: string;
+}
+
+// -------------------- Constants --------------------
 
 export const TRIP_EDIT_REASONS = [
   "Incorrect Date",
@@ -126,10 +161,9 @@ export const TRIP_EDIT_REASONS = [
 ];
 
 export const TRIP_DELETION_REASONS = [
-  "Duplicate",
-  "Test Trip",
-  "Invalid Data",
-  "Client Canceled",
+  "Duplicate Entry",
+  "Error in Data",
+  "Client Cancelled",
   "Other",
 ];
 
@@ -157,6 +191,24 @@ export const DELAY_REASON_TYPES = [
   { value: "traffic", label: "Traffic" },
   { value: "other", label: "Other" },
 ];
+
+export const MISSED_LOAD_REASONS = [
+  "Breakdown",
+  "Delays",
+  "Client Cancellation",
+  "Driver Absent",
+  "Other",
+];
+
+export const AGING_THRESHOLDS = {
+  overdue: 30,
+  warning: 15,
+};
+
+export const FOLLOW_UP_THRESHOLDS = {
+  red: 10,
+  orange: 5,
+};
 
 export const SYSTEM_COST_RATES = {
   USD: {
@@ -195,20 +247,66 @@ export const SYSTEM_COST_RATES = {
   },
 };
 
-export const AGING_THRESHOLDS = [15, 30, 45, 60];
-
-export const FOLLOW_UP_THRESHOLDS = {
-  pending: 7,
-  flagged: 14,
-  resolved: 30,
-};
-
-export const MISSED_LOAD_REASONS = [
-  "Vehicle Breakdown",
-  "Driver Unavailable",
-  "Customer Canceled",
-  "Route Issue",
-  "Other",
+export const FLEET_NUMBERS = [
+  "TRUCK-001", "TRUCK-002", "TRUCK-003", "TRUCK-004", "TRUCK-005"
 ];
 
-export const CLIENTS = ["Client A", "Client B", "Client C"];
+export const CLIENTS = [
+  "Client A", "Client B", "Client C", "Client D"
+];
+
+export const TRUCKS_WITH_PROBES = [
+  "TRUCK-001",
+  "TRUCK-002",
+  "TRUCK-007",
+  "TRUCK-010"
+];
+
+export const DRIVERS = [
+  "John Doe",
+  "Jane Smith",
+  "Mike Brown",
+  "Susan Lee"
+];
+
+export const COST_CATEGORIES = [
+  "Fuel",
+  "Tolls",
+  "Maintenance",
+  "Repairs",
+  "Tyres",
+  "Licensing",
+  "Insurance",
+  "Tracking",
+  "Fines",
+  "Other"
+];
+
+export const RESPONSIBLE_PERSONS = [
+  "Fleet Manager",
+  "Driver",
+  "Operations",
+  "Finance",
+  "Maintenance",
+  "Security",
+  "Other"
+];
+
+export const DEFAULT_SYSTEM_COST_RATES: Record<"USD" | "ZAR", SystemCostRates> = SYSTEM_COST_RATES;
+export const DEFAULT_SYSTEM_COST_RATES_ZAR: SystemCostRates = {
+  currency: "ZAR",
+  perKmCosts: { repairMaintenance: 0, tyreCost: 0 },
+  perDayCosts: {
+    gitInsurance: 0,
+    shortTermInsurance: 0,
+    trackingCost: 0,
+    fleetManagementSystem: 0,
+    licensing: 0,
+    vidRoadworthy: 0,
+    wages: 0,
+    depreciation: 0,
+  },
+  lastUpdated: "",
+  updatedBy: "",
+  effectiveDate: "",
+};

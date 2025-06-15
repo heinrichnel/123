@@ -7,7 +7,7 @@ import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index';
 // ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { FileUpload, Input, Select, TextArea } from '../ui/FormElements';
+import { Input, Select, Textarea } from '../ui/FormElements';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import { DollarSign, Plus, Upload, X } from 'lucide-react';

@@ -8,7 +8,7 @@ import { ActionItem } from '../../types/index';
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { TextArea } from '../ui/FormElements';
+import { Input, Textarea } from '../ui/FormElements';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import {

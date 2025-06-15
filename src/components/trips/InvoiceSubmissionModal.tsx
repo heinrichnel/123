@@ -9,7 +9,7 @@ import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpe
 // ─── UI Components ────────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, TextArea, FileUpload } from '../ui/FormElements';
+import { Input, Select, Textarea } from '../ui/FormElements';
 
 // ─── Feature Components ───────────────────────────────────────────
 import AdditionalCostsForm from '../costs/AdditionalCostsForm';
