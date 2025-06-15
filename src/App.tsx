@@ -14,7 +14,7 @@ import DieselDashboard from "./components/diesel/DieselDashboard.tsx";
 import Admin from "./pages/Admin.tsx";
 import Modal from "./components/ui/Modal.tsx";
 import ConnectionStatus from "./components/ui/ConnectionStatus.tsx";
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types.tsx";
+import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.tsx";
 import { Database } from "lucide-react";
 import DriverBehaviorPage from "./pages/DriverBehaviorPage.tsx";
 import TripDetails from "./components/trips/TripDetails.tsx";
@@ -22,7 +22,7 @@ import TripForm from "./components/trips/TripForm.tsx";
 import SystemCostConfiguration from "./components/admin/SystemCostConfiguration.tsx";
 import ActionLog from "./components/actionlog/ActionLog.tsx";
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
-import { db } from "./firebase.tsx";
+import { db } from "./firebase.js";
 
 const AppContent: React.FC = () => {
   const {
