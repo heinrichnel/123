@@ -1,8 +1,23 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
-import { CostEntry, COST_CATEGORIES } from '../../types/index.js';
-import { Input, TextArea, FileUpload, Select } from '../ui/FormElements.tsx';
-import Button from '../ui/Button.tsx';
-import { Save, X, Upload, Flag, AlertTriangle, Calculator } from 'lucide-react';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { CostEntry, COST_CATEGORIES } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Button from '../ui/Button';
+import { FileUpload, Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Calculator,
+  Flag,
+  Save,
+  Upload,
+  X
+} from 'lucide-react';
+
 
 interface CostFormProps {
   tripId: string;

@@ -1,18 +1,28 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import { Input, TextArea } from '../ui/FormElements.js';
-import { 
-  Save, 
-  X, 
-  CheckCircle, 
-  AlertTriangle, 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Save,
+  X,
+  CheckCircle,
+  AlertTriangle,
   Fuel,
   FileText,
   Upload
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface ProbeVerificationModalProps {
   isOpen: boolean;

@@ -1,8 +1,15 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { Input, Select, TextArea } from '../ui/FormElements.js';
-import { formatCurrency, formatDate } from '../../utils/helpers.js';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatCurrency, formatDate } from '../../utils/helpers';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import {
   Save,
   X,
@@ -12,7 +19,10 @@ import {
   Trash2,
   History
 } from 'lucide-react';
+
+// ─── Constants / Types ───────────────────────────────────────────
 import { FLEET_NUMBERS } from '../../types';
+
 
 interface DieselNorms {
   fleetNumber: string;

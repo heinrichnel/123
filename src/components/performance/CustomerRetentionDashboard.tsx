@@ -1,21 +1,31 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, CustomerPerformance } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Input, Select } from '../ui/FormElements.js';
-import { 
-  Users, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Award, 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Input, Select } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Award,
   Calendar,
-  DollarSign,
   Clock,
+  DollarSign,
+  Download,
   Filter,
-  Download
+  TrendingDown,
+  TrendingUp,
+  Users
 } from 'lucide-react';
+
+// ─── Helper Functions ────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface CustomerRetentionDashboardProps {
   trips: Trip[];

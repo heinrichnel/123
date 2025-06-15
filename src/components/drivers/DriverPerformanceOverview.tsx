@@ -1,12 +1,49 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import { DriverBehaviorEvent, DriverBehaviorEventType, DRIVER_BEHAVIOR_EVENT_TYPES, DRIVERS, FLEET_NUMBERS } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Input, Select, TextArea } from '../ui/FormElements.js';
-import Modal from '../ui/Modal.js';
-import { User as UserRound, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Calendar, Filter, Plus, FileText, X, Save, Eye, Edit, Trash2, Shield, Clock, MapPin, FileUp } from 'lucide-react';
+
+// ─── Types ───────────────────────────────────────────────────────
+import {
+  DriverBehaviorEvent,
+  DriverBehaviorEventType,
+  DRIVER_BEHAVIOR_EVENT_TYPES,
+  DRIVERS,
+  FLEET_NUMBERS
+} from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Input, Select, TextArea } from '../ui/FormElements';
+import Modal from '../ui/Modal';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  User as UserRound,
+  AlertTriangle,
+  CheckCircle,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Filter,
+  Plus,
+  FileText,
+  X,
+  Save,
+  Eye,
+  Edit,
+  Trash2,
+  Shield,
+  Clock,
+  MapPin,
+  FileUp
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatDate, formatDateTime } from '../../utils/helpers';
+
 
 const DriverPerformanceOverview: React.FC = () => {
   const { driverBehaviorEvents, addDriverBehaviorEvent, updateDriverBehaviorEvent, deleteDriverBehaviorEvent, getAllDriversPerformance } = useAppContext();

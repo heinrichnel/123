@@ -1,14 +1,21 @@
-// src/components/trips/CompletedTrips.tsx
-
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState } from 'react';
-import { Trip, TripDeletionRecord } from '../../types';
 import { useAppContext } from '../../context/AppContext';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { Trip, TripDeletionRecord } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
+import SyncIndicator from '../ui/SyncIndicator';
+
+// ─── Feature Components ──────────────────────────────────────────
 import CompletedTripEditModal from './CompletedTripEditModal';
 import TripDeletionModal from './TripDeletionModal';
-import SyncIndicator from '../ui/SyncIndicator';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import {
   Edit,
   Trash2,
@@ -20,12 +27,15 @@ import {
   Calendar,
   Download
 } from 'lucide-react';
+
+// ─── Helper Functions ────────────────────────────────────────────
 import {
   formatCurrency,
   formatDate,
   formatDateTime,
   calculateTotalCosts
 } from '../../utils/helpers';
+
 
 interface CompletedTripsProps {
   trips: Trip[];

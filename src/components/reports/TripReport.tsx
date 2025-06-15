@@ -1,16 +1,37 @@
+// ─── React ───────────────────────────────────────────────────────
 import React from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Download, FileSpreadsheet, Calendar, User, Truck, MapPin, DollarSign, TrendingUp, AlertTriangle, FileX } from 'lucide-react';
-import { 
-  formatDate, 
-  formatCurrency, 
-  generateReport, 
-  downloadTripPDF, 
-  downloadTripExcel,
-  calculateKPIs
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Calendar,
+  DollarSign,
+  Download,
+  FileSpreadsheet,
+  FileX,
+  MapPin,
+  Truck,
+  TrendingUp,
+  User
+} from 'lucide-react';
+
+// ─── Helper Functions ────────────────────────────────────────────
+import {
+  formatDate,
+  formatCurrency,
+  calculateKPIs,
+  generateReport,
+  downloadTripPDF,
+  downloadTripExcel
 } from '../../utils/helpers';
+
 
 interface TripReportProps {
   trip: Trip;

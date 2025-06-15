@@ -10,7 +10,7 @@ import {
   DriverBehaviorEvent,
   ActionItem,
   CARReport,
-} from "../types/index.js";
+} from "../types/index";
 import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase"; // adjust path if needed
 import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";

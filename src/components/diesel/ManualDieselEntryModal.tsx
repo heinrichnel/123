@@ -1,19 +1,31 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { Input, Select, TextArea } from '../ui/FormElements.js';
-import { 
-  Save, 
-  X, 
+
+// ─── Context ─────────────────────────────────────────────────────
+import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Save,
+  X,
   Calculator,
   AlertTriangle,
   Fuel,
   Database,
   Link
 } from 'lucide-react';
+
+// ─── Types / Constants ───────────────────────────────────────────
 import { FLEET_NUMBERS, DRIVERS, TRUCKS_WITH_PROBES } from '../../types';
-import { useAppContext } from '../../context/AppContext';
-import { formatCurrency, formatDate } from '../../utils/helpers.js';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;

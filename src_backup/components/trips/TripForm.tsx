@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Trip } from '../../types/index.js';
-import { CLIENTS, DRIVERS, FLEET_NUMBERS, CLIENT_TYPES } from '../../types/index.js';
-import { Input, Select, TextArea } from '../ui/FormElements.tsx';
-import Button from '../ui/Button.tsx';
+import { Trip } from '../../types/index';
+import { CLIENTS, DRIVERS, FLEET_NUMBERS, CLIENT_TYPES } from '../../types/index';
+import { Input, Select, TextArea } from '../ui/FormElements';
+import Button from '../ui/Button';
 import { Save, X, Building } from 'lucide-react';
 
 interface TripFormProps {

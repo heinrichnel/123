@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Trip, TripDeletionRecord } from '../../types/index.js';
-import { useAppContext } from '../../context/AppContext.js';
-import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
-import Button from '../ui/Button.tsx';
-import { Input, Select } from '../ui/FormElements.tsx';
-import CompletedTripEditModal from './CompletedTripEditModal.tsx';
-import TripDeletionModal from './TripDeletionModal.tsx';
-import SyncIndicator from '../ui/SyncIndicator.tsx';
+import { Trip, TripDeletionRecord } from '../../types/index';
+import { useAppContext } from '../../context/AppContext';
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Input, Select } from '../ui/FormElements';
+import CompletedTripEditModal from './CompletedTripEditModal';
+import TripDeletionModal from './TripDeletionModal';
+import SyncIndicator from '../ui/SyncIndicator';
 import { Edit, Trash2, FileSpreadsheet, Eye, History, AlertTriangle, User, Calendar } from 'lucide-react';
-import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts } from '../../utils/helpers.ts';
+import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts } from '../../utils/helpers';
 
 interface CompletedTripsProps {
   trips: Trip[];

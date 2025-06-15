@@ -1,20 +1,30 @@
+// ─── React ───────────────────────────────────────────────────────
 import React from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { DriverBehaviorEvent, DRIVER_BEHAVIOR_EVENT_TYPES } from '../../types';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { 
-  Edit, 
-  X, 
-  AlertTriangle, 
-  CheckCircle, 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  FileUp, 
-  Shield, 
-  FileText 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Edit,
+  X,
+  AlertTriangle,
+  CheckCircle,
+  Calendar,
+  Clock,
+  MapPin,
+  FileUp,
+  Shield,
+  FileText
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatDate, formatDateTime } from '../../utils/helpers';
+
 
 interface DriverBehaviorEventDetailsProps {
   isOpen: boolean;

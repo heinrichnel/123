@@ -1,4 +1,4 @@
-// src/types/index.ts
+// src/types/index
 
 // --- Attachments, CostData, and DelayReason ---
 

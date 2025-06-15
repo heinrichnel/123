@@ -1,4 +1,3 @@
-import { initializeApp } from "firebase/app";
 import {
   getFirestore,
   enableNetwork,
@@ -10,16 +9,14 @@ import {
   deleteDoc,
   doc,
   Firestore,
-  DocumentData,
-  QuerySnapshot,
+  DocumentData
 } from "firebase/firestore";
-import { firebaseConfig } from "./firebaseConfig";
+import { firebaseApp } from "./firebaseConfig"; // ✅ Gebruik bestaande Firebase app instansie
 
-// 1️⃣ Initialize Firebase App and Firestore
-const app = initializeApp(firebaseConfig);
-export const db: Firestore = getFirestore(app);
+// ✅ Gebruik gedeelde Firebase app
+export const db: Firestore = getFirestore(firebaseApp);
 
-// 2️⃣ Collection references
+// 🔗 Collection references
 export const tripsCollection = collection(db, "trips");
 export const dieselCollection = collection(db, "diesel");
 export const missedLoadsCollection = collection(db, "missedLoads");
@@ -27,10 +24,10 @@ export const driverBehaviorCollection = collection(db, "driverBehavior");
 export const actionItemsCollection = collection(db, "actionItems");
 export const carReportsCollection = collection(db, "carReports");
 
-// 3️⃣ Network Control
+// 🌐 Network Controls
 export { enableNetwork, disableNetwork };
 
-// 4️⃣ Real-time listeners (typed)
+// 📡 Listener factory
 function makeListener<T = DocumentData>(
   ref: ReturnType<typeof collection>,
   onUpdate: (docs: (T & { id: string })[]) => void,
@@ -43,12 +40,13 @@ function makeListener<T = DocumentData>(
       onUpdate(data);
     },
     err => {
-      if (onError) onError(err);
       console.error("Firestore listen error:", err);
+      onError?.(err);
     }
   );
 }
 
+// 🔄 Shared listeners
 export const listenToTrips = makeListener;
 export const listenToDieselRecords = makeListener;
 export const listenToMissedLoads = makeListener;
@@ -56,35 +54,63 @@ export const listenToDriverBehaviorEvents = makeListener;
 export const listenToActionItems = makeListener;
 export const listenToCARReports = makeListener;
 
-// Usage example:
-// const unsub = listenToTrips(tripsCollection, (trips) => {...});
+// 📁 CRUD helpers
+function createDoc<T>(ref: ReturnType<typeof collection>, data: T) {
+  return addDoc(ref, data);
+}
 
-// 5️⃣ CRUD functions (generic and typed)
-export const addTripToFirebase = (d: any) => addDoc(tripsCollection, d);
-export const updateTripInFirebase = (id: string, d: any) => updateDoc(doc(tripsCollection, id), d);
-export const deleteTripFromFirebase = (id: string) => deleteDoc(doc(tripsCollection, id));
+function updateDocById<T>(ref: ReturnType<typeof collection>, id: string, data: Partial<T>) {
+  return updateDoc(doc(ref, id), data);
+}
 
-export const addDieselToFirebase = (d: any) => addDoc(dieselCollection, d);
-export const updateDieselInFirebase = (id: string, d: any) => updateDoc(doc(dieselCollection, id), d);
-export const deleteDieselFromFirebase = (id: string) => deleteDoc(doc(dieselCollection, id));
+function deleteDocById(ref: ReturnType<typeof collection>, id: string) {
+  return deleteDoc(doc(ref, id));
+}
 
-export const addMissedLoadToFirebase = (d: any) => addDoc(missedLoadsCollection, d);
-export const updateMissedLoadInFirebase = (id: string, d: any) => updateDoc(doc(missedLoadsCollection, id), d);
-export const deleteMissedLoadFromFirebase = (id: string) => deleteDoc(doc(missedLoadsCollection, id));
+// 🚛 Trips
+export const addTripToFirebase = (data: object) => createDoc(tripsCollection, data);
+export const updateTripInFirebase = (id: string, data: object) =>
+  updateDocById(tripsCollection, id, data);
+export const deleteTripFromFirebase = (id: string) =>
+  deleteDocById(tripsCollection, id);
 
-export const addDriverBehaviorEventToFirebase = (d: any) => addDoc(driverBehaviorCollection, d);
-export const updateDriverBehaviorEventToFirebase = (id: string, d: any) => updateDoc(doc(driverBehaviorCollection, id), d);
-export const deleteDriverBehaviorEventToFirebase = (id: string) => deleteDoc(doc(driverBehaviorCollection, id));
+// 🛢️ Diesel
+export const addDieselToFirebase = (data: object) => createDoc(dieselCollection, data);
+export const updateDieselInFirebase = (id: string, data: object) =>
+  updateDocById(dieselCollection, id, data);
+export const deleteDieselFromFirebase = (id: string) =>
+  deleteDocById(dieselCollection, id);
 
-export const addActionItemToFirebase = (d: any) => addDoc(actionItemsCollection, d);
-export const updateActionItemInFirebase = (id: string, d: any) => updateDoc(doc(actionItemsCollection, id), d);
-export const deleteActionItemFromFirebase = (id: string) => deleteDoc(doc(actionItemsCollection, id));
+// 📉 Missed Loads
+export const addMissedLoadToFirebase = (data: object) => createDoc(missedLoadsCollection, data);
+export const updateMissedLoadInFirebase = (id: string, data: object) =>
+  updateDocById(missedLoadsCollection, id, data);
+export const deleteMissedLoadFromFirebase = (id: string) =>
+  deleteDocById(missedLoadsCollection, id);
 
-export const addCARReportToFirebase = (d: any) => addDoc(carReportsCollection, d);
-export const updateCARReportInFirebase = (id: string, d: any) => updateDoc(doc(carReportsCollection, id), d);
-export const deleteCARReportFromFirebase = (id: string) => deleteDoc(doc(carReportsCollection, id));
+// 👨‍✈️ Driver Behavior
+export const addDriverBehaviorEventToFirebase = (data: object) =>
+  createDoc(driverBehaviorCollection, data);
+export const updateDriverBehaviorEventToFirebase = (id: string, data: object) =>
+  updateDocById(driverBehaviorCollection, id, data);
+export const deleteDriverBehaviorEventToFirebase = (id: string) =>
+  deleteDocById(driverBehaviorCollection, id);
 
-// 6️⃣ Connection monitor (optional)
+// ✅ Action Items
+export const addActionItemToFirebase = (data: object) => createDoc(actionItemsCollection, data);
+export const updateActionItemInFirebase = (id: string, data: object) =>
+  updateDocById(actionItemsCollection, id, data);
+export const deleteActionItemFromFirebase = (id: string) =>
+  deleteDocById(actionItemsCollection, id);
+
+// 📄 CAR Reports
+export const addCARReportToFirebase = (data: object) => createDoc(carReportsCollection, data);
+export const updateCARReportInFirebase = (id: string, data: object) =>
+  updateDocById(carReportsCollection, id, data);
+export const deleteCARReportFromFirebase = (id: string) =>
+  deleteDocById(carReportsCollection, id);
+
+// 🔌 Monitor connectivity
 export const monitorConnectionStatus = (
   onOnline: () => void,
   onOffline: () => void

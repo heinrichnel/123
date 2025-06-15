@@ -1,22 +1,9 @@
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.js";
-
-// src/types/index.ts
-
-// --- Attachments, CostData, and DelayReason ---
+// ------------------ Interfaces ------------------
 
 export interface Attachment {
   id: string;
-  // Add other fields if needed (e.g. fileName, url)
 }
 
-// "Simple" legacy cost entry: ONLY use if you have old code relying on {fuel, tolls, other}
-export interface SimpleCostData {
-  fuel: number;
-  tolls: number;
-  other: number;
-}
-
-// Full, rich cost entry structure (use this for all new code)
 export interface CostData {
   id: string;
   amount: number;
@@ -28,7 +15,6 @@ export interface CostData {
   flaggedAt?: string;
   resolvedAt?: string;
   attachments?: Attachment[];
-  // ...add any other fields used in your code
 }
 
 export interface DelayReason {
@@ -39,9 +25,6 @@ export interface DelayReason {
   id?: string;
 }
 
-export type TripStatus = "active" | "flagged" | "completed";
-
-// --- Main Trip type (use this everywhere) ---
 export interface Trip {
   id: string;
   driverName: string;
@@ -54,73 +37,21 @@ export interface Trip {
   revenueCurrency: "USD" | "ZAR";
   distanceKm: number;
   clientType: "internal" | "external";
-  costs: CostData[]; // Detailed cost entries
+  costs: CostData[];
   additionalCosts: CostData[];
   delayReasons: DelayReason[];
-  investigationNotes?: string;
-  plannedArrivalDateTime?: string;
-  actualArrivalDateTime?: string;
-  followUpHistory?: any[];
-  status?: TripStatus;
+  status?: "active" | "flagged" | "completed";
   description?: string;
+  attachments?: Attachment[];
   invoiceNumber?: string;
   invoiceSubmittedAt?: string;
-  invoiceSubmittedBy?: string;
   invoiceDueDate?: string;
   paymentStatus?: "unpaid" | "partial" | "paid";
-  timelineValidated?: boolean;
-  timelineValidatedAt?: string;
-  autoCompletedAt?: string;
-  autoCompletedReason?: string;
   completedAt?: string;
-  completedBy?: string;
-  invoiceDate?: string;
-  editHistory?: any[];
   actualOffloadDateTime?: string;
   plannedOffloadDateTime?: string;
-  actualDepartureDateTime?: string;
-  plannedDepartureDateTime?: string;
-  flaggedAt?: string;
-  resolvedAt?: string;
-  flaggedReason?: string;
-  comments?: string[];
-  attachments?: Attachment[];
-  // ...add any other fields referenced in your code
 }
 
-// --- System Cost Configuration Types ---
-export interface SystemCostRates {
-  currency: "USD" | "ZAR";
-  perKmCosts: {
-    repairMaintenance: number;
-    tyreCost: number;
-  };
-  perDayCosts: {
-    gitInsurance: number;
-    shortTermInsurance: number;
-    trackingCost: number;
-    fleetManagementSystem: number;
-    licensing: number;
-    vidRoadworthy: number;
-    wages: number;
-    depreciation: number;
-  };
-  lastUpdated: string;
-  updatedBy: string;
-  effectiveDate: string;
-}
-
-export interface SystemCostReminder {
-  id: string;
-  nextReminderDate: string;
-  lastReminderDate?: string;
-  reminderFrequencyDays: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// --- Audit Trail Types ---
 export interface TripEditRecord {
   id: string;
   tripId: string;
@@ -131,18 +62,6 @@ export interface TripEditRecord {
   oldValue: string;
   newValue: string;
   changeType: "update" | "status_change" | "completion" | "auto_completion";
-}
-
-export interface CostEditRecord {
-  id: string;
-  costId: string;
-  editedBy: string;
-  editedAt: string;
-  reason: string;
-  fieldChanged: string;
-  oldValue: string;
-  newValue: string;
-  changeType: "update" | "flag_status" | "investigation";
 }
 
 export interface TripDeletionRecord {
@@ -156,9 +75,24 @@ export interface TripDeletionRecord {
   totalCosts: number;
   costEntriesCount: number;
   flaggedItemsCount: number;
+  deletionComments?: string;
+  attachments?: Attachment[];
+  createdAt: string;
+  updatedAt: string;
 }
 
-// --- User Permission Types ---
+export interface MissedLoad {
+  id: string;
+  reason: string;
+  client: string;
+  createdAt: string;
+}
+
+export interface InvoiceAging {
+  tripId: string;
+  agingDays: number;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -181,29 +115,27 @@ export interface UserPermission {
   granted: boolean;
 }
 
-// --- Constants for form options ---
+// ------------------ Constants ------------------
 
-export const CLIENTS = [
-  // ... [your full CLIENTS array here]
+export const TRIP_EDIT_REASONS = [
+  "Incorrect Date",
+  "Client Request",
+  "Driver Change",
+  "Revenue Adjustment",
+  "Other",
 ];
 
-export const DRIVERS = [
-  // ... [your full DRIVERS array here]
+export const TRIP_DELETION_REASONS = [
+  "Duplicate",
+  "Test Trip",
+  "Invalid Data",
+  "Client Canceled",
+  "Other",
 ];
-
-export const FLEET_NUMBERS = [
-  // ... [your full FLEET_NUMBERS array here]
-];
-
-export const RESPONSIBLE_PERSONS = [
-  // ... [your full RESPONSIBLE_PERSONS array here]
-];
-
-export const TRUCKS_WITH_PROBES = [...FLEET_NUMBERS];
 
 export const CLIENT_TYPES = [
   { value: "internal", label: "Internal Client" },
-  { value: "external", label: "External Client" }
+  { value: "external", label: "External Client" },
 ];
 
 export const ADDITIONAL_COST_TYPES = [
@@ -213,7 +145,7 @@ export const ADDITIONAL_COST_TYPES = [
   { value: "detention", label: "Detention" },
   { value: "escort_fees", label: "Escort Fees" },
   { value: "storage", label: "Storage" },
-  { value: "other", label: "Other" }
+  { value: "other", label: "Other" },
 ];
 
 export const DELAY_REASON_TYPES = [
@@ -223,165 +155,10 @@ export const DELAY_REASON_TYPES = [
   { value: "paperwork_issues", label: "Paperwork Issues" },
   { value: "weather_conditions", label: "Weather Conditions" },
   { value: "traffic", label: "Traffic" },
-  { value: "other", label: "Other" }
+  { value: "other", label: "Other" },
 ];
 
-export const CONTACT_METHODS = [
-  { value: "call", label: "Phone Call" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "in_person", label: "In Person" },
-  { value: "sms", label: "SMS" }
-];
-
-export const MISSED_LOAD_REASONS = [
-  { value: "no_vehicle", label: "No Vehicle Available" },
-  { value: "late_response", label: "Late Response" },
-  { value: "mechanical_issue", label: "Mechanical Issue" },
-  { value: "driver_unavailable", label: "Driver Unavailable" },
-  { value: "customer_cancelled", label: "Customer Cancelled" },
-  { value: "rate_disagreement", label: "Rate Disagreement" },
-  { value: "other", label: "Other" }
-];
-
-export const DRIVER_BEHAVIOR_EVENT_TYPES = [
-  { value: "speeding", label: "Speeding", severity: "medium", points: 5 },
-  { value: "harsh_braking", label: "Harsh Braking", severity: "medium", points: 3 },
-  { value: "harsh_acceleration", label: "Harsh Acceleration", severity: "medium", points: 3 },
-  { value: "idling", label: "Excessive Idling", severity: "low", points: 1 },
-  { value: "route_deviation", label: "Route Deviation", severity: "medium", points: 4 },
-  { value: "unauthorized_stop", label: "Unauthorized Stop", severity: "medium", points: 4 },
-  { value: "fatigue_alert", label: "Fatigue Alert", severity: "high", points: 8 },
-  { value: "phone_usage", label: "Phone Usage While Driving", severity: "high", points: 10 },
-  { value: "seatbelt_violation", label: "Seatbelt Violation", severity: "high", points: 7 },
-  { value: "other", label: "Other", severity: "medium", points: 2 }
-];
-
-export const CAR_INCIDENT_TYPES = [
-  { value: "accident", label: "Accident" },
-  { value: "traffic_violation", label: "Traffic Violation" }
-];
-
-// --- Placeholders for missing types referenced in the codebase ---
-export interface ActionItem {
-  id: string;
-  title: string;
-  description?: string;
-  status?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  attachments?: Attachment[];
-}
-
-export interface CostEntry extends CostData {}
-
-export interface AdditionalCost extends CostData {}
-
-export interface FlaggedCost extends CostData {
-  flaggedReason?: string;
-}
-
-export interface MissedLoad {
-  id: string;
-  reason: string;
-  date: string;
-  fleetNumber?: string;
-  driverName?: string;
-}
-
-export interface InvoiceAging {
-  id: string;
-  tripId: string;
-  current: number;
-  warning: number;
-  critical: number;
-  overdue: number;
-  total: number;
-  currency: string;
-  lastFollowUpDate?: string;
-}
-
-export interface DriverBehaviorEvent {
-  id: string;
-  driverName: string;
-  eventType: string;
-  date: string;
-  points?: number;
-  severity?: string;
-  notes?: string;
-}
-
-export type DriverBehaviorEventType = string;
-
-export interface CARReport {
-  id: string;
-  driverName: string;
-  incidentType: string;
-  date: string;
-  description?: string;
-  attachments?: Attachment[];
-}
-
-export interface CustomerPerformance {
-  id: string;
-  clientName: string;
-  retentionRate: number;
-  lostClients: number;
-  gainedClients: number;
-  paymentReceivedDate?: string;
-}
-
-export const AGING_THRESHOLDS = [7, 14, 30, 60];
-export const TRIP_DELETION_REASONS = [
-  "Duplicate",
-  "Test",
-  "Cancelled",
-  "Incorrect Data",
-  "Other",
-];
-export interface DieselConsumptionRecord {
-  id: string;
-  tripId: string;
-  liters: number;
-  date: string;
-  recordedBy: string;
-}
-export interface TripSummary {
-  totalTrips: number;
-  completedTrips: number;
-  activeTrips: number;
-  flaggedTrips: number;
-  totalRevenue: number;
-  totalCosts: number;
-  averageDistance: number;
-  averageDuration: number;
-}
-export interface TripDashboardData {
-  activeTrips: Trip[];
-  flaggedTrips: Trip[];
-  completedTrips: Trip[];
-  totalRevenue: number;
-  totalCosts: number;
-  averageDistance: number;
-  averageDuration: number;
-}
-export interface TripDeletionRecord {
-  id: string;
-  tripId: string;
-  deletedBy: string;
-  deletedAt: string;
-  reason: string;
-  tripData: string;
-  totalRevenue: number;
-  totalCosts: number;
-  costEntriesCount: number;
-  flaggedItemsCount: number;
-  deletionComments?: string;
-  attachments?: Attachment[];
-  createdAt: string;
-  updatedAt: string;
-}
-export const DEFAULT_SYSTEM_COST_RATES: Record<"USD" | "ZAR", SystemCostRates> = {
+export const SYSTEM_COST_RATES = {
   USD: {
     currency: "USD",
     perKmCosts: { repairMaintenance: 0, tyreCost: 0 },
@@ -417,3 +194,21 @@ export const DEFAULT_SYSTEM_COST_RATES: Record<"USD" | "ZAR", SystemCostRates> =
     effectiveDate: "",
   },
 };
+
+export const AGING_THRESHOLDS = [15, 30, 45, 60];
+
+export const FOLLOW_UP_THRESHOLDS = {
+  pending: 7,
+  flagged: 14,
+  resolved: 30,
+};
+
+export const MISSED_LOAD_REASONS = [
+  "Vehicle Breakdown",
+  "Driver Unavailable",
+  "Customer Canceled",
+  "Route Issue",
+  "Other",
+];
+
+export const CLIENTS = ["Client A", "Client B", "Client C"];

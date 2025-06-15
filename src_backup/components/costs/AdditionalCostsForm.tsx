@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index.js';
+import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index';
 import { Input, Select, TextArea, FileUpload } from '../ui/FormElements.tsx';
 import Button from '../ui/Button.tsx';
 import Card, { CardContent, CardHeader } from '../ui/Card.tsx';

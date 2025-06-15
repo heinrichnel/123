@@ -1,8 +1,13 @@
-// src/components/trips/TripForm.tsx
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
+
+// ─── Types & Constants ───────────────────────────────────────────
 import { Trip, CLIENTS, DRIVERS } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import { Input, Select, Textarea } from '../ui/FormElements';
 import Button from '../ui/Button';
+
 
 interface TripFormProps {
   trip?: Trip;

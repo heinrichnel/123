@@ -1,14 +1,33 @@
-// /src/components/flags/FlagsInvestigations.tsx
-
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, FlaggedCost } from '../../types';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Input, Select } from '../ui/FormElements.js';
-import FlagResolutionModal from './FlagResolutionModal.tsx';
-import { AlertTriangle, Eye, CheckCircle, Clock, Play, Flag, Upload, Edit } from 'lucide-react';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Input, Select } from '../ui/FormElements';
+import FlagResolutionModal from './FlagResolutionModal';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Eye,
+  CheckCircle,
+  Clock,
+  Play,
+  Flag,
+  Upload,
+  Edit
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, formatDate, getAllFlaggedCosts } from '../../utils/helpers';
+
 
 interface FlagsInvestigationsProps {
   trips: Trip[];

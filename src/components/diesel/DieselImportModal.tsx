@@ -1,16 +1,24 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import { 
-  AlertTriangle, 
-  TrendingDown, 
-  Flag, 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  TrendingDown,
+  Flag,
   Download,
   Printer,
   CheckCircle
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface DieselRecord {
   id: string;

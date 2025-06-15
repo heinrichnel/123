@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { Trip, CostEntry, AdditionalCost } from '../../types/index.js';
-import { useAppContext } from '../../context/AppContext.js';
-import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
-import Button from '../ui/Button.tsx';
-import Modal from '../ui/Modal.tsx';
-import CostForm from '../costs/CostForm.tsx';
-import CostList from '../costs/CostList.tsx';
-import TripReport from '../reports/TripReport.tsx';
-import SystemCostGenerator from '../costs/SystemCostGenerator.tsx';
-import InvoiceSubmissionModal from './InvoiceSubmissionModal.tsx';
-import TripPlanningForm from '../planning/TripPlanningForm.tsx';
+import { Trip, CostEntry, AdditionalCost } from '../../types/index';
+import { useAppContext } from '../../context/AppContext';
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import Modal from '../ui/Modal';
+import CostForm from '../costs/CostForm';
+import CostList from '../costs/CostList';
+import TripReport from '../reports/TripReport';
+import SystemCostGenerator from '../costs/SystemCostGenerator';
+import InvoiceSubmissionModal from './InvoiceSubmissionModal';
+import TripPlanningForm from '../planning/TripPlanningForm';
 import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield, Send, Calculator, ArrowLeft, BarChart3 } from 'lucide-react';
 import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts, getFileIcon, calculateKPIs, getFlaggedCostsCount, getUnresolvedFlagsCount, canCompleteTrip } from '../../utils/helpers.ts';
 

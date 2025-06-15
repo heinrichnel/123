@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CostEntry, COST_CATEGORIES } from '../../types/index.js';
+import { CostEntry, COST_CATEGORIES } from '../../types/index';
 import { Input, TextArea, FileUpload, Select } from '../ui/FormElements.tsx';
 import Button from '../ui/Button.tsx';
 import { Save, X, Upload, Flag, AlertTriangle, Calculator } from 'lucide-react';

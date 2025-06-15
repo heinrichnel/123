@@ -1,16 +1,19 @@
+// ─── React & Icons ────────────────────────────────────────────────
 import React, { useState } from 'react';
-import { Trip, AdditionalCost } from '../../types/index.js';
-import Modal from '../ui/Modal.tsx';
-import Button from '../ui/Button.tsx';
-import { Input, TextArea, FileUpload } from '../ui/FormElements.tsx';
-import AdditionalCostsForm from '../costs/AdditionalCostsForm.tsx';
-import { 
-  Send, 
-  X, 
-  AlertTriangle, 
-  Flag
-} from 'lucide-react';
-import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers.ts';
+import { Send, X, AlertTriangle, Flag } from 'lucide-react';
+
+// ─── Types & Helpers ──────────────────────────────────────────────
+import { Trip, AdditionalCost } from '../../types';
+import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
+
+// ─── UI Components ────────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, TextArea, FileUpload } from '../ui/FormElements';
+
+// ─── Feature Components ───────────────────────────────────────────
+import AdditionalCostsForm from '../costs/AdditionalCostsForm';
+
 
 interface InvoiceSubmissionModalProps {
   isOpen: boolean;

@@ -1,9 +1,15 @@
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState } from 'react';
-import Modal from '../ui/Modal.tsx';
-import Button from '../ui/Button.tsx';
-import { useAppContext } from '../../context/AppContext.js';
-import { Input } from '../ui/FormElements.tsx';
+import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { Upload, X, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+
 
 interface LoadImportModalProps {
   isOpen: boolean;

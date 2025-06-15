@@ -1,12 +1,27 @@
-// /src/components/flags/FlagResolutionModal.tsx
-
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { CostEntry } from '../../types';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { Input, TextArea, FileUpload } from '../ui/FormElements.js';
-import { Save, X, Upload, CheckCircle, AlertTriangle, FileText } from 'lucide-react';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, TextArea, FileUpload } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Save,
+  X,
+  Upload,
+  CheckCircle,
+  AlertTriangle,
+  FileText
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface FlagResolutionModalProps {
   isOpen: boolean;

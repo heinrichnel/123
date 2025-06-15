@@ -1,10 +1,20 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { Input, TextArea, Select } from '../ui/FormElements.js';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, TextArea, Select } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { Save, X, Phone, Calendar, User } from 'lucide-react';
+
+// ─── Utils ───────────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface InvoiceFollowUpModalProps {
   isOpen: boolean;

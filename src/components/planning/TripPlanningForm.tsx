@@ -1,10 +1,20 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, DelayReason, DELAY_REASON_TYPES } from '../../types';
-import { Input, Select, TextArea } from '../ui/FormElements.js';
-import Button from '../ui/Button.js';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { AlertTriangle, Plus, X } from 'lucide-react';
+
+// ─── Helper Functions ────────────────────────────────────────────
 import { formatDateTime } from '../../utils/helpers';
+
 
 interface TripPlanningFormProps {
   trip: Trip;

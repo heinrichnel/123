@@ -1,17 +1,77 @@
+// ─── React & State ───────────────────────────────────────────────
 import React, { useState } from 'react';
-import { Trip, CostEntry, AdditionalCost } from '../../types/index.js';
-import { useAppContext } from '../../context/AppContext.js';
-import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
-import Button from '../ui/Button.tsx';
-import Modal from '../ui/Modal.tsx';
-import CostForm from '../costs/CostForm.tsx';
-import CostList from '../costs/CostList.tsx';
-import TripReport from '../reports/TripReport.tsx';
-import SystemCostGenerator from '../costs/IndirectCost'; // ✅ CORRECT
-import InvoiceSubmissionModal from './InvoiceSubmissionModal.tsx';
-import TripPlanningForm from '../planning/TripPlanningForm.tsx';
-import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield, Send, Calculator, ArrowLeft, BarChart3 } from 'lucide-react';
-import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts, getFileIcon, calculateKPIs, getFlaggedCostsCount, getUnresolvedFlagsCount, canCompleteTrip } from '../../utils/helpers.ts';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { Trip, CostEntry, AdditionalCost } from '../../types';
+
+// ─── Context ─────────────────────────────────────────────────────
+import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import { Input, Select, TextArea, FileUpload } from '../ui/FormElements';
+
+// ─── Custom Modules ──────────────────────────────────────────────
+import CostForm from '../costs/CostForm';
+import CostList from '../costs/CostList';
+import SystemCostGenerator from '../costs/IndirectCost';
+import TripPlanningForm from '../planning/TripPlanningForm';
+import InvoiceSubmissionModal from './InvoiceSubmissionModal';
+import TripReport from '../reports/TripReport';
+
+// ─── Helpers ─────────────────────────────────────────────────────
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  calculateTotalCosts,
+  calculateKPIs,
+  getFileIcon,
+  getFlaggedCostsCount,
+  getUnresolvedFlagsCount,
+  canCompleteTrip
+} from '../../utils/helpers';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  Bell,
+  Building,
+  Calendar,
+  Calculator,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Download,
+  Edit,
+  Eye,
+  FileSpreadsheet,
+  FileText,
+  FileUp,
+  FileX,
+  Flag,
+  History,
+  Image,
+  Lock,
+  MapPin,
+  Navigation,
+  Paperclip,
+  Plus,
+  Save,
+  Send,
+  Shield,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  Upload,
+  User,
+  X
+} from 'lucide-react';
+
 
 interface TripDetailsProps {
   trip: Trip;

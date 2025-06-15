@@ -1,23 +1,32 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import DieselImportModal from './DieselImportModal.tsx';
-import DieselDebriefModal from './DieselDebriefModal.tsx';
-import DieselNormsModal from './DieselNormsModal.tsx';
-import ManualDieselEntryModal from './ManualDieselEntryModal.tsx';
-import TripLinkageModal from './TripLinkageModal.tsx';
-import ProbeVerificationModal from './ProbeVerificationModal.tsx';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Select } from '../ui/FormElements.js';
-import SyncIndicator from '../ui/SyncIndicator.js';
-import { 
-  Upload, 
-  Trash2, 
-  Edit, 
-  Save, 
-  X, 
-  AlertTriangle, 
-  TrendingDown, 
+
+// ─── Modals ──────────────────────────────────────────────────────
+import DieselImportModal from './DieselImportModal';
+import DieselDebriefModal from './DieselDebriefModal';
+import DieselNormsModal from './DieselNormsModal';
+import ManualDieselEntryModal from './ManualDieselEntryModal';
+import TripLinkageModal from './TripLinkageModal';
+import ProbeVerificationModal from './ProbeVerificationModal';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Select } from '../ui/FormElements';
+import SyncIndicator from '../ui/SyncIndicator';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Upload,
+  Trash2,
+  Edit,
+  Save,
+  X,
+  AlertTriangle,
+  TrendingDown,
   TrendingUp,
   Fuel,
   Calculator,
@@ -28,8 +37,13 @@ import {
   Plus,
   Link
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
+// ─── Constants / Types ───────────────────────────────────────────
 import { TRUCKS_WITH_PROBES } from '../../types';
+
 
 interface DieselNorms {
   fleetNumber: string;

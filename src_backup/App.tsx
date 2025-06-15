@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AppProvider, useAppContext } from "./context/AppContext.js";
+import { AppProvider, useAppContext } from "./context/AppContext";
 import Header from "./components/layout/Header";
 import Dashboard from "./components/dashboard/Dashboard";
 import YearToDateKPIs from "./components/dashboard/YearToDateKPIs";

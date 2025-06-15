@@ -1,18 +1,28 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import { Select } from '../ui/FormElements.js';
-import { 
-  Link, 
-  X, 
-  Save, 
-  AlertTriangle, 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Select } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Link,
+  X,
+  Save,
+  AlertTriangle,
   DollarSign,
   Truck,
   Calendar
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatDate, formatCurrency } from '../../utils/helpers';
+
 
 interface TripLinkageModalProps {
   isOpen: boolean;

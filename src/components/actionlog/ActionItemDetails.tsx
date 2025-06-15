@@ -1,21 +1,31 @@
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState } from 'react';
-import { ActionItem } from '../../types/index.js';
-import Modal from '../ui/Modal.tsx';
-import Button from '../ui/Button.tsx';
-import { TextArea } from '../ui/FormElements.tsx';
-import { 
-  CheckCircle, 
-  Clock, 
-  Calendar, 
-  User, 
-  MessageSquare, 
-  Send, 
-  FileUp, 
+import { useAppContext } from '../../context/AppContext';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { ActionItem } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
   AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  FileUp,
+  MessageSquare,
+  Send,
+  User,
   X
 } from 'lucide-react';
-import { formatDate, formatDateTime } from '../../utils/helpers.ts';
-import { useAppContext } from '../../context/AppContext.js';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatDate, formatDateTime } from '../../utils/helpers';
+
 
 interface ActionItemDetailsProps {
   isOpen: boolean;

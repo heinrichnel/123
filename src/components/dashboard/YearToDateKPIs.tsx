@@ -1,26 +1,36 @@
+// ─── React & State ───────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Input } from '../ui/FormElements.js';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import Modal from '../ui/Modal';
+import { Input } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Navigation,
+  Activity,
+  AlertTriangle,
+  Award,
   BarChart3,
   Calendar,
+  DollarSign,
+  Download,
   Edit,
+  Navigation,
   Save,
-  X,
-  AlertTriangle,
   Target,
-  Award,
-  Activity,
-  Download
+  TrendingDown,
+  TrendingUp,
+  X
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency, calculateTotalCosts } from '../../utils/helpers';
-import Modal from '../ui/Modal.js';
+
 
 interface YTDMetrics {
   year: number;

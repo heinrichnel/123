@@ -1,5 +1,5 @@
 import React from 'react';
-import { CostEntry } from '../../types/index.js';
+import { CostEntry } from '../../types/index';
 import Card, { CardContent } from '../ui/Card.tsx';
 import Button from '../ui/Button.tsx';
 import { Edit, Trash2, FileText, Image, Paperclip, Flag, AlertTriangle, Calculator, Lock, Download, Eye } from 'lucide-react';

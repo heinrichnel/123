@@ -1,9 +1,31 @@
+// ─── React ───────────────────────────────────────────────────────
 import React from 'react';
-import { CostEntry } from '../../types/index.js';
-import Card, { CardContent } from '../ui/Card.tsx';
-import Button from '../ui/Button.tsx';
-import { Edit, Trash2, FileText, Image, Paperclip, Flag, AlertTriangle, Calculator, Lock, Download, Eye } from 'lucide-react';
-import { formatDate, formatCurrency } from '../../utils/helpers.ts';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { CostEntry } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent } from '../ui/Card';
+import Button from '../ui/Button';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Calculator,
+  Download,
+  Edit,
+  Eye,
+  FileText,
+  Flag,
+  Image,
+  Lock,
+  Paperclip,
+  Trash2
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatDate, formatCurrency } from '../../utils/helpers';
+
 
 interface CostListProps {
   costs: CostEntry[];

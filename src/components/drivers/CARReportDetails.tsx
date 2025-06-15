@@ -1,20 +1,30 @@
+// ─── React ───────────────────────────────────────────────────────
 import React from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { CARReport } from '../../types';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { 
-  FileText, 
-  Edit, 
-  Download, 
-  X, 
-  Calendar, 
-  User, 
-  Clock, 
-  AlertTriangle, 
-  CheckCircle, 
-  FileUp 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  FileText,
+  Edit,
+  Download,
+  X,
+  Calendar,
+  User,
+  Clock,
+  AlertTriangle,
+  CheckCircle,
+  FileUp
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatDate, formatDateTime } from '../../utils/helpers';
+
 
 interface CARReportDetailsProps {
   isOpen: boolean;

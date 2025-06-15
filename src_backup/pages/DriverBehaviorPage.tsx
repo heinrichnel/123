@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext.js';
-import { DriverBehaviorEvent } from '../types/index.js';
-import Card, { CardContent, CardHeader } from '../components/ui/Card.tsx';
-import Button from '../components/ui/Button.tsx';
-import DriverPerformanceOverview from '../components/drivers/DriverPerformanceOverview.tsx';
-import DriverBehaviorEventForm from '../components/drivers/DriverBehaviorEventForm.tsx';
-import DriverBehaviorEventDetails from '../components/drivers/DriverBehaviorEventDetails.tsx';
-import CARReportForm from '../components/drivers/CARReportForm.tsx';
-import CARReportList from '../components/drivers/CARReportList.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs.tsx';
+import { useAppContext } from '../context/AppContext';
+import { DriverBehaviorEvent } from '../types/index';
+import Card, { CardContent, CardHeader } from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import DriverPerformanceOverview from '../components/drivers/DriverPerformanceOverview';
+import DriverBehaviorEventForm from '../components/drivers/DriverBehaviorEventForm';
+import DriverBehaviorEventDetails from '../components/drivers/DriverBehaviorEventDetails';
+import CARReportForm from '../components/drivers/CARReportForm';
+import CARReportList from '../components/drivers/CARReportList';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
 import { User, FileText, Plus } from 'lucide-react';
 
 const DriverBehaviorPage: React.FC = () => {

@@ -1,10 +1,20 @@
+// ─── React & State ───────────────────────────────────────────────
 import React, { useState } from 'react';
-import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index.js';
-import { Input, Select, TextArea, FileUpload } from '../ui/FormElements.tsx';
-import Button from '../ui/Button.tsx';
-import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
-import { Plus, X, DollarSign, Upload } from 'lucide-react';
-import { formatCurrency } from '../../utils/helpers.ts';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Button from '../ui/Button';
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import { FileUpload, Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import { DollarSign, Plus, Upload, X } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatCurrency } from '../../utils/helpers';
+
 
 interface AdditionalCostsFormProps {
   tripId: string;

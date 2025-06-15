@@ -1,4 +1,4 @@
-// src/firebaseConfig.ts
+// src/firebaseConfig
 import type { FirebaseOptions } from "firebase/app";
 
 export const firebaseConfig: FirebaseOptions = {

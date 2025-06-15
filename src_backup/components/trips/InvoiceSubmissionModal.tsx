@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trip, AdditionalCost } from '../../types/index.js';
+import { Trip, AdditionalCost } from '../../types/index';
 import Modal from '../ui/Modal.tsx';
 import Button from '../ui/Button.tsx';
 import { Input, TextArea, FileUpload } from '../ui/FormElements.tsx';

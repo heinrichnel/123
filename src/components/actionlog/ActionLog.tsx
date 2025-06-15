@@ -1,29 +1,39 @@
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
-import { useAppContext } from '../../context/AppContext.js';
-import { ActionItem, RESPONSIBLE_PERSONS } from '../../types/index.js';
-import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
-import Button from '../ui/Button.tsx';
-import { Input, Select, TextArea } from '../ui/FormElements.tsx';
-import Modal from '../ui/Modal.tsx';
-import { 
-  ClipboardList, 
-  Plus, 
-  Calendar, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  AlertTriangle, 
-  Edit, 
-  Trash2, 
-  X, 
-  Save, 
+import { useAppContext } from '../../context/AppContext';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { ActionItem, RESPONSIBLE_PERSONS } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import Modal from '../ui/Modal';
+import SyncIndicator from '../ui/SyncIndicator';
+import { Input, Select, TextArea } from '../ui/FormElements';
+import ActionItemDetails from './ActionItemDetails';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  Edit,
   Eye,
+  FileUp,
   MessageSquare,
-  FileUp
+  Plus,
+  Save,
+  Trash2,
+  User,
+  X
 } from 'lucide-react';
-import { formatDate, formatDateTime } from '../../utils/helpers.ts';
-import SyncIndicator from '../ui/SyncIndicator.tsx';
-import ActionItemDetails from './ActionItemDetails.tsx';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatDate, formatDateTime } from '../../utils/helpers';
+
 
 const ActionLog: React.FC = () => {
   const { actionItems, addActionItem, updateActionItem, deleteActionItem, connectionStatus } = useAppContext();

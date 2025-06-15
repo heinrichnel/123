@@ -1,4 +1,4 @@
-import { Trip, CostEntry, FlaggedCost } from '../types/index.js';
+import { Trip, CostEntry, FlaggedCost } from '../types/index';
 import { v4 as uuidv4 } from 'uuid';
 
 // -------------------- Date Formatting --------------------
@@ -37,9 +37,11 @@ export const formatDateTime = (date: string | Date): string => {
 
 // -------------------- Currency Formatting --------------------
 
-export const formatCurrency = (amount: number, currency: 'USD' | 'ZAR' = 'ZAR'): string => {
+export const formatCurrency = (
+  amount: number,
+  currency: 'USD' | 'ZAR' = 'ZAR'
+): string => {
   if (amount === undefined || amount === null) return currency === 'USD' ? '$0.00' : 'R0.00';
-
   try {
     const symbol = currency === 'USD' ? '$' : 'R';
     return `${symbol}${amount.toLocaleString('en-US', {
@@ -56,12 +58,7 @@ export const formatCurrency = (amount: number, currency: 'USD' | 'ZAR' = 'ZAR'):
 
 export const calculateTotalCosts = (costs: CostEntry[]): number => {
   if (!costs || !Array.isArray(costs)) return 0;
-  try {
-    return costs.reduce((sum, cost) => sum + (cost.amount || 0), 0);
-  } catch (error) {
-    console.error('Error calculating total costs:', error);
-    return 0;
-  }
+  return costs.reduce((sum, cost) => sum + (cost.amount || 0), 0);
 };
 
 export const calculateKPIs = (trip: Trip) => {
@@ -97,50 +94,27 @@ export const calculateKPIs = (trip: Trip) => {
 
 // -------------------- Flag & Compliance Logic --------------------
 
-export const getFlaggedCostsCount = (costs: CostEntry[]): number => {
-  try {
-    return costs.filter((cost) => cost.isFlagged).length;
-  } catch (error) {
-    console.error('Error counting flagged costs:', error);
-    return 0;
-  }
-};
+export const getFlaggedCostsCount = (costs: CostEntry[]): number =>
+  costs?.filter((cost) => cost.isFlagged).length || 0;
 
-export const getUnresolvedFlagsCount = (costs: CostEntry[]): number => {
-  try {
-    return costs.filter((cost) => cost.isFlagged && cost.investigationStatus !== 'resolved').length;
-  } catch (error) {
-    console.error('Error counting unresolved flags:', error);
-    return 0;
-  }
-};
+export const getUnresolvedFlagsCount = (costs: CostEntry[]): number =>
+  costs?.filter((cost) => cost.isFlagged && cost.investigationStatus !== 'resolved').length || 0;
 
-export const canCompleteTrip = (trip: Trip): boolean => {
-  try {
-    const unresolvedFlags = getUnresolvedFlagsCount(trip.costs);
-    return unresolvedFlags === 0;
-  } catch (error) {
-    console.error('Error checking trip completion:', error);
-    return false;
-  }
-};
+export const canCompleteTrip = (trip: Trip): boolean =>
+  getUnresolvedFlagsCount(trip.costs) === 0;
 
-export const shouldAutoCompleteTrip = (trip: Trip): boolean => {
-  try {
-    if (trip.status !== 'active') return false;
-    const flagged = trip.costs.filter((c) => c.isFlagged);
-    if (flagged.length === 0) return false;
-    const unresolved = getUnresolvedFlagsCount(trip.costs);
-    return unresolved === 0;
-  } catch (error) {
-    console.error('Error auto-completing trip:', error);
-    return false;
-  }
-};
+export const shouldAutoCompleteTrip = (trip: Trip): boolean =>
+  trip.status === 'active' &&
+  trip.costs.some((c) => c.isFlagged) &&
+  getUnresolvedFlagsCount(trip.costs) === 0;
 
 // -------------------- Filtering Functions --------------------
 
-export const filterTripsByDateRange = (trips: Trip[], startDate?: string, endDate?: string): Trip[] => {
+export const filterTripsByDateRange = (
+  trips: Trip[],
+  startDate?: string,
+  endDate?: string
+): Trip[] => {
   if (!trips) return [];
   return trips.filter((trip) => {
     const start = new Date(trip.startDate);
@@ -151,20 +125,14 @@ export const filterTripsByDateRange = (trips: Trip[], startDate?: string, endDat
   });
 };
 
-export const filterTripsByClient = (trips: Trip[], client: string): Trip[] => {
-  if (!trips || !client) return trips;
-  return trips.filter((trip) => trip.clientName === client);
-};
+export const filterTripsByClient = (trips: Trip[], client: string): Trip[] =>
+  !client ? trips : trips.filter((trip) => trip.clientName === client);
 
-export const filterTripsByCurrency = (trips: Trip[], currency: string): Trip[] => {
-  if (!trips || !currency) return trips;
-  return trips.filter((trip) => trip.revenueCurrency === currency);
-};
+export const filterTripsByCurrency = (trips: Trip[], currency: string): Trip[] =>
+  !currency ? trips : trips.filter((trip) => trip.revenueCurrency === currency);
 
-export const filterTripsByDriver = (trips: Trip[], driver: string): Trip[] => {
-  if (!trips || !driver) return trips;
-  return trips.filter((trip) => trip.driverName === driver);
-};
+export const filterTripsByDriver = (trips: Trip[], driver: string): Trip[] =>
+  !driver ? trips : trips.filter((trip) => trip.driverName === driver);
 
 // -------------------- Utility Functions --------------------
 
@@ -194,14 +162,14 @@ export const retryOperation = async (
   throw lastError;
 };
 
-export const getFileIcon = (fileType: string) => {
+export const getFileIcon = (fileType: string): string => {
   if (!fileType) return 'Paperclip';
   if (fileType.includes('pdf')) return 'FileText';
   if (fileType.includes('image')) return 'Image';
   return 'Paperclip';
 };
 
-// -------------------- Download Stubs --------------------
+// -------------------- Download Placeholders --------------------
 
 export const downloadTripPDF = async (tripId: string) => {
   try {
@@ -219,16 +187,14 @@ export const downloadTripExcel = async (tripId: string) => {
   }
 };
 
-export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
-  if (!trips || !Array.isArray(trips)) return [];
+// -------------------- Flagged Costs Extraction --------------------
 
+export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
   try {
     const flaggedCosts: FlaggedCost[] = [];
 
-    trips.forEach(trip => {
-      if (!trip.costs || !Array.isArray(trip.costs)) return;
-
-      trip.costs.forEach(cost => {
+    trips?.forEach(trip => {
+      trip.costs?.forEach(cost => {
         if (cost.isFlagged) {
           flaggedCosts.push({
             ...cost,
@@ -249,4 +215,14 @@ export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
     console.error('Error getting all flagged costs:', error);
     return [];
   }
+};
+
+// -------------------- 🔧 Required Exports for Reports --------------------
+
+export const generateCurrencyFleetReport = () => {
+  console.warn('generateCurrencyFleetReport not implemented yet');
+};
+
+export const downloadCurrencyFleetReport = () => {
+  console.warn('downloadCurrencyFleetReport not implemented yet');
 };

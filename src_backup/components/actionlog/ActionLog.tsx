@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { useAppContext } from '../../context/AppContext.js';
-import { ActionItem, RESPONSIBLE_PERSONS } from '../../types/index.js';
+import { useAppContext } from '../../context/AppContext';
+import { ActionItem, RESPONSIBLE_PERSONS } from '../../types/index';
 import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
 import Button from '../ui/Button.tsx';
 import { Input, Select, TextArea } from '../ui/FormElements.tsx';

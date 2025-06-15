@@ -1,22 +1,36 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, InvoiceAging, AGING_THRESHOLDS, FOLLOW_UP_THRESHOLDS } from '../../types';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Input, Select } from '../ui/FormElements.js';
-import InvoiceFollowUpModal from './InvoiceFollowUpModal.tsx';
-import PaymentUpdateModal from './PaymentUpdateModal.tsx';
-import { 
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Input, Select } from '../ui/FormElements';
+
+// ─── Modals ──────────────────────────────────────────────────────
+import InvoiceFollowUpModal from './InvoiceFollowUpModal';
+import PaymentUpdateModal from './PaymentUpdateModal';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Bell,
+  CreditCard,
   DollarSign,
-  Filter,
   Download,
   Eye,
-  Bell,
-  Phone,
+  Filter,
   MessageSquare,
-  CreditCard
+  Phone
 } from 'lucide-react';
+
+// ─── Utils ───────────────────────────────────────────────────────
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/helpers';
+
 
 interface InvoiceAgingDashboardProps {
   trips: Trip[];

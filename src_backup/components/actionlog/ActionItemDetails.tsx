@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActionItem } from '../../types/index.js';
+import { ActionItem } from '../../types/index';
 import Modal from '../ui/Modal.tsx';
 import Button from '../ui/Button.tsx';
 import { TextArea } from '../ui/FormElements.tsx';
@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { formatDate, formatDateTime } from '../../utils/helpers.ts';
-import { useAppContext } from '../../context/AppContext.js';
+import { useAppContext } from '../../context/AppContext';
 
 interface ActionItemDetailsProps {
   isOpen: boolean;

@@ -1,8 +1,18 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES, CostEntry } from '../../types';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { Calculator, Clock, Navigation, AlertTriangle } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency } from '../../utils/helpers';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
+
 
 interface SystemCostGeneratorProps {
   trip: Trip;

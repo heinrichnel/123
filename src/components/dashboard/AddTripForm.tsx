@@ -1,6 +1,26 @@
-// src/components/dashboard/AddTripForm.tsx
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Button from '../ui/Button';
+import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Save,
+  X,
+  Calendar,
+  MapPin,
+  DollarSign,
+  User
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface AddTripFormProps {
   onAddTrip: (trip: Trip) => void;

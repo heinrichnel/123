@@ -1,8 +1,16 @@
+// ─── React & State ───────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, CLIENTS, DRIVERS } from '../../types';
-import Card, { CardContent, CardHeader } from '../ui/Card.js';
-import Button from '../ui/Button.js';
-import { Input, Select } from '../ui/FormElements.js';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Card, { CardContent, CardHeader } from '../ui/Card';
+import Button from '../ui/Button';
+import { Input, Select } from '../ui/FormElements';
+import { AddTripForm } from './AddTripForm'; // Named export – correct ✅
+
+// ─── Icons ───────────────────────────────────────────────────────
 import {
   TrendingUp,
   Truck,
@@ -23,8 +31,11 @@ import {
   BarChart3,
   User
 } from 'lucide-react';
+
+// ─── Utils ───────────────────────────────────────────────────────
 import {
   formatCurrency,
+  formatDate,
   calculateTotalCosts,
   calculateKPIs,
   filterTripsByDateRange,
@@ -33,10 +44,9 @@ import {
   filterTripsByDriver,
   getAllFlaggedCosts,
   getUnresolvedFlagsCount,
-  canCompleteTrip,
-  formatDate
+  canCompleteTrip
 } from '../../utils/helpers';
-import { AddTripForm } from './AddTripForm.tsx'; // ✅ fixed for named export compatibility
+
 
 interface DashboardProps {
   trips: Trip[];

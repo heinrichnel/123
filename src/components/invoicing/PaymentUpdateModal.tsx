@@ -1,10 +1,27 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
-import Modal from '../ui/Modal.js';
-import Button from '../ui/Button.js';
-import { Input, Select, TextArea } from '../ui/FormElements.js';
-import { Save, X, DollarSign, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Modal from '../ui/Modal';
+import Button from '../ui/Button';
+import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Save,
+  X,
+  DollarSign,
+  Calendar,
+  CheckCircle,
+  AlertTriangle
+} from 'lucide-react';
+
+// ─── Utils ───────────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface PaymentUpdateModalProps {
   isOpen: boolean;
