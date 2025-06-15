@@ -19,7 +19,6 @@ import { Database } from "lucide-react";
 import DriverBehaviorPage from "./pages/DriverBehaviorPage.js";
 import TripDetails from "./components/trips/TripDetails.js";
 import TripForm from "./components/trips/TripForm.js";
-import SystemCostConfiguration from "./components/admin/SystemCostConfiguration.js";
 import ActionLog from "./components/actionlog/ActionLog.js";
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase.js";
@@ -197,19 +196,6 @@ const AppContent: React.FC = () => {
         return <FlagsInvestigations trips={trips} />;
       case "reports":
         return <CurrencyFleetReport trips={trips} />;
-      case "system-costs":
-        return (
-          <SystemCostConfiguration
-            currentRates={systemCostRates}
-            onUpdateRates={(currency, rates) => {
-              setSystemCostRates((prev) => ({
-                ...prev,
-                [currency]: rates,
-              }));
-            }}
-            userRole="admin"
-          />
-        );
       case "invoice-aging":
         return (
           <InvoiceAgingDashboard trips={trips} onViewTrip={setSelectedTrip} />
