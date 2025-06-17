@@ -11,7 +11,14 @@ import {
   ActionItem,
   CARReport,
 } from "../types/index";
-import { doc, updateDoc, collection, addDoc } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  collection,
+  addDoc,
+  onSnapshot,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../firebase"; // adjust path if needed
 import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
 
