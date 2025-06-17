@@ -10,6 +10,8 @@ import {
   DriverBehaviorEvent,
   ActionItem,
   CARReport,
+  SystemCostRates,
+  DEFAULT_SYSTEM_COST_RATES,
 } from "../types/index";
 import {
   doc,
@@ -41,6 +43,16 @@ interface AppContextType {
 
   completeTrip: (tripId: string) => Promise<void>;
 
+  // Missed Loads (following centralized context pattern)
+  missedLoads: MissedLoad[];
+  addMissedLoad: (missedLoad: Omit<MissedLoad, "id">) => Promise<string>;
+  updateMissedLoad: (missedLoad: MissedLoad) => Promise<void>;
+  deleteMissedLoad: (id: string) => Promise<void>;
+
+  // System Cost Rates (following centralized context pattern)
+  systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
+  updateSystemCostRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
+
   connectionStatus: "connected" | "disconnected" | "reconnecting";
   isOnline: boolean;
 }
@@ -57,6 +69,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [carReports, setCARReports] = useState<CARReport[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
+  
+  // System Cost Rates (following centralized context pattern)
+  const [systemCostRates, setSystemCostRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
 
   // Firestore realtime listeners setup
   useEffect(() => {
@@ -69,10 +84,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setConnectionStatus('disconnected');
     });
 
-    // TODO: Add other listeners for missedLoads, dieselRecords, etc., same pattern
+    // Missed Loads realtime sync (following same pattern)
+    const missedLoadsUnsub = onSnapshot(collection(db, "missedLoads"), (snapshot) => {
+      const missedLoadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MissedLoad[];
+      setMissedLoads(missedLoadsData);
+    }, (error) => {
+      console.error("Missed loads listener error:", error);
+      setConnectionStatus('disconnected');
+    });
 
     return () => {
       tripsUnsub();
+      missedLoadsUnsub();
       // Unsubscribe other listeners similarly
     };
   }, []);
@@ -222,6 +245,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  // Missed Loads Handlers (following uniform handler pattern)
+  const addMissedLoad = async (missedLoadData: Omit<MissedLoad, "id">): Promise<string> => {
+    const docRef = await addDoc(collection(db, "missedLoads"), missedLoadData);
+    return docRef.id;
+  };
+
+  const updateMissedLoad = async (missedLoad: MissedLoad): Promise<void> => {
+    const docRef = doc(db, "missedLoads", missedLoad.id);
+    await updateDoc(docRef, missedLoad);
+  };
+
+  const deleteMissedLoad = async (id: string): Promise<void> => {
+    const docRef = doc(db, "missedLoads", id);
+    await deleteDoc(docRef);
+  };
+
+  // System Cost Rates Handler (following uniform handler pattern)
+  const updateSystemCostRates = (currency: 'USD' | 'ZAR', rates: SystemCostRates): void => {
+    setSystemCostRates(prev => ({
+      ...prev,
+      [currency]: rates,
+    }));
+    // Note: In a full implementation, you would also save this to Firestore
+    // But preserving current calculation methodology as requested
+  };
+
   const contextValue: AppContextType = {
     trips,
     addTrip,
@@ -232,6 +281,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     updateCostEntry,
     deleteCostEntry,
     completeTrip,
+    missedLoads,
+    addMissedLoad,
+    updateMissedLoad,
+    deleteMissedLoad,
+    systemCostRates,
+    updateSystemCostRates,
     connectionStatus: "connected",
     isOnline: isOnline(),
   };

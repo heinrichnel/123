@@ -1,25 +1,9 @@
-// ─── React & Context ─────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-
-// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
-
-// ─── Icons ───────────────────────────────────────────────────────
-import {
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Database,
-  HardDrive,
-  RefreshCw,
-  Server
-} from 'lucide-react';
-
-// ─── Utilities ───────────────────────────────────────────────────
+import { Database, RefreshCw, CheckCircle, AlertTriangle, Clock, Server, HardDrive } from 'lucide-react';
 import { formatDateTime } from '../../utils/helpers';
-
 
 const FirestoreStatus: React.FC = () => {
   const { trips, missedLoads, dieselRecords, connectionStatus } = useAppContext();

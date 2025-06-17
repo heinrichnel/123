@@ -25,7 +25,7 @@ import TripDetails from "./components/trips/TripDetails";
 import TripForm from "./components/trips/TripForm";
 
 // Utilities & Types
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types";
+import { Trip } from "./types";
 
 const AppContent: React.FC = () => {
   const {
@@ -38,13 +38,14 @@ const AppContent: React.FC = () => {
     addMissedLoad,
     updateMissedLoad,
     deleteMissedLoad,
+    systemCostRates,
+    updateSystemCostRates,
   } = useAppContext();
 
   const [currentView, setCurrentView] = useState("ytd-kpis");
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | undefined>();
-  const [systemCostRates, setSystemCostRates] = useState<Record<"USD" | "ZAR", SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
 
   // Show trip details after adding a trip (like your working version)
   const handleAddTrip = async (tripData: Omit<Trip, "id" | "costs" | "status">) => {
@@ -149,12 +150,7 @@ const AppContent: React.FC = () => {
         return (
           <SystemCostConfiguration
             currentRates={systemCostRates}
-            onUpdateRates={(currency, rates) => {
-              setSystemCostRates(prev => ({
-                ...prev,
-                [currency]: rates,
-              }));
-            }}
+            onUpdateRates={updateSystemCostRates}
             userRole="admin"
           />
         );

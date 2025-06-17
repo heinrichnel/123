@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) =
     { id: 'completed-trips', label: 'Completed Trips', icon: CheckCircle },
     { id: 'flags', label: 'Flags & Investigations', icon: Flag },
     { id: 'reports', label: 'Reports & Exports', icon: BarChart3 },
-    { id: 'system-costs', label: 'System Costs', icon: Settings },
+    { id: 'system-costs', label: 'Indirect Costs', icon: Settings },
     { id: 'invoice-aging', label: 'Invoice Aging', icon: Clock },
     { id: 'customer-retention', label: 'Customer Retention', icon: Users },
     { id: 'missed-loads', label: 'Missed Loads', icon: TrendingDown },
