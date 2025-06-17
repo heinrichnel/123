@@ -1,25 +1,16 @@
-// ─── React & Utilities ───────────────────────────────────────────
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-
-// ─── Types & Constants ───────────────────────────────────────────
-import { MissedLoad, MISSED_LOAD_REASONS, CLIENTS } from '../../types';
-import { formatCurrency, formatDate } from '../../utils/helpers';
-
-// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import Modal from '../ui/Modal';
-import { Input, Select, Textarea } from '../ui/FormElements';
-
-// ─── Icons ───────────────────────────────────────────────────────
-import {
-  DollarSign,
-  Plus,
-  Edit,
-  Trash2,
-  AlertTriangle,
-  TrendingDown,
+import { Input, Select, TextArea } from '../ui/FormElements';
+import { 
+  DollarSign, 
+  Plus, 
+  Edit, 
+  Trash2, 
+  AlertTriangle, 
+  TrendingDown, 
   Calendar,
   MapPin,
   User,
@@ -28,7 +19,8 @@ import {
   CheckCircle,
   FileText
 } from 'lucide-react';
-
+import { MissedLoad, MISSED_LOAD_REASONS, CLIENTS } from '../../types';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 
 interface MissedLoadsTrackerProps {
   missedLoads: MissedLoad[];

@@ -25,6 +25,18 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
+import {
+  dieselCollection,
+  driverBehaviorCollection,
+  listenToDieselRecords,
+  listenToDriverBehaviorEvents,
+  addDieselToFirebase,
+  updateDieselInFirebase,
+  deleteDieselFromFirebase,
+  addDriverBehaviorEventToFirebase,
+  updateDriverBehaviorEventToFirebase,
+  deleteDriverBehaviorEventToFirebase
+} from '../firebase';
 
 interface AppContextType {
   trips: Trip[];
@@ -48,6 +60,18 @@ interface AppContextType {
   addMissedLoad: (missedLoad: Omit<MissedLoad, "id">) => Promise<string>;
   updateMissedLoad: (missedLoad: MissedLoad) => Promise<void>;
   deleteMissedLoad: (id: string) => Promise<void>;
+
+  // Diesel
+  dieselRecords: DieselConsumptionRecord[];
+  addDieselRecord: (record: DieselConsumptionRecord) => Promise<void>;
+  updateDieselRecord: (record: DieselConsumptionRecord) => Promise<void>;
+  deleteDieselRecord: (id: string) => Promise<void>;
+
+  // Driver Behavior Events
+  driverBehaviorEvents: DriverBehaviorEvent[];
+  addDriverBehaviorEvent: (event: Omit<DriverBehaviorEvent, 'id'>) => Promise<void>;
+  updateDriverBehaviorEvent: (event: DriverBehaviorEvent) => Promise<void>;
+  deleteDriverBehaviorEvent: (id: string) => Promise<void>;
 
   // System Cost Rates (following centralized context pattern)
   systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
@@ -93,9 +117,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setConnectionStatus('disconnected');
     });
 
+    // Diesel Records realtime sync
+    const dieselUnsub = listenToDieselRecords(dieselCollection, setDieselRecords);
+    // Driver Behavior Events realtime sync
+    const driverBehaviorUnsub = listenToDriverBehaviorEvents(driverBehaviorCollection, setDriverBehaviorEvents);
+
     return () => {
       tripsUnsub();
       missedLoadsUnsub();
+      dieselUnsub();
+      driverBehaviorUnsub();
       // Unsubscribe other listeners similarly
     };
   }, []);
@@ -271,6 +302,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     // But preserving current calculation methodology as requested
   };
 
+  // Diesel CRUD
+  const addDieselRecord = async (record: DieselConsumptionRecord) => {
+    await addDieselToFirebase(record);
+  };
+  const updateDieselRecord = async (record: DieselConsumptionRecord) => {
+    await updateDieselInFirebase(record.id, record);
+  };
+  const deleteDieselRecord = async (id: string) => {
+    await deleteDieselFromFirebase(id);
+  };
+
+  // Driver Behavior Event CRUD
+  const addDriverBehaviorEvent = async (event: Omit<DriverBehaviorEvent, 'id'>) => {
+    await addDriverBehaviorEventToFirebase(event);
+  };
+  const updateDriverBehaviorEvent = async (event: DriverBehaviorEvent) => {
+    await updateDriverBehaviorEventToFirebase(event.id, event);
+  };
+  const deleteDriverBehaviorEvent = async (id: string) => {
+    await deleteDriverBehaviorEventToFirebase(id);
+  };
+
   const contextValue: AppContextType = {
     trips,
     addTrip,
@@ -285,6 +338,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addMissedLoad,
     updateMissedLoad,
     deleteMissedLoad,
+    dieselRecords,
+    addDieselRecord,
+    updateDieselRecord,
+    deleteDieselRecord,
+    driverBehaviorEvents,
+    addDriverBehaviorEvent,
+    updateDriverBehaviorEvent,
+    deleteDriverBehaviorEvent,
     systemCostRates,
     updateSystemCostRates,
     connectionStatus: "connected",

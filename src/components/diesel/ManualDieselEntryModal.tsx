@@ -1,30 +1,19 @@
 // ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
-
-// ─── Context ─────────────────────────────────────────────────────
-import { useAppContext } from '../../context/AppContext';
-
-// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, Select, Textarea } from '../ui/FormElements';
-
-// ─── Icons ───────────────────────────────────────────────────────
-import {
-  Save,
-  X,
+import { Input, Select, TextArea } from '../ui/FormElements';
+import { 
+  Save, 
+  X, 
+  Plus, 
   Calculator,
   AlertTriangle,
   Fuel,
-  Database,
   Link
 } from 'lucide-react';
-
-// ─── Types / Constants ───────────────────────────────────────────
-import { FLEET_NUMBERS, DRIVERS, TRUCKS_WITH_PROBES } from '../../types';
-
-// ─── Utilities ───────────────────────────────────────────────────
-import { formatCurrency, formatDate } from '../../utils/helpers';
+import { FLEET_NUMBERS, DRIVERS } from '../../types';
+import { useAppContext } from '../../context/AppContext';
 
 
 interface ManualDieselEntryModalProps {
@@ -36,7 +25,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { addDieselRecord, trips, connectionStatus } = useAppContext();
+  const { addDieselRecord, trips } = useAppContext();
   
   const [formData, setFormData] = useState({
     fleetNumber: '',
@@ -49,16 +38,11 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     fuelStation: '',
     driverName: '',
     notes: '',
-    tripId: '', // Link to trip
-    currency: 'ZAR' as 'USD' | 'ZAR',
-    probeReading: '' // Probe reading field
+    tripId: '' // Link to trip
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoCalculate, setAutoCalculate] = useState(true);
-
-  // Check if selected fleet has a probe
-  const hasProbe = TRUCKS_WITH_PROBES.includes(formData.fleetNumber);
 
   // Get available trips for the selected fleet
   const availableTrips = trips.filter(trip => 
@@ -69,6 +53,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
+    // Clear errors
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -136,15 +121,6 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       }
     }
 
-    // Validate probe reading if truck has probe
-    if (hasProbe) {
-      if (!formData.probeReading) {
-        newErrors.probeReading = 'Probe reading is required for this truck';
-      } else if (isNaN(Number(formData.probeReading)) || Number(formData.probeReading) < 0) {
-        newErrors.probeReading = 'Must be a valid number';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -157,12 +133,10 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const litresFilled = Number(formData.litresFilled);
     const totalCost = Number(formData.totalCost);
     const costPerLitre = formData.costPerLitre ? Number(formData.costPerLitre) : totalCost / litresFilled;
-    const probeReading = formData.probeReading ? Number(formData.probeReading) : undefined;
 
+    // Calculate derived values
     const distanceTravelled = previousKmReading ? kmReading - previousKmReading : undefined;
     const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
-    const probeDiscrepancy = probeReading && litresFilled ? litresFilled - probeReading : undefined;
-    const probeVerified = probeReading !== undefined;
 
     const recordData = {
       fleetNumber: formData.fleetNumber,
@@ -177,29 +151,14 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       previousKmReading,
       distanceTravelled,
       kmPerLitre,
-      tripId: formData.tripId || undefined,
-      currency: formData.currency,
-      hasProbe,
-      probeReading,
-      probeDiscrepancy,
-      probeVerified
+      tripId: formData.tripId || undefined // Link to trip
     };
 
     addDieselRecord(recordData);
-
-    let alertMessage = `Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\nKM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\nCost: ${formData.currency === 'USD' ? '$' : 'R'}${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`;
-
-    if (hasProbe && probeDiscrepancy !== undefined) {
-      const discrepancyAbs = Math.abs(probeDiscrepancy);
-      if (discrepancyAbs > 50) {
-        alertMessage += `\n\n⚠️ WARNING: Large probe discrepancy detected (${discrepancyAbs.toFixed(1)}L).\nThis has been flagged for investigation.`;
-      } else {
-        alertMessage += `\n\nProbe verification: ${discrepancyAbs.toFixed(1)}L difference (within acceptable range).`;
-      }
-    }
-
-    alert(alertMessage);
-
+    
+    alert(`Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\nKM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\nCost: R${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`);
+    
+    // Reset form
     setFormData({
       fleetNumber: '',
       date: new Date().toISOString().split('T')[0],
@@ -211,9 +170,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       fuelStation: '',
       driverName: '',
       notes: '',
-      tripId: '',
-      currency: 'ZAR',
-      probeReading: ''
+      tripId: ''
     });
     setErrors({});
     onClose();
@@ -233,18 +190,6 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     return distance > 0 && litres > 0 ? distance / litres : 0;
   };
 
-  const calculateProbeDiscrepancy = () => {
-    if (!hasProbe || !formData.probeReading || !formData.litresFilled) return null;
-    
-    const probeReading = Number(formData.probeReading);
-    const litresFilled = Number(formData.litresFilled);
-    
-    return litresFilled - probeReading;
-  };
-
-  const probeDiscrepancy = calculateProbeDiscrepancy();
-  const hasLargeDiscrepancy = probeDiscrepancy !== null && Math.abs(probeDiscrepancy) > 50;
-
   return (
     <Modal
       isOpen={isOpen}
@@ -253,21 +198,6 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       maxWidth="lg"
     >
       <div className="space-y-6">
-        {/* Connection Status Warning */}
-        {connectionStatus !== 'connected' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <div className="flex items-start space-x-3">
-              <Database className="w-5 h-5 text-amber-600 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-medium text-amber-800">Working Offline</h4>
-                <p className="text-sm text-amber-700 mt-1">
-                  You're currently working offline. This diesel record will be stored locally and synced when your connection is restored.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Header Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex items-start space-x-3">
@@ -305,10 +235,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             onChange={(e) => handleChange('fleetNumber', e.target.value)}
             options={[
               { label: 'Select fleet...', value: '' },
-              ...FLEET_NUMBERS.map(f => ({ 
-                label: `${f}${TRUCKS_WITH_PROBES.includes(f) ? ' (Has Probe)' : ''}`, 
-                value: f 
-              }))
+              ...FLEET_NUMBERS.map(f => ({ label: f, value: f }))
             ]}
             error={errors.fleetNumber}
           />
@@ -354,31 +281,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.litresFilled}
           />
 
-          {hasProbe && (
-            <Input
-              label="Probe Reading (Litres) *"
-              type="number"
-              step="0.1"
-              min="0"
-              value={formData.probeReading}
-              onChange={(e) => handleChange('probeReading', e.target.value)}
-              placeholder="e.g., 445.5"
-              error={errors.probeReading}
-            />
-          )}
-
-          <Select
-            label="Currency *"
-            value={formData.currency}
-            onChange={(e) => handleChange('currency', e.target.value)}
-            options={[
-              { label: 'ZAR (R)', value: 'ZAR' },
-              { label: 'USD ($)', value: 'USD' }
-            ]}
-          />
-
           <Input
-            label={`Cost per Litre (${formData.currency === 'USD' ? '$' : 'R'})`}
+            label="Cost per Litre (R)"
             type="number"
             step="0.01"
             min="0"
@@ -389,7 +293,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           />
 
           <Input
-            label={`Total Cost (${formData.currency === 'USD' ? '$' : 'R'}) *`}
+            label="Total Cost (R) *"
             type="number"
             step="0.01"
             min="0.01"
@@ -418,6 +322,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.driverName}
           />
 
+          {/* Trip Linkage */}
           <Select
             label="Link to Trip (Optional)"
             value={formData.tripId}
@@ -457,45 +362,10 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
               <div>
                 <p className="text-green-600">Cost per KM</p>
                 <p className="font-bold text-green-800">
-                  {formData.currency === 'USD' ? '$' : 'R'}{calculateDistance() > 0 ? (Number(formData.totalCost) / calculateDistance()).toFixed(2) : '0.00'}
+                  R{calculateDistance() > 0 ? (Number(formData.totalCost) / calculateDistance()).toFixed(2) : '0.00'}
                 </p>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Probe Verification Preview */}
-        {hasProbe && formData.probeReading && formData.litresFilled && (
-          <div className={`border rounded-md p-4 ${hasLargeDiscrepancy ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-            <h4 className={`text-sm font-medium mb-2 ${hasLargeDiscrepancy ? 'text-red-800' : 'text-green-800'}`}>
-              Probe Verification
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className={hasLargeDiscrepancy ? 'text-red-600' : 'text-green-600'}>Filled Amount</p>
-                <p className="font-bold">{Number(formData.litresFilled).toFixed(1)}L</p>
-              </div>
-              <div>
-                <p className={hasLargeDiscrepancy ? 'text-red-600' : 'text-green-600'}>Probe Reading</p>
-                <p className="font-bold">{Number(formData.probeReading).toFixed(1)}L</p>
-              </div>
-              <div>
-                <p className={hasLargeDiscrepancy ? 'text-red-600' : 'text-green-600'}>Discrepancy</p>
-                <p className={`font-bold ${hasLargeDiscrepancy ? 'text-red-800' : 'text-green-800'}`}>
-                  {probeDiscrepancy !== null ? Math.abs(probeDiscrepancy).toFixed(1) : '0'}L
-                </p>
-              </div>
-            </div>
-            
-            {hasLargeDiscrepancy && (
-              <div className="mt-3 flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
-                <p className="text-sm text-red-700">
-                  <strong>WARNING:</strong> Large discrepancy detected between filled amount and probe reading. 
-                  This will be flagged for investigation.
-                </p>
-              </div>
-            )}
           </div>
         )}
 

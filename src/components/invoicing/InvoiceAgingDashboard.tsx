@@ -17,15 +17,15 @@ import InvoiceFollowUpModal from './InvoiceFollowUpModal';
 import PaymentUpdateModal from './PaymentUpdateModal';
 
 // ─── Icons ───────────────────────────────────────────────────────
-import {
-  Bell,
-  CreditCard,
+import { 
   DollarSign,
+  Filter,
   Download,
   Eye,
-  Filter,
+  Bell,
+  Phone,
   MessageSquare,
-  Phone
+  CreditCard
 } from 'lucide-react';
 
 // ─── Utils ───────────────────────────────────────────────────────
@@ -42,14 +42,12 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
   onViewTrip
 }) => {
   const { updateTrip, updateInvoicePayment } = useAppContext();
-
   const [filters, setFilters] = useState({
     currency: '',
     status: '',
     customer: '',
     agingCategory: ''
   });
-
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
@@ -63,10 +61,10 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
         const dueDate = new Date(trip.invoiceDueDate!);
         const today = new Date();
         const agingDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-
+        
         const thresholds = AGING_THRESHOLDS[trip.revenueCurrency];
         let status: 'current' | 'warning' | 'critical' | 'overdue' = 'current';
-
+        
         if (agingDays >= thresholds.overdue.min) {
           status = 'overdue';
         } else if (agingDays >= thresholds.critical.min && agingDays <= thresholds.critical.max) {
@@ -107,6 +105,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
   // Sort invoices with overdue first and descending aging days
   const sortedInvoices = useMemo(() => {
     return [...filteredInvoices].sort((a, b) => {
+      // Overdue first, then by aging days descending
       if (a.status === 'overdue' && b.status !== 'overdue') return -1;
       if (a.status !== 'overdue' && b.status === 'overdue') return 1;
       return b.agingDays - a.agingDays;
@@ -137,19 +136,16 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
   }, [filteredInvoices]);
 
   // Add a follow-up record
-  const handleAddFollowUp = (
-    tripId: string, 
-    followUpData: {
-      followUpDate: string;
-      contactMethod: 'call' | 'email' | 'whatsapp' | 'in_person' | 'sms';
-      responsibleStaff: string;
-      responseSummary: string;
-      nextFollowUpDate?: string;
-      status: 'pending' | 'completed' | 'escalated';
-      priority: 'low' | 'medium' | 'high' | 'urgent';
-      outcome: 'no_response' | 'promised_payment' | 'dispute' | 'payment_received' | 'partial_payment';
-    }
-  ) => {
+  const handleAddFollowUp = (tripId: string, followUpData: {
+    followUpDate: string;
+    contactMethod: 'call' | 'email' | 'whatsapp' | 'in_person' | 'sms';
+    responsibleStaff: string;
+    responseSummary: string;
+    nextFollowUpDate?: string;
+    status: 'pending' | 'completed' | 'escalated';
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    outcome: 'no_response' | 'promised_payment' | 'dispute' | 'payment_received' | 'partial_payment';
+  }) => {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) return;
 
@@ -189,17 +185,14 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
     setShowPaymentModal(true);
   };
 
-  const handlePaymentUpdate = (
-    tripId: string, 
-    paymentData: {
-      paymentStatus: 'unpaid' | 'partial' | 'paid';
-      paymentAmount?: number;
-      paymentReceivedDate?: string;
-      paymentNotes?: string;
-      paymentMethod?: string;
-      bankReference?: string;
-    }
-  ) => {
+  const handlePaymentUpdate = (tripId: string, paymentData: {
+    paymentStatus: 'unpaid' | 'partial' | 'paid';
+    paymentAmount?: number;
+    paymentReceivedDate?: string;
+    paymentNotes?: string;
+    paymentMethod?: string;
+    bankReference?: string;
+  }) => {
     updateInvoicePayment(tripId, paymentData);
     setShowPaymentModal(false);
     setSelectedTrip(null);

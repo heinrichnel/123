@@ -159,6 +159,20 @@ export interface UserPermission {
   granted: boolean;
 }
 
+// Driver Behavior Event Type
+export interface DriverBehaviorEvent {
+  id: string;
+  driverName: string;
+  fleetNumber: string;
+  eventType: string; // e.g., 'Fuel Discrepancy', 'Speeding', etc.
+  description: string;
+  date: string;
+  resolved: boolean;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  notes?: string;
+}
+
 // Constants for form options
 export const CLIENTS = [
   "Teralco",

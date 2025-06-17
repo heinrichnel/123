@@ -4,20 +4,27 @@ import React, { useState } from 'react';
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import Card, { CardContent } from '../ui/Card';
+import Card, { CardContent, CardHeader } from '../ui/Card';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import {
+  X,
   AlertTriangle,
   TrendingDown,
+  TrendingUp,
+  FileText,
+  Download,
   Flag,
-  Printer,
   CheckCircle,
-  Fuel
+  Fuel,
+  Printer,
+  Calendar,
+  User,
+  FileSignature
 } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
-import { formatDate } from '../../utils/helpers';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 
 
 interface DieselRecord {
