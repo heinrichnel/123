@@ -220,9 +220,132 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
 
   return (
     <div className="space-y-6">
+      {/* Add Trip Form at the top */}
       <AddTripForm onAddTrip={handleAddTrip} />
-      {/* Dashboard UI layout remains unchanged — already included above */}
-      {/* No further updates needed unless you’re also seeing UI render issues */}
+
+      {/* Dashboard Overview & Analytics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>Total Trips</CardHeader>
+          <CardContent>{stats.totalTrips}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Revenue</CardHeader>
+          <CardContent>{formatCurrency(stats.zarRevenue, 'ZAR')}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Total Costs</CardHeader>
+          <CardContent>{formatCurrency(stats.zarCosts, 'ZAR')}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Net Profit</CardHeader>
+          <CardContent>{formatCurrency(stats.zarProfit, 'ZAR')}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Unresolved Flags</CardHeader>
+          <CardContent>{stats.unresolvedFlags.length}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Avg Resolution Time</CardHeader>
+          <CardContent>{stats.avgResolutionTime.toFixed(1)} days</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Ready for Completion</CardHeader>
+          <CardContent>{stats.tripsReadyForCompletion.length} trips</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Active Drivers</CardHeader>
+          <CardContent>{Object.keys(stats.driverStats).length}</CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>Quick Actions</CardHeader>
+          <CardContent>
+            <Button onClick={() => alert('View Trips with Unresolved Flags')}>View Trips with Unresolved Flags ({stats.tripsWithUnresolvedFlags.length})</Button>
+            <Button onClick={() => alert('View Trips Ready for Completion')}>View Trips Ready for Completion ({stats.tripsReadyForCompletion.length})</Button>
+            <Button onClick={() => alert('View Driver KPI Summary')}>View Driver KPI Summary</Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Trips with Unresolved Flags</CardHeader>
+          <CardContent>
+            {stats.tripsWithUnresolvedFlags.length === 0 ? 'No unresolved flags' : stats.tripsWithUnresolvedFlags.map(trip => (
+              <div key={trip.id}>{trip.fleetNumber} - {trip.driverName}</div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Trips Ready for Completion</CardHeader>
+          <CardContent>
+            {stats.tripsReadyForCompletion.length === 0 ? 'None' : stats.tripsReadyForCompletion.map(trip => (
+              <div key={trip.id} className="flex justify-between items-center">
+                <span>Fleet {trip.fleetNumber}<br />{trip.driverName}</span>
+                <span className="text-green-600 font-bold">{formatCurrency(trip.baseRevenue, trip.revenueCurrency)}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top Drivers & Most Flagged Cost Categories */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>Top 5 Drivers with Highest Flags</CardHeader>
+          <CardContent>
+            {stats.topDriversByFlags.length === 0 ? 'No flagged drivers' : stats.topDriversByFlags.map(([driver, d], idx) => (
+              <div key={driver} className="mb-2 p-2 rounded bg-red-50">
+                <span className="font-bold">{idx + 1}</span> {driver}<br />
+                <span className="text-xs">{d.trips} trips • {d.flagPercentage.toFixed(1)}% flag rate</span><br />
+                <span className="text-xs">{d.unresolvedFlags} unresolved - last 30 days: {d.flags}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>Most Flagged Cost Categories</CardHeader>
+          <CardContent>
+            {stats.topFlaggedCategories.length === 0 ? 'No flagged categories' : stats.topFlaggedCategories.map(([cat, count]) => (
+              <div key={cat}>{cat}: {count}</div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Driver Performance Summary */}
+      <Card>
+        <CardHeader>Driver Performance Summary</CardHeader>
+        <CardContent>
+          <table className="w-full text-xs">
+            <thead>
+              <tr>
+                <th className="text-left">Driver</th>
+                <th>Trips</th>
+                <th>Total Flags</th>
+                <th>Unresolved</th>
+                <th>Flag Rate %</th>
+                <th>Avg Profit/Trip</th>
+                <th>Performance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(stats.driverStats).map(([driver, d]) => (
+                <tr key={driver}>
+                  <td>{driver}</td>
+                  <td>{d.trips}</td>
+                  <td>{d.flags}</td>
+                  <td>{d.unresolvedFlags}</td>
+                  <td>{d.flagPercentage.toFixed(1)}%</td>
+                  <td>{formatCurrency(d.profitPerTrip, 'ZAR')}</td>
+                  <td>{Math.round(100 - d.flagPercentage)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
