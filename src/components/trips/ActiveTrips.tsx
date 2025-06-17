@@ -113,9 +113,10 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
                   <div className="flex space-x-2">
                     <Button size="sm" variant="outline" onClick={() => onView(trip)} icon={<Eye className="w-3 h-3" />}>View</Button>
                     <Button size="sm" variant="outline" onClick={() => handleEdit(trip)} icon={<Edit className="w-3 h-3" />}>Edit</Button>
-                    <Button size="sm" variant="danger" onClick={() => handleDelete(trip.id)} icon={<Trash2 className="w-3 h-3" />}>Delete</Button>
+                    <Button size="sm" variant="outline" onClick={() => handleDelete(trip.id)} icon={<Trash2 className="w-3 h-3" />}>Delete</Button>
                     <Button
                       size="sm"
+                      variant="success"
                       onClick={() => {
                         if (canComplete) {
                           onCompleteTrip(trip.id);
@@ -124,7 +125,6 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
                         }
                       }}
                       disabled={!canComplete}
-                      className={canComplete ? 'bg-green-500 text-white' : 'bg-gray-400 text-gray-700 cursor-not-allowed'}
                     >
                       Complete Trip
                     </Button>

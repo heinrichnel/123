@@ -127,7 +127,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           value={fleetNumber}
           onChange={e => setFleetNumber(e.target.value)}
           onBlur={() => handleBlur('fleetNumber')}
-          options={FLEET_NUMBERS.map(f => ({ label: f, value: f }))}
+          options={[{ label: 'Select fleet number...', value: '' }, ...FLEET_NUMBERS.map(f => ({ label: f, value: f }))]}
           required
           error={touched.fleetNumber && errors.fleetNumber}
         />
@@ -136,7 +136,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           value={client}
           onChange={e => setClient(e.target.value)}
           onBlur={() => handleBlur('client')}
-          options={CLIENTS.map(c => ({ label: c, value: c }))}
+          options={[{ label: 'Select client...', value: '' }, ...CLIENTS.map(c => ({ label: c, value: c }))]}
           required
           error={touched.client && errors.client}
         />
@@ -145,7 +145,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           value={driver}
           onChange={e => setDriver(e.target.value)}
           onBlur={() => handleBlur('driver')}
-          options={DRIVERS.map(d => ({ label: d, value: d }))}
+          options={[{ label: 'Select driver...', value: '' }, ...DRIVERS.map(d => ({ label: d, value: d }))]}
           required
           error={touched.driver && errors.driver}
         />

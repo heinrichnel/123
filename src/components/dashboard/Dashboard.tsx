@@ -8,7 +8,6 @@ import { Trip, CLIENTS, DRIVERS } from '../../types';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import { AddTripForm } from './AddTripForm'; // Named export – correct ✅
 
 // ─── Icons ───────────────────────────────────────────────────────
 import {
@@ -214,15 +213,8 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
     alert(message);
   };
 
-  const handleAddTrip = (trip: Trip) => {
-    setTripList(prev => [...prev, trip]);
-  };
-
   return (
     <div className="space-y-6">
-      {/* Add Trip Form at the top */}
-      <AddTripForm onAddTrip={handleAddTrip} />
-
       {/* Dashboard Overview & Analytics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
