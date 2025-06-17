@@ -8,5 +8,5 @@
 [[plugins]]
   package = "netlify-plugin-formspree"
 
-[[plugins]]
-  package = "netlify-plugin-cloudinary"
+# [[plugins]]
+# package = "netlify-plugin-cloudinary"
