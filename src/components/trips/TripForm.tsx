@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ─── Types & Constants ───────────────────────────────────────────
-import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES } from '../../types';
+import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES,FLEET_NUMBERS } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
 import { Input, Select, Textarea } from '../ui/FormElements';
@@ -122,7 +122,15 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           required
           error={touched.clientType && errors.clientType}
         />
-        <Input label="Fleet Number" value={fleetNumber} onChange={e => setFleetNumber(e.target.value)} onBlur={() => handleBlur('fleetNumber')} required error={touched.fleetNumber && errors.fleetNumber} />
+        <Select
+          label="Fleet Number"
+          value={fleetNumber}
+          onChange={e => setFleetNumber(e.target.value)}
+          onBlur={() => handleBlur('fleetNumber')}
+          options={FLEET_NUMBERS.map(f => ({ label: f, value: f }))}
+          required
+          error={touched.fleetNumber && errors.fleetNumber}
+        />
         <Select
           label="Client"
           value={client}

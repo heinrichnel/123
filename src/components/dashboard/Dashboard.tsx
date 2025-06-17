@@ -220,6 +220,7 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
 
   return (
     <div className="space-y-6">
+      <AddTripForm onAddTrip={handleAddTrip} />
       {/* Dashboard UI layout remains unchanged — already included above */}
       {/* No further updates needed unless you’re also seeing UI render issues */}
     </div>
