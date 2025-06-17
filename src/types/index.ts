@@ -1,13 +1,9 @@
-// -------------------- Interfaces --------------------
+// src/types/index.ts
 
+// Base types for the application
 export interface Attachment {
   id: string;
-}
-
-export interface SimpleCostData {
-  fuel: number;
-  tolls: number;
-  other: number;
+  // add other fields if needed
 }
 
 export interface CostData {
@@ -21,6 +17,7 @@ export interface CostData {
   flaggedAt?: string;
   resolvedAt?: string;
   attachments?: Attachment[];
+  // ...add any other fields used in your code
 }
 
 export interface DelayReason {
@@ -49,11 +46,59 @@ export interface Trip {
   additionalCosts: CostData[];
   delayReasons: DelayReason[];
   investigationNotes?: string;
+  plannedArrivalDateTime?: string;
+  actualArrivalDateTime?: string;
+  followUpHistory?: any[];
   status?: TripStatus;
-  attachments?: Attachment[];
-  [key: string]: any;
+  description?: string;
+  invoiceNumber?: string;
+  invoiceSubmittedAt?: string;
+  invoiceSubmittedBy?: string;
+  invoiceDueDate?: string;
+  paymentStatus?: "unpaid" | "partial" | "paid";
+  timelineValidated?: boolean;
+  timelineValidatedAt?: string;
+  autoCompletedAt?: string;
+  autoCompletedReason?: string;
+  completedAt?: string;
+  completedBy?: string;
+  invoiceDate?: string;
+  // ...add any other fields referenced in your code
 }
 
+// System Cost Configuration Types
+export interface SystemCostRates {
+  currency: "USD" | "ZAR";
+  perKmCosts: {
+    repairMaintenance: number;
+    tyreCost: number;
+  };
+  perDayCosts: {
+    gitInsurance: number;
+    shortTermInsurance: number;
+    trackingCost: number;
+    fleetManagementSystem: number;
+    licensing: number;
+    vidRoadworthy: number;
+    wages: number;
+    depreciation: number;
+  };
+  lastUpdated: string;
+  updatedBy: string;
+  effectiveDate: string;
+}
+
+export interface SystemCostReminder {
+  id: string;
+  nextReminderDate: string;
+  lastReminderDate?: string;
+  reminderFrequencyDays: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Audit Trail Types
 export interface TripEditRecord {
   id: string;
   tripId: string;
@@ -89,33 +134,9 @@ export interface TripDeletionRecord {
   totalCosts: number;
   costEntriesCount: number;
   flaggedItemsCount: number;
-  deletionComments?: string;
-  attachments?: Attachment[];
-  createdAt: string;
-  updatedAt: string;
 }
 
-export interface SystemCostRates {
-  currency: "USD" | "ZAR";
-  perKmCosts: {
-    repairMaintenance: number;
-    tyreCost: number;
-  };
-  perDayCosts: {
-    gitInsurance: number;
-    shortTermInsurance: number;
-    trackingCost: number;
-    fleetManagementSystem: number;
-    licensing: number;
-    vidRoadworthy: number;
-    wages: number;
-    depreciation: number;
-  };
-  lastUpdated: string;
-  updatedBy: string;
-  effectiveDate: string;
-}
-
+// User Permission Types
 export interface User {
   id: string;
   name: string;
@@ -125,51 +146,131 @@ export interface User {
 }
 
 export interface UserPermission {
-  action: string;
+  action:
+    | "create_trip"
+    | "edit_trip"
+    | "delete_trip"
+    | "complete_trip"
+    | "edit_completed_trip"
+    | "delete_completed_trip"
+    | "manage_investigations"
+    | "view_reports"
+    | "manage_system_costs";
   granted: boolean;
 }
 
-export interface InvoiceAging {
-  tripId: string;
-  daysOutstanding: number;
-}
-
-export interface MissedLoad {
-  id: string;
-  fleetNumber: string;
-  client: string;
-  reason: string;
-  createdAt: string;
-}
-
-export interface ActionItem {
-  id: string;
-  description: string;
-  status: string;
-  responsible: string;
-  dueDate: string;
-}
-
-// -------------------- Constants --------------------
-
-export const TRIP_EDIT_REASONS = [
-  "Incorrect Date",
-  "Client Request",
-  "Driver Change",
-  "Revenue Adjustment",
-  "Other",
+// Constants for form options
+export const CLIENTS = [
+  "Teralco",
+  "SPF",
+  "Deep Catch",
+  "DS Healthcare",
+  "HFR",
+  "Aspen",
+  "DP World",
+  "FX Logistics",
+  "Feedmix",
+  "ETG",
+  "National Foods",
+  "Mega Market",
+  "Crystal Candy",
+  "Trade Clear Logistics",
+  "Steainweg",
+  "Agrouth",
+  "Emmands",
+  "Falcon Gate",
+  "FreightCo",
+  "Tarondale",
+  "Makandi",
+  "FWZCargo",
+  "Kroots",
+  "Crake Valley",
+  "Cains",
+  "Big Dutcheman",
+  "Jacobs",
+  "Jacksons",
+  "Pacibrite",
+  "Vector",
+  "Du-roi",
+  "Sunside Seedlings",
+  "Massmart",
+  "Dacher (Pty) Ltd.",
+  "Shoprite",
+  "Lesaffre",
+  "Westfalia",
+  "Everfresh",
+  "Rezende Retail",
+  "Rezende Retail Vendor",
+  "Rezende Vendor",
+  "Bulawayo Retail",
+  "Bulawayo Retail Vendor",
+  "Bulawayo Vendor"
 ];
 
-export const TRIP_DELETION_REASONS = [
-  "Duplicate Entry",
-  "Error in Data",
-  "Client Cancelled",
-  "Other",
+export const DRIVERS = [
+  "Enock Mukonyerwa",
+  "Jonathan Bepete",
+  "Lovemore Qochiwe",
+  "Peter Farai",
+  "Phillimon Kwarire",
+  "Taurayi Vherenaisi",
+  "Adrian Moyo",
+  "Canaan Chipfurutse",
+  "Doctor Kondwani",
+  "Biggie Mugwa",
+  "Luckson Tanyanyiwa",
+  "Wellington Musumbu",
+  "Decide Murahwa"
 ];
+
+export const FLEET_NUMBERS = [
+  "4H",
+  "6H",
+  "UD",
+  "29H",
+  "30H",
+  "21H",
+  "22H",
+  "23H",
+  "24H",
+  "26H",
+  "28H",
+  "31H",
+  "32H",
+  "33H"
+];
+
+export const RESPONSIBLE_PERSONS = [
+  "Fleet Manager",
+  "Operations Manager",
+  "Safety Officer",
+  "Maintenance Supervisor",
+  "Driver Supervisor",
+  "Quality Assurance Manager",
+  "Compliance Officer",
+  "HR Manager",
+  "Finance Manager",
+  "General Manager",
+  "Enock Mukonyerwa",
+  "Jonathan Bepete",
+  "Lovemore Qochiwe",
+  "Peter Farai",
+  "Phillimon Kwarire",
+  "Taurayi Vherenaisi",
+  "Adrian Moyo",
+  "Canaan Chipfurutse",
+  "Doctor Kondwani",
+  "Biggie Mugwa",
+  "Luckson Tanyanyiwa",
+  "Wellington Musumbu",
+  "Decide Murahwa"
+];
+
+export const TRUCKS_WITH_PROBES = [...FLEET_NUMBERS];
 
 export const CLIENT_TYPES = [
   { value: "internal", label: "Internal Client" },
-  { value: "external", label: "External Client" },
+  { value: "external", label: "External Client" }
 ];
 
 export const ADDITIONAL_COST_TYPES = [
@@ -179,7 +280,7 @@ export const ADDITIONAL_COST_TYPES = [
   { value: "detention", label: "Detention" },
   { value: "escort_fees", label: "Escort Fees" },
   { value: "storage", label: "Storage" },
-  { value: "other", label: "Other" },
+  { value: "other", label: "Other" }
 ];
 
 export const DELAY_REASON_TYPES = [
@@ -189,124 +290,41 @@ export const DELAY_REASON_TYPES = [
   { value: "paperwork_issues", label: "Paperwork Issues" },
   { value: "weather_conditions", label: "Weather Conditions" },
   { value: "traffic", label: "Traffic" },
-  { value: "other", label: "Other" },
+  { value: "other", label: "Other" }
+];
+
+export const CONTACT_METHODS = [
+  { value: "call", label: "Phone Call" },
+  { value: "email", label: "Email" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "in_person", label: "In Person" },
+  { value: "sms", label: "SMS" }
 ];
 
 export const MISSED_LOAD_REASONS = [
-  "Breakdown",
-  "Delays",
-  "Client Cancellation",
-  "Driver Absent",
-  "Other",
+  { value: "no_vehicle", label: "No Vehicle Available" },
+  { value: "late_response", label: "Late Response" },
+  { value: "mechanical_issue", label: "Mechanical Issue" },
+  { value: "driver_unavailable", label: "Driver Unavailable" },
+  { value: "customer_cancelled", label: "Customer Cancelled" },
+  { value: "rate_disagreement", label: "Rate Disagreement" },
+  { value: "other", label: "Other" }
 ];
 
-export const AGING_THRESHOLDS = {
-  overdue: 30,
-  warning: 15,
-};
-
-export const FOLLOW_UP_THRESHOLDS = {
-  red: 10,
-  orange: 5,
-};
-
-export const SYSTEM_COST_RATES = {
-  USD: {
-    currency: "USD",
-    perKmCosts: { repairMaintenance: 0, tyreCost: 0 },
-    perDayCosts: {
-      gitInsurance: 0,
-      shortTermInsurance: 0,
-      trackingCost: 0,
-      fleetManagementSystem: 0,
-      licensing: 0,
-      vidRoadworthy: 0,
-      wages: 0,
-      depreciation: 0,
-    },
-    lastUpdated: "",
-    updatedBy: "",
-    effectiveDate: "",
-  },
-  ZAR: {
-    currency: "ZAR",
-    perKmCosts: { repairMaintenance: 0, tyreCost: 0 },
-    perDayCosts: {
-      gitInsurance: 0,
-      shortTermInsurance: 0,
-      trackingCost: 0,
-      fleetManagementSystem: 0,
-      licensing: 0,
-      vidRoadworthy: 0,
-      wages: 0,
-      depreciation: 0,
-    },
-    lastUpdated: "",
-    updatedBy: "",
-    effectiveDate: "",
-  },
-};
-
-export const FLEET_NUMBERS = [
-  "TRUCK-001", "TRUCK-002", "TRUCK-003", "TRUCK-004", "TRUCK-005"
+export const DRIVER_BEHAVIOR_EVENT_TYPES = [
+  { value: "speeding", label: "Speeding", severity: "medium", points: 5 },
+  { value: "harsh_braking", label: "Harsh Braking", severity: "medium", points: 3 },
+  { value: "harsh_acceleration", label: "Harsh Acceleration", severity: "medium", points: 3 },
+  { value: "idling", label: "Excessive Idling", severity: "low", points: 1 },
+  { value: "route_deviation", label: "Route Deviation", severity: "medium", points: 4 },
+  { value: "unauthorized_stop", label: "Unauthorized Stop", severity: "medium", points: 4 },
+  { value: "fatigue_alert", label: "Fatigue Alert", severity: "high", points: 8 },
+  { value: "phone_usage", label: "Phone Usage While Driving", severity: "high", points: 10 },
+  { value: "seatbelt_violation", label: "Seatbelt Violation", severity: "high", points: 7 },
+  { value: "other", label: "Other", severity: "medium", points: 2 }
 ];
 
-export const CLIENTS = [
-  "Client A", "Client B", "Client C", "Client D"
+export const CAR_INCIDENT_TYPES = [
+  { value: "accident", label: "Accident" },
+  { value: "traffic_violation", label: "Traffic Violation" }
 ];
-
-export const TRUCKS_WITH_PROBES = [
-  "TRUCK-001",
-  "TRUCK-002",
-  "TRUCK-007",
-  "TRUCK-010"
-];
-
-export const DRIVERS = [
-  "John Doe",
-  "Jane Smith",
-  "Mike Brown",
-  "Susan Lee"
-];
-
-export const COST_CATEGORIES = [
-  "Fuel",
-  "Tolls",
-  "Maintenance",
-  "Repairs",
-  "Tyres",
-  "Licensing",
-  "Insurance",
-  "Tracking",
-  "Fines",
-  "Other"
-];
-
-export const RESPONSIBLE_PERSONS = [
-  "Fleet Manager",
-  "Driver",
-  "Operations",
-  "Finance",
-  "Maintenance",
-  "Security",
-  "Other"
-];
-
-export const DEFAULT_SYSTEM_COST_RATES: Record<"USD" | "ZAR", SystemCostRates> = SYSTEM_COST_RATES;
-export const DEFAULT_SYSTEM_COST_RATES_ZAR: SystemCostRates = {
-  currency: "ZAR",
-  perKmCosts: { repairMaintenance: 0, tyreCost: 0 },
-  perDayCosts: {
-    gitInsurance: 0,
-    shortTermInsurance: 0,
-    trackingCost: 0,
-    fleetManagementSystem: 0,
-    licensing: 0,
-    vidRoadworthy: 0,
-    wages: 0,
-    depreciation: 0,
-  },
-  lastUpdated: "",
-  updatedBy: "",
-  effectiveDate: "",
-};
