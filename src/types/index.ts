@@ -397,3 +397,13 @@ export const DEFAULT_SYSTEM_COST_RATES: Record<'USD' | 'ZAR', SystemCostRates> =
     effectiveDate: '',
   },
 };
+
+export const DEFAULT_SYSTEM_COST_REMINDER: SystemCostReminder = {
+  id: 'default',
+  nextReminderDate: new Date().toISOString(),
+  lastReminderDate: '',
+  reminderFrequencyDays: 30,
+  isActive: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
