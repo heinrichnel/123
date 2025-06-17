@@ -328,3 +328,72 @@ export const CAR_INCIDENT_TYPES = [
   { value: "accident", label: "Accident" },
   { value: "traffic_violation", label: "Traffic Violation" }
 ];
+
+export const TRIP_EDIT_REASONS = [
+  "Correction",
+  "Update",
+  "Admin Edit",
+  "Other"
+];
+
+export const TRIP_DELETION_REASONS = [
+  "Duplicate",
+  "Error",
+  "Cancelled",
+  "Other"
+];
+
+export const AGING_THRESHOLDS = [7, 14, 30, 60, 90];
+export const FOLLOW_UP_THRESHOLDS = [3, 7, 14];
+
+export const COST_CATEGORIES = [
+  "Fuel",
+  "Tolls",
+  "Maintenance",
+  "Repairs",
+  "Insurance",
+  "Other"
+];
+
+export const DEFAULT_SYSTEM_COST_RATES: Record<'USD' | 'ZAR', SystemCostRates> = {
+  USD: {
+    currency: 'USD',
+    perKmCosts: {
+      repairMaintenance: 0.15,
+      tyreCost: 0.10,
+    },
+    perDayCosts: {
+      gitInsurance: 5,
+      shortTermInsurance: 3,
+      trackingCost: 2,
+      fleetManagementSystem: 1,
+      licensing: 1,
+      vidRoadworthy: 0.5,
+      wages: 20,
+      depreciation: 10,
+    },
+    lastUpdated: '',
+    updatedBy: '',
+    effectiveDate: '',
+  },
+  ZAR: {
+    currency: 'ZAR',
+    perKmCosts: {
+      repairMaintenance: 2.5,
+      tyreCost: 1.8,
+    },
+    perDayCosts: {
+      gitInsurance: 80,
+      shortTermInsurance: 60,
+      trackingCost: 40,
+      fleetManagementSystem: 20,
+      licensing: 15,
+      vidRoadworthy: 10,
+      wages: 300,
+      depreciation: 150,
+    },
+    lastUpdated: '',
+    updatedBy: '',
+    effectiveDate: '',
+  },
+};

@@ -79,14 +79,14 @@ export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   label?: string;
 }
 
-export const TextArea: React.FC<TextAreaProps> = ({ label, ...props }) => (
+export const TextArea = ({ label, ...props }: TextAreaProps) => (
   <div className="flex flex-col">
     {label && <label className="mb-1 font-medium">{label}</label>}
     <textarea {...props} className="border rounded p-2 focus:ring" />
   </div>
 );
 
-export { TextArea };
+export { TextArea as Textarea };
 
 // Default export optional
 export default {
