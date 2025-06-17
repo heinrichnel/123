@@ -11,8 +11,17 @@ import {
   ActionItem,
   CARReport,
 } from "../types/index";
-import { doc, updateDoc, collection, addDoc, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase"; // adjust path if needed
+import {
+  doc,
+  updateDoc,
+  collection,
+  addDoc,
+  onSnapshot,
+  enableNetwork,
+  disableNetwork,
+  deleteDoc,
+} from "firebase/firestore";
+import { db } from "../firebase";
 import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
 
 interface AppContextType {
@@ -72,13 +81,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const handleOnline = () => {
       setConnectionStatus('reconnecting');
-      enableFirestoreNetwork()
+      enableNetwork(db)
         .then(() => setConnectionStatus('connected'))
         .catch(() => setConnectionStatus('disconnected'));
     };
     const handleOffline = () => {
       setConnectionStatus('disconnected');
-      disableFirestoreNetwork().catch(console.error);
+      disableNetwork(db).catch(console.error);
     };
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
