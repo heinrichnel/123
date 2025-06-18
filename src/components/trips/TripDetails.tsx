@@ -88,6 +88,11 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   const [showTripPlanning, setShowTripPlanning] = useState(false);
   const [editingCost, setEditingCost] = useState<CostEntry | undefined>();
 
+  // Ensure trip has costs array
+  if (!trip.costs) {
+    trip.costs = [];
+  }
+
   // Enhanced handleAddCost with file support
   const handleAddCost = (costData: Omit<CostEntry, 'id' | 'attachments'>, files?: FileList) => {
     try {
@@ -190,7 +195,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
         updateTrip({
           ...trip,
           status: 'completed',
-          completedAt: new Date().toISOString().split('T')[0],
+          completedAt: new Date().toISOString(),
           completedBy: 'Current User' // In a real app, this would be the logged-in user
         });
         
@@ -396,7 +401,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
               </h4>
               <p className="text-sm text-blue-700 mt-1">
                 Invoice #{trip.invoiceNumber} submitted on {formatDateTime(trip.invoiceSubmittedAt!)} by {trip.invoiceSubmittedBy}. 
-                Due date: {trip.invoiceDueDate}. Payment status: {trip.paymentStatus?.toUpperCase()}.
+                Due date: {trip.invoiceDueDate}. Payment status: {trip.paymentStatus?.toUpperCase() || 'UNPAID'}.
               </p>
               {trip.timelineValidated && (
                 <p className="text-sm text-blue-600 mt-1">
@@ -671,13 +676,13 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
                     <div className="flex justify-between text-sm">
                       <span>With receipts:</span>
                       <span className="text-green-600 font-medium">
-                        {trip.costs.filter(c => c.attachments.length > 0).length}
+                        {trip.costs.filter(c => c.attachments && c.attachments.length > 0).length}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Missing receipts:</span>
                       <span className="text-red-600 font-medium">
-                        {trip.costs.filter(c => c.attachments.length === 0).length}
+                        {trip.costs.filter(c => !c.attachments || c.attachments.length === 0).length}
                       </span>
                     </div>
                   </div>
