@@ -528,7 +528,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   step="0.01"
                   min="0"
                   value={formData.perKmCosts.repairMaintenance.toString()}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('perKmCosts', 'repairMaintenance', e.target.value)}
+                  onChange={(value: string) => handleChange('perKmCosts', 'repairMaintenance', value)}
                   error={errors['perKmCosts.repairMaintenance']}
                 />
                 <Input
@@ -537,7 +537,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   step="0.01"
                   min="0"
                   value={formData.perKmCosts.tyreCost.toString()}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('perKmCosts', 'tyreCost', e.target.value)}
+                  onChange={(value: string) => handleChange('perKmCosts', 'tyreCost', value)}
                   error={errors['perKmCosts.tyreCost']}
                 />
               </div>
@@ -555,7 +555,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                     step="0.01"
                     min="0"
                     value={value.toString()}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('perDayCosts', key, e.target.value)}
+                    onChange={(value: string) => handleChange('perDayCosts', key, value)}
                     error={errors[`perDayCosts.${key}`]}
                   />
                 ))}
@@ -682,7 +682,7 @@ const ReminderConfigForm: React.FC<{
           min="1"
           max="365"
           value={frequency}
-          onChange={(e) => setFrequency(e.target.value)}
+          onChange={(value: string) => setFrequency(value)}
           error={errors.frequency}
           disabled={!isActive}
         />
