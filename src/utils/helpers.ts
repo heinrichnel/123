@@ -3,6 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 
+// -------------------- ID Generation --------------------
+
+export const generateTripId = (): string => {
+  return uuidv4();
+};
+
 // -------------------- Date Formatting --------------------
 
 export const formatDate = (date: string | Date): string => {
