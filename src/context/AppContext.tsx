@@ -26,6 +26,10 @@ import {
   deleteDoc,
   getDoc,
   setDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
@@ -52,6 +56,7 @@ interface AppContextType {
   addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => Promise<string>;
   updateTrip: (trip: Trip) => Promise<void>;
   deleteTrip: (id: string) => Promise<void>;
+  bulkDeleteTrips: (ids: string[]) => Promise<void>;
   getTrip: (id: string) => Trip | undefined;
 
   addCostEntry: (
@@ -272,10 +277,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const deleteTrip = async (id: string): Promise<void> => {
     try {
+      // Delete from Firestore first
       await deleteDoc(doc(db, "trips", id));
+      
+      // Then update local state
       setTrips(prev => prev.filter(trip => trip.id !== id));
     } catch (error) {
       console.error("Error deleting trip:", error);
+      throw error;
+    }
+  };
+
+  // New bulk delete function
+  const bulkDeleteTrips = async (ids: string[]): Promise<void> => {
+    try {
+      // Use a batch write for better performance and atomicity
+      const batch = writeBatch(db);
+      
+      // Add each trip to the batch for deletion
+      ids.forEach(id => {
+        const tripRef = doc(db, "trips", id);
+        batch.delete(tripRef);
+      });
+      
+      // Commit the batch
+      await batch.commit();
+      
+      // Update local state after successful Firestore operation
+      setTrips(prev => prev.filter(trip => !ids.includes(trip.id)));
+      
+    } catch (error) {
+      console.error("Error bulk deleting trips:", error);
       throw error;
     }
   };
@@ -331,8 +363,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const cleanCostEntry = removeUndefinedValues(newCostEntry);
       const cleanCosts = updatedCosts.map(cost => removeUndefinedValues(cost));
       
-      // Use setDoc with merge to handle cases where the trip document doesn't exist in Firestore
-      await setDoc(doc(db, "trips", tripId), { costs: cleanCosts }, { merge: true });
+      // Update the trip document in Firestore
+      await updateDoc(doc(db, "trips", tripId), { costs: cleanCosts });
       
       // Update local state only after successful Firestore operation
       setTrips(prev => 
@@ -1121,6 +1153,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addTrip,
     updateTrip,
     deleteTrip,
+    bulkDeleteTrips,
     getTrip,
     addCostEntry,
     updateCostEntry,

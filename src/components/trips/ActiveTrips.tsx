@@ -8,9 +8,10 @@ import { Trip, CLIENTS, DRIVERS, FLEET_NUMBERS } from '../../types';
 import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Edit, Trash2, Eye, AlertTriangle, Upload, Filter, Calendar } from 'lucide-react';
+import { Edit, Trash2, Eye, AlertTriangle, Upload, Filter, Calendar, CheckSquare, Square, CheckCheck } from 'lucide-react';
 import { formatCurrency, calculateTotalCosts, getFlaggedCostsCount, formatDateForHeader, sortTripsByLoadingDate } from '../../utils/helpers';
 import LoadImportModal from './LoadImportModal';
+import { useAppContext } from '../../context/AppContext';
 
 
 interface ActiveTripsProps {
@@ -22,11 +23,14 @@ interface ActiveTripsProps {
 }
 
 const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onView, onCompleteTrip }) => {
+  const { bulkDeleteTrips } = useAppContext();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [filterFleet, setFilterFleet] = useState<string>('');
   const [filterDriver, setFilterDriver] = useState<string>('');
   const [filterClient, setFilterClient] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
+  const [selectMode, setSelectMode] = useState(false);
 
   const openImportModal = () => setIsImportModalOpen(true);
   const closeImportModal = () => setIsImportModalOpen(false);
@@ -39,6 +43,45 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
     const trip = trips.find(t => t.id === id);
     if (trip && confirm(`Delete trip for fleet ${trip.fleetNumber}? This cannot be undone.`)) {
       onDelete(id);
+    }
+  };
+
+  // Bulk delete handler
+  const handleBulkDelete = () => {
+    if (selectedTripIds.length === 0) {
+      alert('No trips selected for deletion');
+      return;
+    }
+
+    if (confirm(`Delete ${selectedTripIds.length} selected trips? This cannot be undone.`)) {
+      bulkDeleteTrips(selectedTripIds)
+        .then(() => {
+          alert(`Successfully deleted ${selectedTripIds.length} trips`);
+          setSelectedTripIds([]);
+          setSelectMode(false);
+        })
+        .catch(error => {
+          console.error('Error deleting trips:', error);
+          alert(`Error deleting trips: ${error.message}`);
+        });
+    }
+  };
+
+  // Toggle trip selection
+  const toggleTripSelection = (tripId: string) => {
+    setSelectedTripIds(prev => 
+      prev.includes(tripId)
+        ? prev.filter(id => id !== tripId)
+        : [...prev, tripId]
+    );
+  };
+
+  // Toggle select all trips
+  const toggleSelectAll = () => {
+    if (selectedTripIds.length === filteredTrips.length) {
+      setSelectedTripIds([]);
+    } else {
+      setSelectedTripIds(filteredTrips.map(trip => trip.id));
     }
   };
 
@@ -82,6 +125,22 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
           >
             {showFilters ? 'Hide Filters' : 'Show Filters'}
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => setSelectMode(!selectMode)}
+            icon={selectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+          >
+            {selectMode ? 'Exit Selection' : 'Select Trips'}
+          </Button>
+          {selectMode && selectedTripIds.length > 0 && (
+            <Button 
+              variant="danger" 
+              onClick={handleBulkDelete}
+              icon={<Trash2 className="w-4 h-4" />}
+            >
+              Delete Selected ({selectedTripIds.length})
+            </Button>
+          )}
           <Button icon={<Upload className="w-4 h-4" />} onClick={openImportModal}>
             Import Trips
           </Button>
@@ -153,6 +212,35 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
         </div>
       )}
 
+      {/* Bulk selection header */}
+      {selectMode && filteredTrips.length > 0 && (
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={toggleSelectAll}
+              icon={selectedTripIds.length === filteredTrips.length ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+            >
+              {selectedTripIds.length === filteredTrips.length ? 'Deselect All' : 'Select All'}
+            </Button>
+            <span className="text-blue-700">
+              {selectedTripIds.length} of {filteredTrips.length} trips selected
+            </span>
+          </div>
+          {selectedTripIds.length > 0 && (
+            <Button 
+              size="sm" 
+              variant="danger" 
+              onClick={handleBulkDelete}
+              icon={<Trash2 className="w-4 h-4" />}
+            >
+              Delete Selected
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Display trips grouped by date */}
       <div className="space-y-8">
         {Object.entries(tripsByDate).map(([date, dateTrips]) => (
@@ -173,11 +261,33 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
                   (cost) => cost.isFlagged && cost.investigationStatus !== 'resolved'
                 );
                 const canComplete = !unresolvedFlags;
+                const isSelected = selectedTripIds.includes(trip.id);
 
                 return (
-                  <Card key={trip.id} className="hover:shadow-md transition-shadow">
+                  <Card 
+                    key={trip.id} 
+                    className={`hover:shadow-md transition-shadow ${
+                      selectMode && isSelected ? 'border-2 border-blue-500 bg-blue-50' : ''
+                    }`}
+                  >
                     <CardHeader
-                      title={`Fleet ${trip.fleetNumber} - ${trip.route}`}
+                      title={
+                        <div className="flex items-center">
+                          {selectMode && (
+                            <div 
+                              className="mr-3 cursor-pointer" 
+                              onClick={() => toggleTripSelection(trip.id)}
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-5 h-5 text-blue-600" />
+                              ) : (
+                                <Square className="w-5 h-5 text-gray-400" />
+                              )}
+                            </div>
+                          )}
+                          <span>{`Fleet ${trip.fleetNumber} - ${trip.route}`}</span>
+                        </div>
+                      }
                       subtitle={`${trip.clientName} • ${trip.startDate} to ${trip.endDate}`}
                     />
                     <CardContent>
