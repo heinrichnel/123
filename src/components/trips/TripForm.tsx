@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ─── Types & Constants ───────────────────────────────────────────
-import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES,FLEET_NUMBERS } from '../../types';
+import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES, FLEET_NUMBERS } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
 import { Input, Select, TextArea } from '../ui/FormElements';
@@ -16,68 +16,92 @@ interface TripFormProps {
 }
 
 const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
-  const [fleetNumber, setFleetNumber] = useState('');
-  const [client, setClient] = useState('');
-  const [driver, setDriver] = useState('');
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
-  const [distanceKm, setDistanceKm] = useState(0);
-  const [baseRevenue, setBaseRevenue] = useState(0);
-  const [revenueCurrency, setRevenueCurrency] = useState<'USD' | 'ZAR'>('ZAR');
-  const [tripNotes, setTripNotes] = useState('');
-  const [clientType, setClientType] = useState<'internal' | 'external'>('external');
-  const [route, setRoute] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [tripDescription, setTripDescription] = useState('');
+  const [formData, setFormData] = useState({
+    fleetNumber: '',
+    clientName: '',
+    driverName: '',
+    route: '',
+    startDate: '',
+    endDate: '',
+    distanceKm: '',
+    baseRevenue: '',
+    revenueCurrency: 'ZAR' as 'USD' | 'ZAR',
+    clientType: 'external' as 'internal' | 'external',
+    tripDescription: '',
+    tripNotes: ''
+  });
+  
   const [touched, setTouched] = useState<{[key: string]: boolean}>({});
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (trip) {
-      setFleetNumber(trip.fleetNumber || '');
-      setClient(trip.clientName || '');
-      setDriver(trip.driverName || '');
-      setRoute(trip.route || '');
-      setStartDate(trip.startDate || '');
-      setEndDate(trip.endDate || '');
-      setClientType(trip.clientType || 'external');
-      setDistanceKm(trip.distanceKm || 0);
-      setBaseRevenue(trip.baseRevenue || 0);
-      setRevenueCurrency(trip.revenueCurrency || 'ZAR');
-      setTripDescription(trip.tripDescription || '');
-      setTripNotes(trip.tripNotes || '');
+      setFormData({
+        fleetNumber: trip.fleetNumber || '',
+        clientName: trip.clientName || '',
+        driverName: trip.driverName || '',
+        route: trip.route || '',
+        startDate: trip.startDate || '',
+        endDate: trip.endDate || '',
+        distanceKm: trip.distanceKm ? String(trip.distanceKm) : '',
+        baseRevenue: trip.baseRevenue ? String(trip.baseRevenue) : '',
+        revenueCurrency: trip.revenueCurrency || 'ZAR',
+        clientType: trip.clientType || 'external',
+        tripDescription: trip.tripDescription || '',
+        tripNotes: trip.tripNotes || ''
+      });
     }
   }, [trip]);
 
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
-    if (!clientType) newErrors.clientType = 'Client Type is required';
-    if (!String(fleetNumber ?? '').trim()) newErrors.fleetNumber = 'Fleet Number is required';
-    if (!String(client ?? '').trim()) newErrors.client = 'Client is required';
-    if (!String(driver ?? '').trim()) newErrors.driver = 'Driver is required';
-    if (!String(route ?? '').trim()) newErrors.route = 'Route is required';
-    if (!startDate) newErrors.startDate = 'Start Date is required';
-    if (!endDate) {
+    
+    if (!formData.clientType) newErrors.clientType = 'Client Type is required';
+    if (!formData.fleetNumber) newErrors.fleetNumber = 'Fleet Number is required';
+    if (!formData.clientName) newErrors.clientName = 'Client is required';
+    if (!formData.driverName) newErrors.driverName = 'Driver is required';
+    if (!formData.route) newErrors.route = 'Route is required';
+    if (!formData.startDate) newErrors.startDate = 'Start Date is required';
+    
+    if (!formData.endDate) {
       newErrors.endDate = 'End Date is required';
-    } else if (startDate && endDate < startDate) {
+    } else if (formData.startDate && formData.endDate < formData.startDate) {
       newErrors.endDate = 'End Date cannot be earlier than Start Date';
     }
-    if (!distanceKm || distanceKm <= 0) newErrors.distanceKm = 'Distance must be greater than 0';
-    if (!baseRevenue || baseRevenue <= 0) newErrors.baseRevenue = 'Base Revenue must be greater than 0';
-    if (!revenueCurrency) newErrors.revenueCurrency = 'Currency is required';
-    if (!String(tripDescription ?? '').trim()) newErrors.tripDescription = 'Trip Description is required';
+    
+    if (!formData.distanceKm || parseFloat(formData.distanceKm) <= 0) {
+      newErrors.distanceKm = 'Distance must be greater than 0';
+    }
+    
+    if (!formData.baseRevenue || parseFloat(formData.baseRevenue) <= 0) {
+      newErrors.baseRevenue = 'Base Revenue must be greater than 0';
+    }
+    
+    if (!formData.revenueCurrency) newErrors.revenueCurrency = 'Currency is required';
+    if (!formData.tripDescription) newErrors.tripDescription = 'Trip Description is required';
+    
     return newErrors;
   };
 
   useEffect(() => {
     setErrors(validate());
-  }, [clientType, fleetNumber, client, driver, route, startDate, endDate, distanceKm, baseRevenue, revenueCurrency, tripDescription]);
+  }, [formData]);
 
   const isFormValid = Object.keys(errors).length === 0;
 
   const handleBlur = (field: string) => {
     setTouched(t => ({ ...t, [field]: true }));
+  };
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,8 +111,8 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
     setTouched({
       clientType: true,
       fleetNumber: true,
-      client: true,
-      driver: true,
+      clientName: true,
+      driverName: true,
       route: true,
       startDate: true,
       endDate: true,
@@ -97,20 +121,22 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
       revenueCurrency: true,
       tripDescription: true,
     });
+    
     if (Object.keys(validationErrors).length > 0) return;
+    
     onSubmit({
-      clientType,
-      fleetNumber: String(fleetNumber ?? '').trim(),
-      clientName: String(client ?? '').trim(),
-      driverName: String(driver ?? '').trim(),
-      route: String(route ?? '').trim(),
-      startDate,
-      endDate,
-      distanceKm,
-      baseRevenue,
-      revenueCurrency,
-      tripDescription: String(tripDescription ?? '').trim(),
-      tripNotes: String(tripNotes ?? ''),
+      clientType: formData.clientType,
+      fleetNumber: formData.fleetNumber,
+      clientName: formData.clientName,
+      driverName: formData.driverName,
+      route: formData.route,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      distanceKm: parseFloat(formData.distanceKm),
+      baseRevenue: parseFloat(formData.baseRevenue),
+      revenueCurrency: formData.revenueCurrency,
+      tripDescription: formData.tripDescription,
+      tripNotes: formData.tripNotes
     });
   };
 
@@ -119,65 +145,107 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
       <div className="grid grid-cols-2 gap-4">
         <Select
           label="Client Type"
-          value={clientType}
-          onChange={val => setClientType(val as 'internal' | 'external')}
+          value={formData.clientType}
+          onChange={(value) => handleChange('clientType', value)}
           onBlur={() => handleBlur('clientType')}
           options={CLIENT_TYPES}
           required
           error={touched.clientType && errors.clientType}
         />
+        
         <Select
           label="Fleet Number"
-          value={fleetNumber}
-          onChange={val => setFleetNumber(val)}
+          value={formData.fleetNumber}
+          onChange={(value) => handleChange('fleetNumber', value)}
           onBlur={() => handleBlur('fleetNumber')}
-          options={[{ label: 'Select fleet number...', value: '' }, ...FLEET_NUMBERS.map(f => ({ label: f, value: f }))]}
+          options={[
+            { label: 'Select fleet number...', value: '' }, 
+            ...FLEET_NUMBERS.map(f => ({ label: f, value: f }))
+          ]}
           required
           error={touched.fleetNumber && errors.fleetNumber}
         />
+        
         <Select
           label="Client"
-          value={client}
-          onChange={val => setClient(val)}
-          onBlur={() => handleBlur('client')}
-          options={[{ label: 'Select client...', value: '' }, ...CLIENTS.map(c => ({ label: c, value: c }))]}
+          value={formData.clientName}
+          onChange={(value) => handleChange('clientName', value)}
+          onBlur={() => handleBlur('clientName')}
+          options={[
+            { label: 'Select client...', value: '' }, 
+            ...CLIENTS.map(c => ({ label: c, value: c }))
+          ]}
           required
-          error={touched.client && errors.client}
+          error={touched.clientName && errors.clientName}
         />
+        
         <Select
           label="Driver"
-          value={driver}
-          onChange={val => setDriver(val)}
-          onBlur={() => handleBlur('driver')}
-          options={[{ label: 'Select driver...', value: '' }, ...DRIVERS.map(d => ({ label: d, value: d }))]}
+          value={formData.driverName}
+          onChange={(value) => handleChange('driverName', value)}
+          onBlur={() => handleBlur('driverName')}
+          options={[
+            { label: 'Select driver...', value: '' }, 
+            ...DRIVERS.map(d => ({ label: d, value: d }))
+          ]}
           required
-          error={touched.driver && errors.driver}
+          error={touched.driverName && errors.driverName}
         />
-        <Input label="Route (semicolon separated)" value={route} onChange={val => setRoute(val)} onBlur={() => handleBlur('route')} required error={touched.route && errors.route} placeholder="e.g. Harare;Bulawayo;Gweru" />
-        <Input label="Start Date" type="date" value={startDate} onChange={val => setStartDate(val)} onBlur={() => handleBlur('startDate')} required error={touched.startDate && errors.startDate} />
-        <Input label="End Date" type="date" value={endDate} onChange={val => setEndDate(val)} onBlur={() => handleBlur('endDate')} required error={touched.endDate && errors.endDate} />
+        
+        <Input 
+          label="Route (semicolon separated)" 
+          value={formData.route} 
+          onChange={(value) => handleChange('route', value)} 
+          onBlur={() => handleBlur('route')} 
+          required 
+          error={touched.route && errors.route} 
+          placeholder="e.g. Harare;Bulawayo;Gweru" 
+        />
+        
+        <Input 
+          label="Start Date" 
+          type="date" 
+          value={formData.startDate} 
+          onChange={(value) => handleChange('startDate', value)} 
+          onBlur={() => handleBlur('startDate')} 
+          required 
+          error={touched.startDate && errors.startDate} 
+        />
+        
+        <Input 
+          label="End Date" 
+          type="date" 
+          value={formData.endDate} 
+          onChange={(value) => handleChange('endDate', value)} 
+          onBlur={() => handleBlur('endDate')} 
+          required 
+          error={touched.endDate && errors.endDate} 
+        />
+        
         <Input
           label="Distance (KM)"
           type="number"
-          value={distanceKm === 0 ? '' : distanceKm}
-          onChange={val => setDistanceKm(val === '' ? 0 : Number(val))}
+          value={formData.distanceKm}
+          onChange={(value) => handleChange('distanceKm', value)}
           onBlur={() => handleBlur('distanceKm')}
           required
           error={touched.distanceKm && errors.distanceKm}
         />
+        
         <Input
           label="Base Revenue"
           type="number"
-          value={baseRevenue === 0 ? '' : baseRevenue}
-          onChange={val => setBaseRevenue(val === '' ? 0 : Number(val))}
+          value={formData.baseRevenue}
+          onChange={(value) => handleChange('baseRevenue', value)}
           onBlur={() => handleBlur('baseRevenue')}
           required
           error={touched.baseRevenue && errors.baseRevenue}
         />
+        
         <Select
           label="Revenue Currency"
-          value={revenueCurrency}
-          onChange={val => setRevenueCurrency(val as 'USD' | 'ZAR')}
+          value={formData.revenueCurrency}
+          onChange={(value) => handleChange('revenueCurrency', value)}
           onBlur={() => handleBlur('revenueCurrency')}
           options={[
             { label: 'USD', value: 'USD' },
@@ -187,26 +255,32 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           error={touched.revenueCurrency && errors.revenueCurrency}
         />
       </div>
+      
       <TextArea
         label="Trip Notes"
-        value={tripNotes || ''}
-        onChange={e => setTripNotes(typeof e === 'string' ? e : e.target?.value || '')}
+        value={formData.tripNotes}
+        onChange={(value) => handleChange('tripNotes', value)}
         placeholder="Notes about this trip..."
         rows={3}
       />
+      
       <TextArea
         label="Trip Description"
-        value={tripDescription || ''}
-        onChange={e => setTripDescription(typeof e === 'string' ? e : e.target?.value || '')}
+        value={formData.tripDescription}
+        onChange={(value) => handleChange('tripDescription', value)}
         placeholder="Description of the trip..."
         rows={3}
         required
+        error={touched.tripDescription && errors.tripDescription}
       />
+      
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit" disabled={!isFormValid}>{trip ? 'Update Trip' : 'Create Trip'}</Button>
+        <Button type="submit" disabled={!isFormValid}>
+          {trip ? 'Update Trip' : 'Create Trip'}
+        </Button>
       </div>
     </form>
   );

@@ -75,7 +75,7 @@ interface AppContextType {
 
   // Driver Behavior Events
   driverBehaviorEvents: DriverBehaviorEvent[];
-  addDriverBehaviorEvent: (event: Omit<DriverBehaviorEvent, 'id'>) => Promise<void>;
+  addDriverBehaviorEvent: (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList) => Promise<void>;
   updateDriverBehaviorEvent: (event: DriverBehaviorEvent) => Promise<void>;
   deleteDriverBehaviorEvent: (id: string) => Promise<void>;
 
@@ -84,8 +84,8 @@ interface AppContextType {
 
   // CAR Reports
   carReports: CARReport[];
-  addCARReport: (report: Omit<CARReport, 'id'>) => Promise<void>;
-  updateCARReport: (report: CARReport) => Promise<void>;
+  addCARReport: (report: Omit<CARReport, 'id'>, files?: FileList) => Promise<void>;
+  updateCARReport: (report: CARReport, files?: FileList) => Promise<void>;
   deleteCARReport: (id: string) => Promise<void>;
 
   // System Cost Rates (following centralized context pattern)
@@ -97,6 +97,7 @@ interface AppContextType {
   addActionItem: (item: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => Promise<string>;
   updateActionItem: (item: ActionItem) => Promise<void>;
   deleteActionItem: (id: string) => Promise<void>;
+  addActionItemComment: (itemId: string, comment: string) => Promise<void>;
 
   connectionStatus: "connected" | "disconnected" | "reconnecting";
   isOnline: boolean;
@@ -369,7 +370,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Driver Behavior Event CRUD
-  const addDriverBehaviorEvent = async (event: Omit<DriverBehaviorEvent, 'id'>) => {
+  const addDriverBehaviorEvent = async (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList) => {
     await addDriverBehaviorEventToFirebase(event);
   };
   const updateDriverBehaviorEvent = async (event: DriverBehaviorEvent) => {
@@ -380,10 +381,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // CAR Report CRUD
-  const addCARReport = async (report: Omit<CARReport, 'id'>) => {
+  const addCARReport = async (report: Omit<CARReport, 'id'>, files?: FileList) => {
     await addCARReportToFirebase(report);
   };
-  const updateCARReport = async (report: CARReport) => {
+  const updateCARReport = async (report: CARReport, files?: FileList) => {
     await updateCARReportInFirebase(report.id, report);
   };
   const deleteCARReport = async (id: string) => {
@@ -452,9 +453,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       performanceScore -= pendingEvents * 5;
       
       // Deduct points based on high severity events
-      performanceScore -= eventsBySeverity.high * 10;
-      performanceScore -= eventsBySeverity.medium * 5;
-      performanceScore -= eventsBySeverity.low * 2;
+      performanceScore -= (eventsBySeverity.high || 0) * 10;
+      performanceScore -= (eventsBySeverity.medium || 0) * 5;
+      performanceScore -= (eventsBySeverity.low || 0) * 2;
       
       // Bonus for quick resolution
       if (averageResolutionTime > 0 && averageResolutionTime <= 3) {
@@ -506,7 +507,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         eventsBySeverity,
         performanceScore,
         lastEventDate,
-        improvementTrend
+        improvementTrend,
+        behaviorScore: performanceScore // Add this for compatibility
       });
     });
 
@@ -535,6 +537,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const deleteActionItem = async (id: string) => {
     const docRef = doc(db, 'actionItems', id);
     await deleteDoc(docRef);
+  };
+
+  // Add comment to action item
+  const addActionItemComment = async (itemId: string, comment: string) => {
+    const item = actionItems.find(i => i.id === itemId);
+    if (!item) throw new Error("Action item not found");
+    
+    const newComment = {
+      id: `comment-${Date.now()}`,
+      comment,
+      createdAt: new Date().toISOString(),
+      createdBy: 'Current User' // Replace with real user info
+    };
+    
+    const updatedItem = {
+      ...item,
+      comments: [...(item.comments || []), newComment],
+      updatedAt: new Date().toISOString()
+    };
+    
+    await updateActionItem(updatedItem);
   };
 
   const contextValue: AppContextType = {
@@ -570,7 +593,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addActionItem,
     updateActionItem,
     deleteActionItem,
-    connectionStatus: "connected",
+    addActionItemComment,
+    connectionStatus,
     isOnline: isOnline(),
   };
 

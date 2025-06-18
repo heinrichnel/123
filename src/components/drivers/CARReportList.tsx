@@ -38,7 +38,7 @@ import { formatDate } from '../../utils/helpers';
 
 
 const CARReportList: React.FC = () => {
-  const { carReports, deleteCARReport } = useAppContext();
+  const { carReports = [], deleteCARReport } = useAppContext();
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -256,7 +256,7 @@ const CARReportList: React.FC = () => {
             <Select
               label="Status"
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={(value) => handleFilterChange('status', value)}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Draft', value: 'draft' },
@@ -269,7 +269,7 @@ const CARReportList: React.FC = () => {
             <Select
               label="Severity"
               value={filters.severity}
-              onChange={(e) => handleFilterChange('severity', e.target.value)}
+              onChange={(value) => handleFilterChange('severity', value)}
               options={[
                 { label: 'All Severities', value: '' },
                 { label: 'High', value: 'high' },
@@ -281,7 +281,7 @@ const CARReportList: React.FC = () => {
             <Select
               label="Responsible Person"
               value={filters.responsiblePerson}
-              onChange={(e) => handleFilterChange('responsiblePerson', e.target.value)}
+              onChange={(value) => handleFilterChange('responsiblePerson', value)}
               options={[
                 { label: 'All Persons', value: '' },
                 ...uniqueResponsiblePersons.map(person => ({ label: person, value: person }))
@@ -293,13 +293,13 @@ const CARReportList: React.FC = () => {
                 label="From Date"
                 type="date"
                 value={filters.dateRange.start}
-                onChange={(e) => handleFilterChange('dateRange.start', e.target.value)}
+                onChange={(value) => handleFilterChange('dateRange.start', value)}
               />
               <Input
                 label="To Date"
                 type="date"
                 value={filters.dateRange.end}
-                onChange={(e) => handleFilterChange('dateRange.end', e.target.value)}
+                onChange={(value) => handleFilterChange('dateRange.end', value)}
               />
             </div>
           </div>

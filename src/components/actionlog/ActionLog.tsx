@@ -1,29 +1,43 @@
-import React, { useState, useMemo } from 'react';
+// ─── React ───────────────────────────────────────────────────────
+import React, { useState } from 'react';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
-import { ActionItem, RESPONSIBLE_PERSONS } from '../../types';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { ActionItem, RESPONSIBLE_PERSONS } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
 import Modal from '../ui/Modal';
-import { 
-  ClipboardList, 
-  Plus, 
-  Calendar, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  AlertTriangle, 
-  Edit, 
-  Trash2, 
-  X, 
-  Save, 
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  ClipboardList,
+  CheckCircle,
+  Clock,
+  Plus,
+  Edit,
   Eye,
+  Trash2,
+  X,
+  Save,
+  History,
+  User,
+  Calendar,
+  Flag,
   MessageSquare,
   FileUp
 } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatDate, formatDateTime } from '../../utils/helpers';
 import SyncIndicator from '../ui/SyncIndicator';
 import ActionItemDetails from './ActionItemDetails';
+
 
 const ActionLog: React.FC = () => {
   const { actionItems, addActionItem, updateActionItem, deleteActionItem, connectionStatus } = useAppContext();
@@ -50,77 +64,60 @@ const ActionLog: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   
   // Calculate overdue status and days for each action item
-  const enhancedActionItems = useMemo(() => {
-    return actionItems.map(item => {
-      const today = new Date();
-      const dueDate = new Date(item.dueDate);
-      const isOverdue = today > dueDate && item.status !== 'completed';
-      const overdueBy = isOverdue ? Math.floor((today.getTime() - dueDate.getTime()) / (86400000)) : 0;
-      
-      // Check if overdue by 5 or 10 days
-      const isOverdueBy5 = overdueBy >= 5;
-      const isOverdueBy10 = overdueBy >= 10;
-      
-      return {
-        ...item,
-        isOverdue,
-        overdueBy,
-        isOverdueBy5,
-        isOverdueBy10,
-        needsReason: isOverdueBy10 && !item.overdueReason && item.status !== 'completed'
-      };
-    });
-  }, [actionItems]);
-  
-  // Apply filters
-  const filteredItems = useMemo(() => {
-    return enhancedActionItems.filter(item => {
-      if (filters.status && item.status !== filters.status) return false;
-      if (filters.responsiblePerson && item.responsiblePerson !== filters.responsiblePerson) return false;
-      if (filters.overdue && !item.isOverdue) return false;
-      return true;
-    });
-  }, [enhancedActionItems, filters]);
-  
-  // Sort items: first by status (incomplete first), then by due date (overdue first)
-  const sortedItems = useMemo(() => {
-    return [...filteredItems].sort((a, b) => {
-      // Completed items at the bottom
-      if (a.status === 'completed' && b.status !== 'completed') return 1;
-      if (a.status !== 'completed' && b.status === 'completed') return -1;
-      
-      // Then sort by due date (overdue first)
-      if (a.isOverdue && !b.isOverdue) return -1;
-      if (!a.isOverdue && b.isOverdue) return 1;
-      
-      // Then by due date (earliest first)
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-    });
-  }, [filteredItems]);
-  
-  // Calculate summary statistics
-  const summary = useMemo(() => {
-    const total = enhancedActionItems.length;
-    const completed = enhancedActionItems.filter(item => item.status === 'completed').length;
-    const inProgress = enhancedActionItems.filter(item => item.status === 'in_progress').length;
-    const initiated = enhancedActionItems.filter(item => item.status === 'initiated').length;
-    const overdue = enhancedActionItems.filter(item => item.isOverdue).length;
-    const overdueBy5 = enhancedActionItems.filter(item => item.isOverdueBy5).length;
-    const overdueBy10 = enhancedActionItems.filter(item => item.isOverdueBy10).length;
-    const needReason = enhancedActionItems.filter(item => item.needsReason).length;
+  const enhancedActionItems = actionItems.map(item => {
+    const today = new Date();
+    const dueDate = new Date(item.dueDate);
+    const isOverdue = today > dueDate && item.status !== 'completed';
+    const overdueBy = isOverdue ? Math.floor((today.getTime() - dueDate.getTime()) / (86400000)) : 0;
+    
+    // Check if overdue by 5 or 10 days
+    const isOverdueBy5 = overdueBy >= 5;
+    const isOverdueBy10 = overdueBy >= 10;
     
     return {
-      total,
-      completed,
-      inProgress,
-      initiated,
-      overdue,
-      overdueBy5,
-      overdueBy10,
-      needReason,
-      completionRate: total > 0 ? (completed / total) * 100 : 0
+      ...item,
+      isOverdue,
+      overdueBy,
+      isOverdueBy5,
+      isOverdueBy10,
+      needsReason: isOverdueBy10 && !item.overdueReason && item.status !== 'completed'
     };
-  }, [enhancedActionItems]);
+  });
+  
+  // Apply filters
+  const filteredItems = enhancedActionItems.filter(item => {
+    if (filters.status && item.status !== filters.status) return false;
+    if (filters.responsiblePerson && item.responsiblePerson !== filters.responsiblePerson) return false;
+    if (filters.overdue && !item.isOverdue) return false;
+    return true;
+  });
+  
+  // Sort items: first by status (incomplete first), then by due date (overdue first)
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    // Completed items at the bottom
+    if (a.status === 'completed' && b.status !== 'completed') return 1;
+    if (a.status !== 'completed' && b.status === 'completed') return -1;
+    
+    // Then sort by due date (overdue first)
+    if (a.isOverdue && !b.isOverdue) return -1;
+    if (!a.isOverdue && b.isOverdue) return 1;
+    
+    // Then by due date (earliest first)
+    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+  });
+  
+  // Calculate summary statistics
+  const summary = {
+    total: enhancedActionItems.length,
+    completed: enhancedActionItems.filter(item => item.status === 'completed').length,
+    inProgress: enhancedActionItems.filter(item => item.status === 'in_progress').length,
+    initiated: enhancedActionItems.filter(item => item.status === 'initiated').length,
+    overdue: enhancedActionItems.filter(item => item.isOverdue).length,
+    overdueBy5: enhancedActionItems.filter(item => item.isOverdueBy5).length,
+    overdueBy10: enhancedActionItems.filter(item => item.isOverdueBy10).length,
+    needReason: enhancedActionItems.filter(item => item.needsReason).length,
+    completionRate: enhancedActionItems.length > 0 ? (enhancedActionItems.filter(item => item.status === 'completed').length / enhancedActionItems.length) * 100 : 0
+  };
   
   // Handle form changes
   const handleFormChange = (field: string, value: string) => {
@@ -345,7 +342,7 @@ const ActionLog: React.FC = () => {
             <Select
               label="Status"
               value={filters.status}
-              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              onChange={(value) => setFilters(prev => ({ ...prev, status: value }))}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Initiated', value: 'initiated' },
@@ -357,7 +354,7 @@ const ActionLog: React.FC = () => {
             <Select
               label="Responsible Person"
               value={filters.responsiblePerson}
-              onChange={(e) => setFilters(prev => ({ ...prev, responsiblePerson: e.target.value }))}
+              onChange={(value) => setFilters(prev => ({ ...prev, responsiblePerson: value }))}
               options={[
                 { label: 'All Persons', value: '' },
                 ...RESPONSIBLE_PERSONS.map(person => ({ label: person, value: person }))
@@ -619,7 +616,7 @@ const ActionLog: React.FC = () => {
             <Input
               label="Title *"
               value={formData.title}
-              onChange={(e) => handleFormChange('title', e.target.value)}
+              onChange={(value) => handleFormChange('title', value)}
               placeholder="Enter action item title..."
               error={errors.title}
             />
@@ -627,7 +624,7 @@ const ActionLog: React.FC = () => {
             <TextArea
               label="Description *"
               value={formData.description}
-              onChange={(e) => handleFormChange('description', e.target.value)}
+              onChange={(value) => handleFormChange('description', value)}
               placeholder="Provide details about the action item..."
               rows={3}
               error={errors.description}
@@ -637,7 +634,7 @@ const ActionLog: React.FC = () => {
               <Select
                 label="Responsible Person *"
                 value={formData.responsiblePerson}
-                onChange={(e) => handleFormChange('responsiblePerson', e.target.value)}
+                onChange={(value) => handleFormChange('responsiblePerson', value)}
                 options={[
                   { label: 'Select responsible person...', value: '' },
                   ...RESPONSIBLE_PERSONS.map(person => ({ label: person, value: person }))
@@ -649,7 +646,7 @@ const ActionLog: React.FC = () => {
                 label="Due Date *"
                 type="date"
                 value={formData.dueDate}
-                onChange={(e) => handleFormChange('dueDate', e.target.value)}
+                onChange={(value) => handleFormChange('dueDate', value)}
                 min={new Date().toISOString().split('T')[0]}
                 error={errors.dueDate}
               />
@@ -658,7 +655,7 @@ const ActionLog: React.FC = () => {
             <Select
               label="Initial Status"
               value={formData.status}
-              onChange={(e) => handleFormChange('status', e.target.value as any)}
+              onChange={(value) => handleFormChange('status', value as any)}
               options={[
                 { label: 'Initiated', value: 'initiated' },
                 { label: 'In Progress', value: 'in_progress' }
