@@ -52,7 +52,7 @@ interface SelectProps {
   onBlur?: () => void;
 }
 
-export const Select: React.FC<SelectProps> = ({ label, value, onChange, options, required, error, onBlur }) => (
+export const Select: React.FC<SelectProps> = ({ label, value, onChange, options = [], required, error, onBlur }) => (
   <div className="mb-4">
     <label className="block font-medium mb-1">
       {label} {required && <span className="text-red-500">*</span>}

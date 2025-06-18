@@ -53,10 +53,10 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
   const validate = () => {
     const newErrors: {[key: string]: string} = {};
     if (!clientType) newErrors.clientType = 'Client Type is required';
-    if (!fleetNumber.trim()) newErrors.fleetNumber = 'Fleet Number is required';
-    if (!client.trim()) newErrors.client = 'Client is required';
-    if (!driver.trim()) newErrors.driver = 'Driver is required';
-    if (!route.trim()) newErrors.route = 'Route is required';
+    if (!String(fleetNumber ?? '').trim()) newErrors.fleetNumber = 'Fleet Number is required';
+    if (!String(client ?? '').trim()) newErrors.client = 'Client is required';
+    if (!String(driver ?? '').trim()) newErrors.driver = 'Driver is required';
+    if (!String(route ?? '').trim()) newErrors.route = 'Route is required';
     if (!startDate) newErrors.startDate = 'Start Date is required';
     if (!endDate) {
       newErrors.endDate = 'End Date is required';
@@ -66,7 +66,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
     if (!distanceKm || distanceKm <= 0) newErrors.distanceKm = 'Distance must be greater than 0';
     if (!baseRevenue || baseRevenue <= 0) newErrors.baseRevenue = 'Base Revenue must be greater than 0';
     if (!revenueCurrency) newErrors.revenueCurrency = 'Currency is required';
-    if (!tripDescription.trim()) newErrors.tripDescription = 'Trip Description is required';
+    if (!String(tripDescription ?? '').trim()) newErrors.tripDescription = 'Trip Description is required';
     return newErrors;
   };
 
@@ -100,17 +100,17 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
     if (Object.keys(validationErrors).length > 0) return;
     onSubmit({
       clientType,
-      fleetNumber,
-      clientName: client,
-      driverName: driver,
-      route,
+      fleetNumber: String(fleetNumber ?? '').trim(),
+      clientName: String(client ?? '').trim(),
+      driverName: String(driver ?? '').trim(),
+      route: String(route ?? '').trim(),
       startDate,
       endDate,
       distanceKm,
       baseRevenue,
       revenueCurrency,
-      tripDescription,
-      tripNotes,
+      tripDescription: String(tripDescription ?? '').trim(),
+      tripNotes: String(tripNotes ?? ''),
     });
   };
 
