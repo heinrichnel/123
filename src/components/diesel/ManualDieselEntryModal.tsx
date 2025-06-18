@@ -1,8 +1,16 @@
-// ─── React ───────────────────────────────────────────────────────
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState } from 'react';
+import { useAppContext } from '../../context/AppContext';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { FLEET_NUMBERS, DRIVERS, FUEL_STATIONS } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { 
   Save, 
   X, 
@@ -12,8 +20,6 @@ import {
   Fuel,
   Link
 } from 'lucide-react';
-import { FLEET_NUMBERS, DRIVERS } from '../../types';
-import { useAppContext } from '../../context/AppContext';
 
 
 interface ManualDieselEntryModalProps {
@@ -135,11 +141,12 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const costPerLitre = formData.costPerLitre ? Number(formData.costPerLitre) : totalCost / litresFilled;
 
     // Calculate derived values
-    const distanceTravelled = previousKmReading ? kmReading - previousKmReading : undefined;
+    const distanceTravelled = previousKmReading !== undefined ? kmReading - previousKmReading : undefined;
     const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
 
     // Patch: Only include tripId if it is a non-empty string
     const recordData: any = {
+      id: `diesel-${Date.now()}`,
       fleetNumber: formData.fleetNumber,
       date: formData.date,
       kmReading,
@@ -151,17 +158,11 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       notes: String(formData.notes ?? '').trim(),
       previousKmReading,
       distanceTravelled,
-      kmPerLitre
+      kmPerLitre,
+      currency: 'ZAR'
     };
     if (formData.tripId && typeof formData.tripId === 'string' && formData.tripId.trim() !== '') {
       recordData.tripId = formData.tripId;
-    }
-
-    // Patch: Check for undefined fields before saving
-    for (const key in recordData) {
-      if (recordData[key] === undefined) {
-        delete recordData[key];
-      }
     }
 
     try {
@@ -315,11 +316,14 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.totalCost}
           />
 
-          <Input
+          <Select
             label="Fuel Station *"
             value={formData.fuelStation}
             onChange={value => handleChange('fuelStation', value)}
-            placeholder="RAM Petroleum Harare"
+            options={[
+              { label: 'Select fuel station...', value: '' },
+              ...FUEL_STATIONS.map(station => ({ label: station, value: station }))
+            ]}
             error={errors.fuelStation}
           />
 
