@@ -681,7 +681,10 @@ export const COST_CATEGORIES: Record<string, string[]> = {
   "Trip Allowances": ['Food', 'Airtime', 'Taxi'],
   "Tolls": [
     'Tolls BB to JHB', 'Tolls Cape Town to JHB', 'Tolls JHB to CPT', 'Tolls Mutare to BB',
-    'Tolls JHB to Martinsdrift', 'Tolls BB to Harare', 'Tolls Zambia'
+    'Tolls JHB to Martinsdrift', 'Tolls BB to Harare', 'Tolls Zambia',
+    'Mutare - Harare', 'Harare - Mutare', 'Harare - CBC', 'CBC - Harare',
+    'Mutare - Bulawayo', 'Bulawayo - Mutare', 'Bulawayo - Chipinge',
+    'Chipinge - Bulawayo', 'Mutare - Nyanga', 'Mutare - Chipinge', 'Chipinge - Mutare'
   ],
   "Fuel": [
     "Diesel",
