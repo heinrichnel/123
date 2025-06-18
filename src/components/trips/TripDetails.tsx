@@ -396,7 +396,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
               </h4>
               <p className="text-sm text-blue-700 mt-1">
                 Invoice #{trip.invoiceNumber} submitted on {formatDateTime(trip.invoiceSubmittedAt!)} by {trip.invoiceSubmittedBy}. 
-                Due date: {trip.invoiceDueDate}. Payment status: {trip.paymentStatus.toUpperCase()}.
+                Due date: {trip.invoiceDueDate}. Payment status: {trip.paymentStatus?.toUpperCase()}.
               </p>
               {trip.timelineValidated && (
                 <p className="text-sm text-blue-600 mt-1">
@@ -584,10 +584,10 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
                      trip.status === 'invoiced' ? 'Invoiced' : 'Active'}
                   </span>
                 </div>
-                {trip.description && (
+                {trip.tripDescription && (
                   <div>
                     <p className="text-sm text-gray-500">Description</p>
-                    <p className="font-medium text-gray-700">{trip.description}</p>
+                    <p className="font-medium text-gray-700">{trip.tripDescription}</p>
                   </div>
                 )}
               </div>

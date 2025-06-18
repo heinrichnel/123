@@ -171,6 +171,30 @@ export const getFileIcon = (fileType: string): string => {
   return 'Paperclip';
 };
 
+// -------------------- Helper to clean objects for Firestore --------------------
+
+export const cleanObjectForFirestore = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(cleanObjectForFirestore);
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanObjectForFirestore(value);
+      }
+    }
+    return cleaned;
+  }
+  
+  return obj;
+};
+
 // -------------------- Download Placeholders --------------------
 
 export const downloadTripPDF = async (trip: Trip) => {
@@ -234,9 +258,52 @@ export const downloadTripExcel = async (trip: Trip) => {
   }
 };
 
-// -------------------- Report Helpers --------------------
+// -------------------- Report Generation --------------------
 
-export const generateReport = async (trips: Trip[]) => {
+// Generate report for a single trip (used by TripReport component)
+export const generateReport = (trip: Trip) => {
+  try {
+    const costs = trip.costs || [];
+    
+    // Calculate cost breakdown by category
+    const categoryTotals: Record<string, number> = {};
+    costs.forEach(cost => {
+      const category = cost.category || 'Other';
+      categoryTotals[category] = (categoryTotals[category] || 0) + cost.amount;
+    });
+
+    const totalCosts = Object.values(categoryTotals).reduce((sum, amount) => sum + amount, 0);
+    
+    const costBreakdown = Object.entries(categoryTotals).map(([category, total]) => ({
+      category,
+      total,
+      percentage: totalCosts > 0 ? (total / totalCosts) * 100 : 0
+    })).sort((a, b) => b.total - a.total);
+
+    // Find missing receipts
+    const missingReceipts = costs.filter(cost => 
+      !cost.attachments || cost.attachments.length === 0
+    );
+
+    return {
+      costBreakdown,
+      missingReceipts,
+      totalCosts,
+      totalEntries: costs.length
+    };
+  } catch (error) {
+    console.error('Error generating report:', error);
+    return {
+      costBreakdown: [],
+      missingReceipts: [],
+      totalCosts: 0,
+      totalEntries: 0
+    };
+  }
+};
+
+// Placeholder for multiple trips report generation
+export const generatePlaceholderReportForMultipleTrips = async (trips: Trip[]) => {
   try {
     alert(`Generating report for ${trips.length} trip(s)...`);
     // TODO: Implement real export
