@@ -471,12 +471,12 @@ export const CLIENTS = [
   "Lesaffre",
   "Westfalia",
   "Everfresh",
-  "Rezende Retail",
-  "Rezende Retail Vendor",
-  "Rezende Vendor",
-  "Bulawayo Retail",
-  "Bulawayo Retail Vendor",
-  "Bulawayo Vendor"
+  "Nyamagay",
+  "Marketing Export",
+  "Export",
+  "Marketing Export",
+  "Marketing Local",
+  "Burma Valey"
 ];
 
 export const DRIVERS = [
