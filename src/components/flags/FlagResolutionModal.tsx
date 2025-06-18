@@ -7,7 +7,7 @@ import { CostEntry } from '../../types';
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, Select, Textarea } from '../ui/FormElements';
+import { Input, Select, TextArea } from '../ui/FormElements';
 import FileUpload from '../ui/FileUpload';
 
 // ─── Icons ───────────────────────────────────────────────────────
@@ -213,7 +213,7 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
 
           {/* Notes Update */}
           <div>
-            <Textarea
+            <TextArea
               label="Updated Notes"
               value={formData.notes}
               onChange={(value) => handleChange('notes', value)}
@@ -254,7 +254,7 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
 
           {/* Resolution Comment */}
           <div>
-            <Textarea
+            <TextArea
               label="Resolution Comment (Required) *"
               value={formData.resolutionComment}
               onChange={(value) => handleChange('resolutionComment', value)}

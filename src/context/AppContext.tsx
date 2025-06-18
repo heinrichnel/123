@@ -360,7 +360,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const updatedCosts = [...(trip.costs || []), newCostEntry];
       
       // Remove undefined values before updating Firestore
-      const cleanCostEntry = removeUndefinedValues(newCostEntry);
       const cleanCosts = updatedCosts.map(cost => removeUndefinedValues(cost));
       
       // Update the trip document in Firestore
