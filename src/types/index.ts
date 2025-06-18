@@ -360,14 +360,58 @@ export const TRIP_DELETION_REASONS = [
 export const AGING_THRESHOLDS = [7, 14, 30, 60, 90];
 export const FOLLOW_UP_THRESHOLDS = [3, 7, 14];
 
-export const COST_CATEGORIES = [
-  "Fuel",
-  "Tolls",
-  "Maintenance",
-  "Repairs",
-  "Insurance",
-  "Other"
-];
+export const COST_CATEGORIES: Record<string, string[]> = {
+  "Fuel": [
+    "Diesel",
+    "Petrol",
+    "AdBlue",
+    "Fuel Card Charges",
+    "Fuel Discrepancy",
+    "Emergency Fuel"
+  ],
+  "Tolls": [
+    "Highway Tolls",
+    "Bridge Tolls",
+    "Border Tolls",
+    "City Tolls",
+    "Electronic Toll Collection"
+  ],
+  "Maintenance": [
+    "Scheduled Service",
+    "Oil Change",
+    "Filter Replacement",
+    "Brake Service",
+    "Transmission Service",
+    "Preventive Maintenance"
+  ],
+  "Repairs": [
+    "Engine Repair",
+    "Transmission Repair",
+    "Brake Repair",
+    "Electrical Repair",
+    "Body Repair",
+    "Emergency Repair",
+    "Tyre Replacement",
+    "Battery Replacement"
+  ],
+  "Insurance": [
+    "Vehicle Insurance",
+    "Cargo Insurance",
+    "Third Party Insurance",
+    "Comprehensive Insurance",
+    "Insurance Excess"
+  ],
+  "Other": [
+    "Parking Fees",
+    "Fines",
+    "Permits",
+    "Documentation",
+    "Accommodation",
+    "Meals",
+    "Communication",
+    "Miscellaneous"
+  ]
+};
 
 export const DEFAULT_SYSTEM_COST_RATES: Record<'USD' | 'ZAR', SystemCostRates> = {
   USD: {
