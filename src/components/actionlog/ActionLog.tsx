@@ -619,7 +619,7 @@ const ActionLog: React.FC = () => {
             <Input
               label="Title *"
               value={formData.title}
-              onChange={(e) => handleFormChange('title', e.target.value)}
+              onChange={(value) => handleFormChange('title', value)}
               placeholder="Enter action item title..."
               error={errors.title}
             />
@@ -627,7 +627,7 @@ const ActionLog: React.FC = () => {
             <TextArea
               label="Description *"
               value={formData.description}
-              onChange={(e) => handleFormChange('description', e.target.value)}
+              onChange={(value) => handleFormChange('description', value)}
               placeholder="Provide details about the action item..."
               rows={3}
               error={errors.description}
@@ -637,7 +637,7 @@ const ActionLog: React.FC = () => {
               <Select
                 label="Responsible Person *"
                 value={formData.responsiblePerson}
-                onChange={(e) => handleFormChange('responsiblePerson', e.target.value)}
+                onChange={(value) => handleFormChange('responsiblePerson', value)}
                 options={[
                   { label: 'Select responsible person...', value: '' },
                   ...RESPONSIBLE_PERSONS.map(person => ({ label: person, value: person }))
@@ -649,7 +649,7 @@ const ActionLog: React.FC = () => {
                 label="Due Date *"
                 type="date"
                 value={formData.dueDate}
-                onChange={(e) => handleFormChange('dueDate', e.target.value)}
+                onChange={(value) => handleFormChange('dueDate', value)}
                 min={new Date().toISOString().split('T')[0]}
                 error={errors.dueDate}
               />
@@ -658,7 +658,7 @@ const ActionLog: React.FC = () => {
             <Select
               label="Initial Status"
               value={formData.status}
-              onChange={(e) => handleFormChange('status', e.target.value as any)}
+              onChange={(value) => handleFormChange('status', value as any)}
               options={[
                 { label: 'Initiated', value: 'initiated' },
                 { label: 'In Progress', value: 'in_progress' }

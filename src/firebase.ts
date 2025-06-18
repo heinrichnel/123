@@ -1,5 +1,6 @@
 import {
   getFirestore,
+  initializeFirestore,
   enableNetwork,
   disableNetwork,
   collection,
@@ -11,10 +12,13 @@ import {
   Firestore,
   DocumentData
 } from "firebase/firestore";
-import { firebaseApp } from "./firebaseConfig"; // ✅ Gebruik bestaande Firebase app instansie
+import { firebaseApp } from "./firebaseConfig";
 
-// ✅ Gebruik gedeelde Firebase app
-export const db: Firestore = getFirestore(firebaseApp);
+// Use custom Firestore database ID from .env
+const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || undefined;
+export const db: Firestore = databaseId
+  ? initializeFirestore(firebaseApp, { databaseId })
+  : getFirestore(firebaseApp);
 
 // 🔗 Collection references
 export const tripsCollection = collection(db, "trips");

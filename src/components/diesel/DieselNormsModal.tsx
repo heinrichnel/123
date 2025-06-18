@@ -206,7 +206,16 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                   min="0.1"
                   max="10"
                   value={norm.expectedKmPerLitre.toString()}
-                  onChange={e => handleNormChange(norm.fleetNumber, 'expectedKmPerLitre', e.target.value)}
+                  onChange={e => {
+                    // Patch: Robustly handle both event and value
+                    let value = '';
+                    if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
+                      value = e.target.value;
+                    } else if (typeof e === 'string') {
+                      value = e;
+                    }
+                    handleNormChange(norm.fleetNumber, 'expectedKmPerLitre', value);
+                  }}
                   error={errors[`${norm.fleetNumber}-expectedKmPerLitre`]}
                 />
                 <Input
@@ -216,7 +225,16 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                   min="1"
                   max="50"
                   value={norm.tolerancePercentage.toString()}
-                  onChange={e => handleNormChange(norm.fleetNumber, 'tolerancePercentage', e.target.value)}
+                  onChange={e => {
+                    // Patch: Robustly handle both event and value
+                    let value = '';
+                    if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
+                      value = e.target.value;
+                    } else if (typeof e === 'string') {
+                      value = e;
+                    }
+                    handleNormChange(norm.fleetNumber, 'tolerancePercentage', value);
+                  }}
                   error={errors[`${norm.fleetNumber}-tolerancePercentage`]}
                 />
                 <div className="bg-gray-50 rounded-md p-3">

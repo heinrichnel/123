@@ -138,7 +138,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const distanceTravelled = previousKmReading ? kmReading - previousKmReading : undefined;
     const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
 
-    const recordData = {
+    // Patch: Only include tripId if it is a non-empty string
+    const recordData: any = {
       fleetNumber: formData.fleetNumber,
       date: formData.date,
       kmReading,
@@ -150,30 +151,41 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       notes: String(formData.notes ?? '').trim(),
       previousKmReading,
       distanceTravelled,
-      kmPerLitre,
-      tripId: formData.tripId || undefined // Link to trip
+      kmPerLitre
     };
+    if (formData.tripId && typeof formData.tripId === 'string' && formData.tripId.trim() !== '') {
+      recordData.tripId = formData.tripId;
+    }
 
-    addDieselRecord(recordData);
-    
-    alert(`Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\nKM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\nCost: R${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`);
-    
-    // Reset form
-    setFormData({
-      fleetNumber: '',
-      date: new Date().toISOString().split('T')[0],
-      kmReading: '',
-      previousKmReading: '',
-      litresFilled: '',
-      costPerLitre: '',
-      totalCost: '',
-      fuelStation: '',
-      driverName: '',
-      notes: '',
-      tripId: ''
-    });
-    setErrors({});
-    onClose();
+    // Patch: Check for undefined fields before saving
+    for (const key in recordData) {
+      if (recordData[key] === undefined) {
+        delete recordData[key];
+      }
+    }
+
+    try {
+      addDieselRecord(recordData);
+      alert(`Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\nKM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\nCost: R${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`);
+      // Reset form
+      setFormData({
+        fleetNumber: '',
+        date: new Date().toISOString().split('T')[0],
+        kmReading: '',
+        previousKmReading: '',
+        litresFilled: '',
+        costPerLitre: '',
+        totalCost: '',
+        fuelStation: '',
+        driverName: '',
+        notes: '',
+        tripId: ''
+      });
+      setErrors({});
+      onClose();
+    } catch (err: any) {
+      alert('Failed to add diesel record. Please check all fields and try again.\n' + (err?.message || ''));
+    }
   };
 
   const calculateDistance = () => {

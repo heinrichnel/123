@@ -2,6 +2,7 @@
 
 import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // ✅ Gebruik omgewingsveranderlikes uit .env
 export const firebaseConfig = {
@@ -17,6 +18,12 @@ export const firebaseConfig = {
 
 // 🔥 Firebase App initialiseer
 export const firebaseApp = initializeApp(firebaseConfig);
+
+// ✅ Initialize Firebase App Check with reCAPTCHA v3
+const appCheck = initializeAppCheck(firebaseApp, {
+  provider: new ReCaptchaV3Provider("6LcQ5mQrAAAAAIKWCSw9mAT5VaA6OKJ8nNFSyK1"), // Your site key
+  isTokenAutoRefreshEnabled: true,
+});
 
 // 📊 Optioneel: Analytics initialiseer net as dit beskikbaar is
 export const initAnalytics = async () => {
