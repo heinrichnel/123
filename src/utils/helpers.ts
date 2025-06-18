@@ -354,7 +354,7 @@ export const generateCurrencyFleetReport = async (trips: Trip[], currency: 'USD'
     const externalProfitMargin = externalRevenue > 0 ? (externalProfit / externalRevenue) * 100 : 0;
     
     // Investigation metrics
-    const tripsWithInvestigations = trips.filter(t => t.costs.some(c => c.isFlagged)).length;
+    const tripsWithInvestigations = trips.filter(t => t.costs && t.costs.some(c => c.isFlagged)).length;
     const totalFlags = trips.reduce((sum, trip) => sum + getFlaggedCostsCount(trip.costs || []), 0);
     const unresolvedFlags = trips.reduce((sum, trip) => sum + getUnresolvedFlagsCount(trip.costs || []), 0);
     
@@ -366,6 +366,8 @@ export const generateCurrencyFleetReport = async (trips: Trip[], currency: 'USD'
     let resolvedFlagsCount = 0;
     
     trips.forEach(trip => {
+      if (!trip.costs) return;
+      
       trip.costs.forEach(cost => {
         if (cost.isFlagged && cost.flaggedAt && cost.resolvedAt && cost.investigationStatus === 'resolved') {
           const flaggedDate = new Date(cost.flaggedAt);
@@ -569,6 +571,8 @@ export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
     const flaggedCosts: FlaggedCost[] = [];
 
     trips?.forEach(trip => {
+      if (!trip.costs) return;
+      
       trip.costs?.forEach(cost => {
         if (cost.isFlagged) {
           flaggedCosts.push({

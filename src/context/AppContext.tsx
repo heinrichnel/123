@@ -313,6 +313,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const newCostEntry: CostEntry = {
       ...costEntryData,
       id: newId,
+      tripId, // Ensure tripId is set
       attachments,
       createdAt: currentTime,
       updatedAt: currentTime,
@@ -365,7 +366,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const deleteCostEntry = async (costEntryId: string): Promise<void> => {
-    const trip = trips.find(t => t.costs.some(c => c.id === costEntryId));
+    const trip = trips.find(t => t.costs && t.costs.some(c => c.id === costEntryId));
     if (!trip) throw new Error("Trip not found");
     
     const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
@@ -718,10 +719,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Diesel CRUD
   const addDieselRecord = async (record: DieselConsumptionRecord) => {
-    await addDieselToFirebase(record);
+    await addDieselToFirebase(cleanObjectForFirestore(record));
   };
   const updateDieselRecord = async (record: DieselConsumptionRecord) => {
-    await updateDieselInFirebase(record.id, record);
+    await updateDieselInFirebase(record.id, cleanObjectForFirestore(record));
   };
   const deleteDieselRecord = async (id: string) => {
     await deleteDieselFromFirebase(id);
@@ -729,10 +730,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Driver Behavior Event CRUD
   const addDriverBehaviorEvent = async (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList) => {
-    await addDriverBehaviorEventToFirebase(event);
+    await addDriverBehaviorEventToFirebase(cleanObjectForFirestore(event));
   };
   const updateDriverBehaviorEvent = async (event: DriverBehaviorEvent) => {
-    await updateDriverBehaviorEventToFirebase(event.id, event);
+    await updateDriverBehaviorEventToFirebase(event.id, cleanObjectForFirestore(event));
   };
   const deleteDriverBehaviorEvent = async (id: string) => {
     await deleteDriverBehaviorEventToFirebase(id);
@@ -740,10 +741,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // CAR Report CRUD
   const addCARReport = async (report: Omit<CARReport, 'id'>, files?: FileList) => {
-    await addCARReportToFirebase(report);
+    await addCARReportToFirebase(cleanObjectForFirestore(report));
   };
   const updateCARReport = async (report: CARReport, files?: FileList) => {
-    await updateCARReportInFirebase(report.id, report);
+    await updateCARReportInFirebase(report.id, cleanObjectForFirestore(report));
   };
   const deleteCARReport = async (id: string) => {
     await deleteCARReportFromFirebase(id);

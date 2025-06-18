@@ -94,7 +94,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   }
 
   // Enhanced handleAddCost with file support
-  const handleAddCost = (costData: Omit<CostEntry, 'id' | 'attachments'>, files?: FileList) => {
+  const handleAddCost = (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
     try {
       const costId = addCostEntry(trip.id, costData, files);
       setShowCostForm(false);
@@ -108,7 +108,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   };
 
   // Enhanced handleUpdateCost with file support
-  const handleUpdateCost = (costData: Omit<CostEntry, 'id' | 'attachments'>, files?: FileList) => {
+  const handleUpdateCost = (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
     if (editingCost) {
       try {
         // Process new files if provided
