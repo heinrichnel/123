@@ -240,7 +240,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
           <Card>
             <CardHeader title={`${currency} Driver Performance`} />
             <CardContent>
-              {Object.keys(report.driverStats).length > 0 ? (
+              {report.driverStats && Object.keys(report.driverStats).length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -332,18 +332,18 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 label="Start Date"
                 type="date"
                 value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                onChange={(value) => handleFilterChange('startDate', value)}
               />
               <Input
                 label="End Date"
                 type="date"
                 value={filters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                onChange={(value) => handleFilterChange('endDate', value)}
               />
               <Select
                 label="Client Type"
                 value={filters.clientType}
-                onChange={(e) => handleFilterChange('clientType', e.target.value)}
+                onChange={(value) => handleFilterChange('clientType', value)}
                 options={[
                   { label: 'All Client Types', value: '' },
                   { label: 'Internal Clients', value: 'internal' },
@@ -353,7 +353,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
               <Select
                 label="Driver"
                 value={filters.driver}
-                onChange={(e) => handleFilterChange('driver', e.target.value)}
+                onChange={(value) => handleFilterChange('driver', value)}
                 options={[
                   { label: 'All Drivers', value: '' },
                   ...uniqueDrivers.map(d => ({ label: d, value: d }))
@@ -414,10 +414,10 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 <p className="text-sm text-gray-500">Flagged Trips</p>
               </div>
               <p className="text-xl font-bold text-amber-600">
-                {filteredTrips.filter(t => t.costs.some(c => c.isFlagged)).length}
+                {filteredTrips.filter(t => t.costs && t.costs.some(c => c.isFlagged)).length}
               </p>
               <p className="text-xs text-gray-400">
-                {((filteredTrips.filter(t => t.costs.some(c => c.isFlagged)).length / (filteredTrips.length || 1)) * 100).toFixed(1)}% of trips
+                {((filteredTrips.filter(t => t.costs && t.costs.some(c => c.isFlagged)).length / (filteredTrips.length || 1)) * 100).toFixed(1)}% of trips
               </p>
             </div>
           </div>
