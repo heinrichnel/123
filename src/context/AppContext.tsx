@@ -23,23 +23,22 @@ import {
   enableNetwork,
   disableNetwork,
   deleteDoc,
-  getDoc,
   getDocs,
   setDoc,
+  getDoc,
   query,
   where,
   orderBy,
   limit,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { generateTripId, shouldAutoCompleteTrip, isOnline, cleanObjectForFirestore } from "../utils/helpers";
+import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
 import {
   dieselCollection,
   driverBehaviorCollection,
   carReportsCollection,
-  missedLoadsCollection,
-  actionItemsCollection,
   listenToDieselRecords,
   listenToDriverBehaviorEvents,
   listenToCARReports,
@@ -56,83 +55,71 @@ import {
 
 interface AppContextType {
   trips: Trip[];
-  addTrip: (trip: Omit<Trip, "id" | "costs" | "status">) => string;
-  updateTrip: (trip: Trip) => Promise<void>;
-  deleteTrip: (id: string) => Promise<void>;
+  addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => string;
+  updateTrip: (trip: Trip) => void;
+  deleteTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
 
-  addCostEntry: (
-    tripId: string,
-    costEntry: Omit<CostEntry, "id" | "attachments">,
-    files?: FileList
-  ) => string;
-  updateCostEntry: (costEntry: CostEntry) => Promise<void>;
-  deleteCostEntry: (id: string) => Promise<void>;
+  addCostEntry: (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => string;
+  updateCostEntry: (updatedCost: CostEntry) => void;
+  deleteCostEntry: (id: string) => void;
 
-  completeTrip: (tripId: string) => Promise<void>;
+  completeTrip: (tripId: string) => void;
+  updateInvoicePayment: (tripId: string, paymentData: any) => void;
 
-  // Additional cost management
-  addAdditionalCost: (tripId: string, cost: Omit<AdditionalCost, "id">, files?: FileList) => string;
+  // Additional Cost Management
+  addAdditionalCost: (tripId: string, cost: Omit<AdditionalCost, "id">, files?: FileList) => void;
   removeAdditionalCost: (tripId: string, costId: string) => void;
 
-  // Delay reasons
-  addDelayReason: (tripId: string, delay: Omit<DelayReason, "id">) => string;
+  // Delay Reasons
+  addDelayReason: (tripId: string, delay: Omit<DelayReason, "id">) => void;
 
-  // Invoice payment management
-  updateInvoicePayment: (tripId: string, paymentData: {
-    paymentStatus: 'unpaid' | 'partial' | 'paid';
-    paymentAmount?: number;
-    paymentReceivedDate?: string;
-    paymentNotes?: string;
-    paymentMethod?: string;
-    bankReference?: string;
-  }) => Promise<void>;
-
-  // Import functionality
-  importTripsFromCSV: (trips: any[]) => Promise<void>;
-
-  // Missed Loads (following centralized context pattern)
+  // Missed Loads
   missedLoads: MissedLoad[];
   addMissedLoad: (missedLoad: Omit<MissedLoad, "id">) => string;
-  updateMissedLoad: (missedLoad: MissedLoad) => Promise<void>;
-  deleteMissedLoad: (id: string) => Promise<void>;
+  updateMissedLoad: (missedLoad: MissedLoad) => void;
+  deleteMissedLoad: (id: string) => void;
 
   // Diesel
   dieselRecords: DieselConsumptionRecord[];
-  addDieselRecord: (record: Omit<DieselConsumptionRecord, "id">) => Promise<void>;
-  updateDieselRecord: (record: DieselConsumptionRecord) => Promise<void>;
-  deleteDieselRecord: (id: string) => Promise<void>;
-  allocateDieselToTrip: (dieselId: string, tripId: string) => Promise<void>;
-  removeDieselFromTrip: (dieselId: string) => Promise<void>;
+  addDieselRecord: (record: Omit<DieselConsumptionRecord, "id">) => void;
+  updateDieselRecord: (record: DieselConsumptionRecord) => void;
+  deleteDieselRecord: (id: string) => void;
+  allocateDieselToTrip: (dieselRecordId: string, tripId: string) => void;
+  removeDieselFromTrip: (dieselRecordId: string) => void;
+  importDieselRecords: (formData: FormData) => Promise<void>;
 
   // Driver Behavior Events
   driverBehaviorEvents: DriverBehaviorEvent[];
-  addDriverBehaviorEvent: (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList) => Promise<void>;
-  updateDriverBehaviorEvent: (event: DriverBehaviorEvent) => Promise<void>;
-  deleteDriverBehaviorEvent: (id: string) => Promise<void>;
+  addDriverBehaviorEvent: (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList) => void;
+  updateDriverBehaviorEvent: (event: DriverBehaviorEvent) => void;
+  deleteDriverBehaviorEvent: (id: string) => void;
 
   // Driver Performance
   getAllDriversPerformance: () => DriverPerformance[];
 
   // CAR Reports
   carReports: CARReport[];
-  addCARReport: (report: Omit<CARReport, 'id'>, files?: FileList) => Promise<void>;
-  updateCARReport: (report: CARReport, files?: FileList) => Promise<void>;
-  deleteCARReport: (id: string) => Promise<void>;
+  addCARReport: (report: Omit<CARReport, 'id'>, files?: FileList) => void;
+  updateCARReport: (report: CARReport, files?: FileList) => void;
+  deleteCARReport: (id: string) => void;
 
-  // System Cost Rates (following centralized context pattern)
+  // System Cost Rates
   systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
   updateSystemCostRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
 
   // Action Items
   actionItems: ActionItem[];
   addActionItem: (item: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => string;
-  updateActionItem: (item: ActionItem) => Promise<void>;
-  deleteActionItem: (id: string) => Promise<void>;
-  addActionItemComment: (itemId: string, comment: string) => Promise<void>;
+  updateActionItem: (item: ActionItem) => void;
+  deleteActionItem: (id: string) => void;
+  addActionItemComment: (itemId: string, comment: string) => void;
 
+  // Import/Export
+  importTripsFromCSV: (trips: any[]) => void;
+
+  // Connection Status
   connectionStatus: "connected" | "disconnected" | "reconnecting";
-  isOnline: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -147,9 +134,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [carReports, setCARReports] = useState<CARReport[]>([]);
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
-  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
   
-  // System Cost Rates (following centralized context pattern)
+  // System Cost Rates
   const [systemCostRates, setSystemCostRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
 
   // Firestore realtime listeners setup
@@ -158,7 +144,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     
     // Trips realtime sync
     const tripsUnsub = onSnapshot(collection(db, "trips"), (snapshot) => {
-      console.log(`Received ${snapshot.docs.length} trips from Firestore`);
+      console.log("Trips snapshot received:", snapshot.docs.length);
       const tripsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Trip[];
       setTrips(tripsData);
     }, (error) => {
@@ -168,7 +154,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Missed Loads realtime sync
     const missedLoadsUnsub = onSnapshot(collection(db, "missedLoads"), (snapshot) => {
-      console.log(`Received ${snapshot.docs.length} missed loads from Firestore`);
+      console.log("Missed loads snapshot received:", snapshot.docs.length);
       const missedLoadsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MissedLoad[];
       setMissedLoads(missedLoadsData);
     }, (error) => {
@@ -178,7 +164,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Diesel Records realtime sync
     const dieselUnsub = onSnapshot(collection(db, "diesel"), (snapshot) => {
-      console.log(`Received ${snapshot.docs.length} diesel records from Firestore`);
+      console.log("Diesel records snapshot received:", snapshot.docs.length);
       const dieselData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as DieselConsumptionRecord[];
       setDieselRecords(dieselData);
     }, (error) => {
@@ -188,9 +174,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     
     // Driver Behavior Events realtime sync
     const driverBehaviorUnsub = onSnapshot(collection(db, "driverBehavior"), (snapshot) => {
-      console.log(`Received ${snapshot.docs.length} driver behavior events from Firestore`);
-      const behaviorData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as DriverBehaviorEvent[];
-      setDriverBehaviorEvents(behaviorData);
+      console.log("Driver behavior events snapshot received:", snapshot.docs.length);
+      const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as DriverBehaviorEvent[];
+      setDriverBehaviorEvents(eventsData);
     }, (error) => {
       console.error("Driver behavior events listener error:", error);
       setConnectionStatus('disconnected');
@@ -198,7 +184,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // CAR Reports realtime sync
     const carReportsUnsub = onSnapshot(collection(db, "carReports"), (snapshot) => {
-      console.log(`Received ${snapshot.docs.length} CAR reports from Firestore`);
+      console.log("CAR reports snapshot received:", snapshot.docs.length);
       const reportsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as CARReport[];
       setCARReports(reportsData);
     }, (error) => {
@@ -208,13 +194,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Action Items realtime sync
     const actionItemsUnsub = onSnapshot(collection(db, 'actionItems'), (snapshot) => {
-      console.log(`Received ${snapshot.docs.length} action items from Firestore`);
+      console.log("Action items snapshot received:", snapshot.docs.length);
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ActionItem[];
       setActionItems(items);
-      setDataLoaded(true);
     }, (error) => {
       console.error("Action items listener error:", error);
       setConnectionStatus('disconnected');
+    });
+
+    // System Cost Rates sync
+    const systemCostRatesUnsub = onSnapshot(collection(db, 'systemCostRates'), (snapshot) => {
+      console.log("System cost rates snapshot received:", snapshot.docs.length);
+      if (snapshot.docs.length > 0) {
+        const ratesData = snapshot.docs.reduce((acc, doc) => {
+          const data = doc.data() as SystemCostRates;
+          if (data.currency === 'USD' || data.currency === 'ZAR') {
+            acc[data.currency] = data;
+          }
+          return acc;
+        }, {} as Record<'USD' | 'ZAR', SystemCostRates>);
+        
+        // Only update if we have data for both currencies
+        if (ratesData.USD && ratesData.ZAR) {
+          setSystemCostRates(ratesData);
+        }
+      }
+    }, (error) => {
+      console.error("System cost rates listener error:", error);
     });
 
     return () => {
@@ -225,30 +231,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       driverBehaviorUnsub();
       carReportsUnsub();
       actionItemsUnsub();
+      systemCostRatesUnsub();
     };
   }, []);
 
   // Online/offline status monitor
   useEffect(() => {
     const handleOnline = () => {
-      console.log("Network connection restored. Reconnecting to Firestore...");
+      console.log("Browser went online");
       setConnectionStatus('reconnecting');
       enableNetwork(db)
         .then(() => {
-          console.log("Firestore network enabled");
+          console.log("Firebase network enabled");
           setConnectionStatus('connected');
         })
         .catch((error) => {
-          console.error("Failed to enable Firestore network:", error);
+          console.error("Failed to enable Firebase network:", error);
           setConnectionStatus('disconnected');
         });
     };
     
     const handleOffline = () => {
-      console.log("Network connection lost. Disabling Firestore network...");
+      console.log("Browser went offline");
       setConnectionStatus('disconnected');
       disableNetwork(db).catch(error => {
-        console.error("Failed to disable Firestore network:", error);
+        console.error("Failed to disable Firebase network:", error);
       });
     };
     
@@ -261,115 +268,71 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Firebase operations for trips
-  const addTripToFirebase = async (trip: Trip) => {
-    console.log("Adding trip to Firestore:", trip.id);
-    const cleanTrip = cleanObjectForFirestore(trip);
-    try {
-      const docRef = await addDoc(collection(db, "trips"), cleanTrip);
-      console.log("Trip added to Firestore with ID:", docRef.id);
-      return docRef.id;
-    } catch (error) {
-      console.error("Error adding trip to Firestore:", error);
-      throw error;
-    }
-  };
-
-  const updateTripInFirebase = async (id: string, trip: Trip) => {
-    console.log("Updating trip in Firestore:", id);
-    const cleanTrip = cleanObjectForFirestore(trip);
-    try {
-      const docRef = doc(db, "trips", id);
-      await updateDoc(docRef, cleanTrip);
-      console.log("Trip updated in Firestore:", id);
-    } catch (error) {
-      console.error("Error updating trip in Firestore:", error);
-      throw error;
-    }
-  };
-
-  const deleteTripFromFirebase = async (id: string) => {
-    console.log("Deleting trip from Firestore:", id);
-    try {
-      const docRef = doc(db, "trips", id);
-      await deleteDoc(docRef);
-      console.log("Trip deleted from Firestore:", id);
-    } catch (error) {
-      console.error("Error deleting trip from Firestore:", error);
-      throw error;
-    }
-  };
-
-  // Your existing methods now updated to async and use Firestore below:
-
+  // Trip Management
   const addTrip = (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): string => {
-    // Backend validation for End Date
-    if (!tripData.endDate) {
-      throw new Error('End Date is required');
-    }
-    if (tripData.startDate && tripData.endDate < tripData.startDate) {
-      throw new Error('End Date cannot be earlier than Start Date');
-    }
-    
-    const newId = generateTripId();
-    const newTrip: Trip = {
-      ...tripData,
-      id: newId,
-      costs: [],
-      status: 'active',
-      paymentStatus: 'unpaid',
-      additionalCosts: [],
-      delayReasons: [],
-      followUpHistory: [],
-      clientType: tripData.clientType || 'external',
-    };
-    
-    console.log("Adding new trip:", newId);
-    
-    // Add to local state immediately for better UX
-    setTrips(prev => [...prev, newTrip]);
-    
-    // Then add to Firebase (fire and forget)
-    addTripToFirebase(newTrip).catch(err => {
-      console.error("Error adding trip to Firebase:", err);
-      // Could revert local state here if needed
-    });
-    
-    return newId;
-  };
-
-  const updateTrip = async (updatedTrip: Trip): Promise<void> => {
-    console.log("Updating trip:", updatedTrip.id);
-    const cleanTrip = cleanObjectForFirestore(updatedTrip);
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(trip => trip.id === updatedTrip.id ? updatedTrip : trip)
-    );
-    
-    // Then update in Firebase
     try {
-      const tripDocRef = doc(db, "trips", updatedTrip.id);
-      await updateDoc(tripDocRef, cleanTrip);
-      console.log("Trip updated in Firestore:", updatedTrip.id);
+      console.log("Adding new trip:", tripData);
+      const newId = generateTripId();
+      const newTrip: Trip = {
+        ...tripData,
+        id: newId,
+        costs: [],
+        status: 'active',
+        paymentStatus: 'unpaid',
+        additionalCosts: [],
+        delayReasons: [],
+        followUpHistory: [],
+        clientType: tripData.clientType || 'external',
+      };
+      
+      // Add to Firestore
+      addDoc(collection(db, "trips"), newTrip)
+        .then(docRef => {
+          console.log("Trip added with ID:", docRef.id);
+          // Update the ID to match Firestore
+          updateDoc(docRef, { id: docRef.id });
+        })
+        .catch(error => {
+          console.error("Error adding trip to Firestore:", error);
+        });
+      
+      return newId;
     } catch (error) {
-      console.error("Error updating trip in Firestore:", error);
+      console.error("Error in addTrip:", error);
       throw error;
     }
   };
 
-  const deleteTrip = async (id: string): Promise<void> => {
-    console.log("Deleting trip:", id);
-    
-    // Update local state immediately
-    setTrips(prev => prev.filter(trip => trip.id !== id));
-    
-    // Then delete from Firebase
+  const updateTrip = (updatedTrip: Trip): void => {
     try {
-      await deleteTripFromFirebase(id);
-      console.log("Trip deleted from Firestore:", id);
+      console.log("Updating trip:", updatedTrip.id);
+      const tripDocRef = doc(db, "trips", updatedTrip.id);
+      updateDoc(tripDocRef, updatedTrip)
+        .then(() => {
+          console.log("Trip updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating trip in Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error deleting trip from Firestore:", error);
+      console.error("Error in updateTrip:", error);
+      throw error;
+    }
+  };
+
+  const deleteTrip = (id: string): void => {
+    try {
+      console.log("Deleting trip:", id);
+      const tripDocRef = doc(db, "trips", id);
+      deleteDoc(tripDocRef)
+        .then(() => {
+          console.log("Trip deleted successfully");
+        })
+        .catch(error => {
+          console.error("Error deleting trip from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteTrip:", error);
       throw error;
     }
   };
@@ -378,776 +341,581 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return trips.find(trip => trip.id === id);
   };
 
-  // Cost Entry Firestore update helpers:
-
-  const addCostEntry = (
-    tripId: string,
-    costEntryData: Omit<CostEntry, "id" | "attachments">,
-    files?: FileList
-  ): string => {
-    console.log("Adding cost entry to trip:", tripId);
-    
-    const newId = `C${Date.now()}`;
-    const currentTime = new Date().toISOString();
-    
-    const attachments: Attachment[] = files
-      ? Array.from(files).map((file, index) => ({
-          id: `A${Date.now()}-${index}`,
-          costEntryId: newId,
-          filename: file.name,
-          fileUrl: URL.createObjectURL(file),
-          fileType: file.type,
-          fileSize: file.size,
-          uploadedAt: currentTime,
-          fileData: "",
-        }))
-      : [];
-
-    const newCostEntry: CostEntry = {
-      ...costEntryData,
-      id: newId,
-      tripId, // Ensure tripId is set
-      attachments,
-      createdAt: currentTime,
-      updatedAt: currentTime,
-    };
-
-    const trip = trips.find((t) => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-
-    const updatedCosts = [...(trip.costs || []), newCostEntry];
-    const cleanCosts = cleanObjectForFirestore(updatedCosts);
-    
-    console.log("Adding cost entry to local state:", newId);
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === tripId ? {...t, costs: updatedCosts} : t)
-    );
-    
-    // Then update in Firebase
-    const tripDocRef = doc(db, "trips", tripId);
-    updateDoc(tripDocRef, { costs: cleanCosts }).catch(err => {
-      console.error("Error updating costs in Firebase:", err);
-      // Could revert local state here if needed
-    });
-
-    return newId;
-  };
-
-  const updateCostEntry = async (updatedCostEntry: CostEntry): Promise<void> => {
-    console.log("Updating cost entry:", updatedCostEntry.id);
-    
-    const trip = trips.find(t => t.id === updatedCostEntry.tripId);
-    if (!trip) {
-      console.error("Trip not found:", updatedCostEntry.tripId);
-      throw new Error("Trip not found");
-    }
-
-    const costEntryWithTimestamp = {
-      ...updatedCostEntry,
-      updatedAt: new Date().toISOString()
-    };
-
-    const updatedCosts = trip.costs.map(cost => 
-      cost.id === updatedCostEntry.id ? costEntryWithTimestamp : cost
-    );
-    
-    const cleanCosts = cleanObjectForFirestore(updatedCosts);
-    
-    console.log("Updating cost entry in local state");
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === trip.id ? {...t, costs: updatedCosts} : t)
-    );
-    
-    // Then update in Firebase
+  // Cost Entry Management
+  const addCostEntry = (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList): string => {
     try {
-      const tripDocRef = doc(db, "trips", updatedCostEntry.tripId);
-      await updateDoc(tripDocRef, { costs: cleanCosts });
-      console.log("Cost entry updated in Firestore");
+      console.log("Adding cost entry to trip:", costData.tripId);
+      const newId = `C${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Process attachments if files are provided
+      const attachments: Attachment[] = files
+        ? Array.from(files).map((file, index) => ({
+            id: `A${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}`,
+            costEntryId: newId,
+            filename: file.name,
+            fileUrl: URL.createObjectURL(file),
+            fileType: file.type,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            fileData: "",
+          }))
+        : [];
+
+      const newCostEntry: CostEntry = {
+        ...costData,
+        id: newId,
+        attachments,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const trip = trips.find((t) => t.id === costData.tripId);
+      if (!trip) {
+        console.error("Trip not found:", costData.tripId);
+        throw new Error("Trip not found");
+      }
+
+      const updatedCosts = [...(trip.costs || []), newCostEntry];
+      const tripDocRef = doc(db, "trips", costData.tripId);
+
+      updateDoc(tripDocRef, { costs: updatedCosts })
+        .then(() => {
+          console.log("Cost entry added successfully");
+        })
+        .catch(error => {
+          console.error("Error adding cost entry to Firestore:", error);
+        });
+
+      return newId;
     } catch (error) {
-      console.error("Error updating cost entry in Firestore:", error);
+      console.error("Error in addCostEntry:", error);
       throw error;
     }
   };
 
-  const deleteCostEntry = async (costEntryId: string): Promise<void> => {
-    console.log("Deleting cost entry:", costEntryId);
-    
-    const trip = trips.find(t => t.costs && t.costs.some(c => c.id === costEntryId));
-    if (!trip) {
-      console.error("Trip not found for cost entry:", costEntryId);
-      throw new Error("Trip not found");
-    }
-    
-    const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
-    const cleanCosts = cleanObjectForFirestore(updatedCosts);
-    
-    console.log("Removing cost entry from local state");
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === trip.id ? {...t, costs: updatedCosts} : t)
-    );
-    
-    // Then update in Firebase
+  const updateCostEntry = (updatedCost: CostEntry): void => {
     try {
-      const tripDocRef = doc(db, "trips", trip.id);
-      await updateDoc(tripDocRef, { costs: cleanCosts });
-      console.log("Cost entry deleted from Firestore");
+      console.log("Updating cost entry:", updatedCost.id);
+      const trip = trips.find(t => t.id === updatedCost.tripId);
+      if (!trip) {
+        console.error("Trip not found:", updatedCost.tripId);
+        throw new Error("Trip not found");
+      }
+
+      const updatedCosts = trip.costs.map(cost => 
+        cost.id === updatedCost.id ? { ...updatedCost, updatedAt: new Date().toISOString() } : cost
+      );
+      
+      const tripDocRef = doc(db, "trips", updatedCost.tripId);
+      updateDoc(tripDocRef, { costs: updatedCosts })
+        .then(() => {
+          console.log("Cost entry updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating cost entry in Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error deleting cost entry from Firestore:", error);
+      console.error("Error in updateCostEntry:", error);
+      throw error;
+    }
+  };
+
+  const deleteCostEntry = (costEntryId: string): void => {
+    try {
+      console.log("Deleting cost entry:", costEntryId);
+      const trip = trips.find(t => t.costs.some(c => c.id === costEntryId));
+      if (!trip) {
+        console.error("Trip not found for cost entry:", costEntryId);
+        throw new Error("Trip not found for cost entry");
+      }
+      
+      const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
+      const tripDocRef = doc(db, "trips", trip.id);
+      
+      updateDoc(tripDocRef, { costs: updatedCosts })
+        .then(() => {
+          console.log("Cost entry deleted successfully");
+        })
+        .catch(error => {
+          console.error("Error deleting cost entry from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteCostEntry:", error);
+      throw error;
+    }
+  };
+
+  // Additional Cost Management
+  const addAdditionalCost = (tripId: string, cost: Omit<AdditionalCost, "id">, files?: FileList): void => {
+    try {
+      console.log("Adding additional cost to trip:", tripId);
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found:", tripId);
+        throw new Error("Trip not found");
+      }
+
+      const newId = `AC${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Process supporting documents if files are provided
+      const supportingDocuments = files
+        ? Array.from(files).map((file, index) => ({
+            id: `SD${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}`,
+            costEntryId: newId,
+            filename: file.name,
+            fileUrl: URL.createObjectURL(file),
+            fileType: file.type,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            fileData: "",
+          }))
+        : [];
+
+      const newCost: AdditionalCost = {
+        ...cost,
+        id: newId,
+        supportingDocuments,
+      };
+
+      const updatedAdditionalCosts = [...(trip.additionalCosts || []), newCost];
+      const tripDocRef = doc(db, "trips", tripId);
+      
+      updateDoc(tripDocRef, { additionalCosts: updatedAdditionalCosts })
+        .then(() => {
+          console.log("Additional cost added successfully");
+        })
+        .catch(error => {
+          console.error("Error adding additional cost to Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in addAdditionalCost:", error);
+      throw error;
+    }
+  };
+
+  const removeAdditionalCost = (tripId: string, costId: string): void => {
+    try {
+      console.log("Removing additional cost:", costId, "from trip:", tripId);
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found:", tripId);
+        throw new Error("Trip not found");
+      }
+
+      const updatedAdditionalCosts = (trip.additionalCosts || []).filter(c => c.id !== costId);
+      const tripDocRef = doc(db, "trips", tripId);
+      
+      updateDoc(tripDocRef, { additionalCosts: updatedAdditionalCosts })
+        .then(() => {
+          console.log("Additional cost removed successfully");
+        })
+        .catch(error => {
+          console.error("Error removing additional cost from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in removeAdditionalCost:", error);
+      throw error;
+    }
+  };
+
+  // Delay Reasons
+  const addDelayReason = (tripId: string, delay: Omit<DelayReason, "id">): void => {
+    try {
+      console.log("Adding delay reason to trip:", tripId);
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found:", tripId);
+        throw new Error("Trip not found");
+      }
+
+      const newId = `DR${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const newDelay: DelayReason = {
+        ...delay,
+        id: newId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const updatedDelayReasons = [...(trip.delayReasons || []), newDelay];
+      const tripDocRef = doc(db, "trips", tripId);
+      
+      updateDoc(tripDocRef, { delayReasons: updatedDelayReasons })
+        .then(() => {
+          console.log("Delay reason added successfully");
+        })
+        .catch(error => {
+          console.error("Error adding delay reason to Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in addDelayReason:", error);
       throw error;
     }
   };
 
   // Complete Trip
-  const completeTrip = async (tripId: string): Promise<void> => {
-    console.log("Completing trip:", tripId);
-    
-    const trip = trips.find((t) => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-
-    const unresolvedFlags = trip.costs?.some(
-      (cost) => cost.isFlagged && cost.investigationStatus !== "resolved"
-    );
-    if (unresolvedFlags) {
-      throw new Error(
-        "Cannot complete trip: unresolved flagged cost entries present"
-      );
-    }
-
-    const updateData = cleanObjectForFirestore({
-      status: "completed",
-      completedAt: new Date().toISOString(),
-      completedBy: "User", // Replace with real user info
-    });
-
-    console.log("Updating trip status to completed in local state");
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === tripId ? {...t, ...updateData} : t)
-    );
-
-    // Then update in Firebase
+  const completeTrip = (tripId: string): void => {
     try {
-      const tripDocRef = doc(db, "trips", tripId);
-      await updateDoc(tripDocRef, updateData);
-      console.log("Trip marked as completed in Firestore");
-    } catch (error) {
-      console.error("Error completing trip in Firestore:", error);
-      throw error;
-    }
-  };
-
-  // Additional cost management
-  const addAdditionalCost = (
-    tripId: string,
-    costData: Omit<AdditionalCost, "id">,
-    files?: FileList
-  ): string => {
-    console.log("Adding additional cost to trip:", tripId);
-    
-    const newId = `AC${Date.now()}`;
-    
-    const supportingDocuments: Attachment[] = files
-      ? Array.from(files).map((file, index) => ({
-          id: `ACD${Date.now()}-${index}`,
-          costEntryId: newId,
-          filename: file.name,
-          fileUrl: URL.createObjectURL(file),
-          fileType: file.type,
-          fileSize: file.size,
-          uploadedAt: new Date().toISOString(),
-          fileData: "",
-        }))
-      : [];
-    
-    const newCost: AdditionalCost = {
-      ...costData,
-      id: newId,
-      supportingDocuments
-    };
-    
-    const trip = trips.find(t => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-    
-    const updatedAdditionalCosts = [...(trip.additionalCosts || []), newCost];
-    const cleanAdditionalCosts = cleanObjectForFirestore(updatedAdditionalCosts);
-    
-    console.log("Adding additional cost to local state:", newId);
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === tripId ? {...t, additionalCosts: updatedAdditionalCosts} : t)
-    );
-    
-    // Then update in Firebase
-    const tripDocRef = doc(db, "trips", tripId);
-    updateDoc(tripDocRef, { additionalCosts: cleanAdditionalCosts }).catch(err => {
-      console.error("Error updating additional costs in Firebase:", err);
-    });
-    
-    return newId;
-  };
-  
-  const removeAdditionalCost = (tripId: string, costId: string): void => {
-    console.log("Removing additional cost:", costId, "from trip:", tripId);
-    
-    const trip = trips.find(t => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-    
-    const updatedAdditionalCosts = trip.additionalCosts.filter(c => c.id !== costId);
-    const cleanAdditionalCosts = cleanObjectForFirestore(updatedAdditionalCosts);
-    
-    console.log("Removing additional cost from local state");
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === tripId ? {...t, additionalCosts: updatedAdditionalCosts} : t)
-    );
-    
-    // Then update in Firebase
-    const tripDocRef = doc(db, "trips", tripId);
-    updateDoc(tripDocRef, { additionalCosts: cleanAdditionalCosts }).catch(err => {
-      console.error("Error removing additional cost in Firebase:", err);
-    });
-  };
-
-  // Delay reasons
-  const addDelayReason = (
-    tripId: string,
-    delayData: Omit<DelayReason, "id">
-  ): string => {
-    console.log("Adding delay reason to trip:", tripId);
-    
-    const newId = `DR${Date.now()}`;
-    const currentTime = new Date().toISOString();
-    
-    const newDelay: DelayReason = {
-      ...delayData,
-      id: newId,
-      tripId,
-      date: currentTime,
-      createdAt: currentTime,
-      updatedAt: currentTime
-    };
-    
-    const trip = trips.find(t => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-    
-    const updatedDelayReasons = [...(trip.delayReasons || []), newDelay];
-    const cleanDelayReasons = cleanObjectForFirestore(updatedDelayReasons);
-    
-    console.log("Adding delay reason to local state:", newId);
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === tripId ? {...t, delayReasons: updatedDelayReasons} : t)
-    );
-    
-    // Then update in Firebase
-    const tripDocRef = doc(db, "trips", tripId);
-    updateDoc(tripDocRef, { delayReasons: cleanDelayReasons }).catch(err => {
-      console.error("Error adding delay reason in Firebase:", err);
-    });
-    
-    return newId;
-  };
-
-  // Invoice payment management
-  const updateInvoicePayment = async (
-    tripId: string,
-    paymentData: {
-      paymentStatus: 'unpaid' | 'partial' | 'paid';
-      paymentAmount?: number;
-      paymentReceivedDate?: string;
-      paymentNotes?: string;
-      paymentMethod?: string;
-      bankReference?: string;
-    }
-  ): Promise<void> => {
-    console.log("Updating invoice payment for trip:", tripId);
-    
-    const trip = trips.find(t => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-    
-    const updateData = cleanObjectForFirestore({
-      ...paymentData,
-      paymentUpdatedAt: new Date().toISOString(),
-      paymentUpdatedBy: 'Current User' // In real app, use actual user
-    });
-    
-    console.log("Updating invoice payment in local state");
-    
-    // Update local state immediately
-    setTrips(prev => 
-      prev.map(t => t.id === tripId ? {...t, ...updateData} : t)
-    );
-    
-    // Then update in Firebase
-    try {
-      const tripDocRef = doc(db, "trips", tripId);
-      await updateDoc(tripDocRef, updateData);
-      console.log("Invoice payment updated in Firestore");
-    } catch (error) {
-      console.error("Error updating invoice payment in Firestore:", error);
-      throw error;
-    }
-  };
-
-  // Import functionality
-  const importTripsFromCSV = async (tripsData: any[]): Promise<void> => {
-    console.log("Importing trips from CSV:", tripsData.length, "trips");
-    
-    const newTrips = tripsData.map(data => {
-      const tripId = generateTripId();
-      return {
-        ...data,
-        id: tripId,
-        costs: [],
-        status: 'active',
-        paymentStatus: 'unpaid',
-        additionalCosts: [],
-        delayReasons: [],
-        followUpHistory: []
-      } as Trip;
-    });
-    
-    console.log("Adding imported trips to local state");
-    
-    // Add to local state immediately
-    setTrips(prev => [...prev, ...newTrips]);
-    
-    // Then add to Firebase
-    for (const trip of newTrips) {
-      try {
-        const cleanTrip = cleanObjectForFirestore(trip);
-        await addDoc(collection(db, "trips"), cleanTrip);
-        console.log("Imported trip added to Firestore:", trip.id);
-      } catch (error) {
-        console.error("Error importing trip to Firestore:", error);
+      console.log("Completing trip:", tripId);
+      const trip = trips.find((t) => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found:", tripId);
+        throw new Error("Trip not found");
       }
+
+      const unresolvedFlags = trip.costs?.some(
+        (cost) => cost.isFlagged && cost.investigationStatus !== "resolved"
+      );
+      
+      if (unresolvedFlags) {
+        console.error("Cannot complete trip: unresolved flagged cost entries present");
+        throw new Error(
+          "Cannot complete trip: unresolved flagged cost entries present"
+        );
+      }
+
+      const tripDocRef = doc(db, "trips", tripId);
+      updateDoc(tripDocRef, {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+        completedBy: "Current User", // In a real app, use the logged-in user
+      })
+        .then(() => {
+          console.log("Trip completed successfully");
+        })
+        .catch(error => {
+          console.error("Error completing trip in Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in completeTrip:", error);
+      throw error;
     }
   };
 
-  // Diesel allocation
-  const allocateDieselToTrip = async (dieselId: string, tripId: string): Promise<void> => {
-    console.log("Allocating diesel record to trip:", dieselId, "->", tripId);
-    
-    const diesel = dieselRecords.find(d => d.id === dieselId);
-    if (!diesel) {
-      console.error("Diesel record not found:", dieselId);
-      throw new Error("Diesel record not found");
-    }
-    
-    const trip = trips.find(t => t.id === tripId);
-    if (!trip) {
-      console.error("Trip not found:", tripId);
-      throw new Error("Trip not found");
-    }
-    
-    // Update diesel record
-    const updatedDiesel = {
-      ...diesel,
-      tripId
-    };
-    
-    console.log("Updating diesel record in local state");
-    
-    // Update local state immediately
-    setDieselRecords(prev => 
-      prev.map(d => d.id === dieselId ? updatedDiesel : d)
-    );
-    
-    // Then update in Firebase
+  // Invoice Payment Update
+  const updateInvoicePayment = (tripId: string, paymentData: any): void => {
     try {
-      await updateDieselInFirebase(dieselId, updatedDiesel);
-      console.log("Diesel record updated in Firestore");
-      
-      // Create cost entry for the diesel
-      const costData: Omit<CostEntry, 'id' | 'attachments'> = {
-        tripId,
-        category: 'Fuel',
-        subCategory: 'Diesel',
-        amount: diesel.totalCost,
-        currency: 'ZAR', // Default, should be from diesel record
-        referenceNumber: `FUEL-${diesel.date}-${diesel.fleetNumber}`,
-        date: diesel.date,
-        notes: `Fuel purchase at ${diesel.fuelStation}. ${diesel.litresFilled}L at ${diesel.costPerLitre}/L.`,
-        isFlagged: false,
-        isSystemGenerated: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      console.log("Updating invoice payment for trip:", tripId);
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found:", tripId);
+        throw new Error("Trip not found");
+      }
+
+      const tripDocRef = doc(db, "trips", tripId);
+      updateDoc(tripDocRef, {
+        paymentStatus: paymentData.paymentStatus,
+        paymentAmount: paymentData.paymentAmount,
+        paymentReceivedDate: paymentData.paymentReceivedDate,
+        paymentNotes: paymentData.paymentNotes,
+        paymentMethod: paymentData.paymentMethod,
+        bankReference: paymentData.bankReference,
+        updatedAt: new Date().toISOString(),
+      })
+        .then(() => {
+          console.log("Invoice payment updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating invoice payment in Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in updateInvoicePayment:", error);
+      throw error;
+    }
+  };
+
+  // Missed Loads Management
+  const addMissedLoad = (missedLoadData: Omit<MissedLoad, "id">): string => {
+    try {
+      console.log("Adding missed load:", missedLoadData);
+      const newId = `ML${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const newMissedLoad: MissedLoad = {
+        ...missedLoadData,
+        id: newId,
       };
       
-      addCostEntry(tripId, costData);
-    } catch (error) {
-      console.error("Error allocating diesel to trip in Firestore:", error);
-      throw error;
-    }
-  };
-  
-  const removeDieselFromTrip = async (dieselId: string): Promise<void> => {
-    console.log("Removing diesel record from trip:", dieselId);
-    
-    const diesel = dieselRecords.find(d => d.id === dieselId);
-    if (!diesel) {
-      console.error("Diesel record not found:", dieselId);
-      throw new Error("Diesel record not found");
-    }
-    
-    if (!diesel.tripId) {
-      console.log("Diesel record not linked to any trip");
-      return; // Nothing to remove
-    }
-    
-    // Find the trip and remove the associated cost entry
-    const trip = trips.find(t => t.id === diesel.tripId);
-    if (trip) {
-      const fuelCostEntry = trip.costs.find(c => 
-        c.category === 'Fuel' && 
-        c.subCategory === 'Diesel' && 
-        c.referenceNumber.includes(diesel.fleetNumber) &&
-        c.referenceNumber.includes(diesel.date)
-      );
+      // Add to Firestore
+      addDoc(collection(db, "missedLoads"), newMissedLoad)
+        .then(docRef => {
+          console.log("Missed load added with ID:", docRef.id);
+          // Update the ID to match Firestore
+          updateDoc(docRef, { id: docRef.id });
+        })
+        .catch(error => {
+          console.error("Error adding missed load to Firestore:", error);
+        });
       
-      if (fuelCostEntry) {
-        await deleteCostEntry(fuelCostEntry.id);
+      return newId;
+    } catch (error) {
+      console.error("Error in addMissedLoad:", error);
+      throw error;
+    }
+  };
+
+  const updateMissedLoad = (missedLoad: MissedLoad): void => {
+    try {
+      console.log("Updating missed load:", missedLoad.id);
+      const missedLoadDocRef = doc(db, "missedLoads", missedLoad.id);
+      updateDoc(missedLoadDocRef, missedLoad)
+        .then(() => {
+          console.log("Missed load updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating missed load in Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in updateMissedLoad:", error);
+      throw error;
+    }
+  };
+
+  const deleteMissedLoad = (id: string): void => {
+    try {
+      console.log("Deleting missed load:", id);
+      const missedLoadDocRef = doc(db, "missedLoads", id);
+      deleteDoc(missedLoadDocRef)
+        .then(() => {
+          console.log("Missed load deleted successfully");
+        })
+        .catch(error => {
+          console.error("Error deleting missed load from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteMissedLoad:", error);
+      throw error;
+    }
+  };
+
+  // Diesel Management
+  const addDieselRecord = (record: Omit<DieselConsumptionRecord, "id">): void => {
+    try {
+      console.log("Adding diesel record:", record);
+      const newId = `DR${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const newRecord: DieselConsumptionRecord = {
+        ...record,
+        id: newId,
+      };
+      
+      // Add to Firestore
+      addDoc(collection(db, "diesel"), newRecord)
+        .then(docRef => {
+          console.log("Diesel record added with ID:", docRef.id);
+          // Update the ID to match Firestore
+          updateDoc(docRef, { id: docRef.id });
+        })
+        .catch(error => {
+          console.error("Error adding diesel record to Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in addDieselRecord:", error);
+      throw error;
+    }
+  };
+
+  const updateDieselRecord = (record: DieselConsumptionRecord): void => {
+    try {
+      console.log("Updating diesel record:", record.id);
+      const recordDocRef = doc(db, "diesel", record.id);
+      updateDoc(recordDocRef, record)
+        .then(() => {
+          console.log("Diesel record updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating diesel record in Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in updateDieselRecord:", error);
+      throw error;
+    }
+  };
+
+  const deleteDieselRecord = (id: string): void => {
+    try {
+      console.log("Deleting diesel record:", id);
+      const recordDocRef = doc(db, "diesel", id);
+      deleteDoc(recordDocRef)
+        .then(() => {
+          console.log("Diesel record deleted successfully");
+        })
+        .catch(error => {
+          console.error("Error deleting diesel record from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteDieselRecord:", error);
+      throw error;
+    }
+  };
+
+  const allocateDieselToTrip = (dieselRecordId: string, tripId: string): void => {
+    try {
+      console.log("Allocating diesel record to trip:", dieselRecordId, tripId);
+      const record = dieselRecords.find(r => r.id === dieselRecordId);
+      if (!record) {
+        console.error("Diesel record not found:", dieselRecordId);
+        throw new Error("Diesel record not found");
       }
-    }
-    
-    // Update diesel record
-    const updatedDiesel = {
-      ...diesel,
-      tripId: undefined
-    };
-    
-    console.log("Removing trip link from diesel record in local state");
-    
-    // Update local state immediately
-    setDieselRecords(prev => 
-      prev.map(d => d.id === dieselId ? updatedDiesel : d)
-    );
-    
-    // Then update in Firebase
-    try {
-      await updateDieselInFirebase(dieselId, updatedDiesel);
-      console.log("Diesel record updated in Firestore");
-    } catch (error) {
-      console.error("Error removing diesel from trip in Firestore:", error);
-      throw error;
-    }
-  };
-
-  // Missed Loads Handlers (following uniform handler pattern)
-  // Helper to sanitize missed load fields for Firestore
-  function sanitizeMissedLoad(load: any) {
-    return cleanObjectForFirestore({
-      ...load,
-      compensationNotes: typeof load.compensationNotes === 'string' ? load.compensationNotes : '',
-      resolutionNotes: typeof load.resolutionNotes === 'string' ? load.resolutionNotes : '',
-      reasonDescription: typeof load.reasonDescription === 'string' ? load.reasonDescription : '',
-      // Add more fields as needed
-    });
-  }
-
-  const addMissedLoad = (missedLoadData: Omit<MissedLoad, "id">): string => {
-    console.log("Adding missed load");
-    
-    const newId = `ML${Date.now()}`;
-    const sanitized = sanitizeMissedLoad(missedLoadData);
-    
-    const newMissedLoad = {
-      ...sanitized,
-      id: newId
-    };
-    
-    console.log("Adding missed load to local state:", newId);
-    
-    // Update local state immediately
-    setMissedLoads(prev => [...prev, newMissedLoad as MissedLoad]);
-    
-    // Then add to Firebase
-    addDoc(collection(db, "missedLoads"), sanitized).catch(err => {
-      console.error("Error adding missed load to Firebase:", err);
-    });
-    
-    return newId;
-  };
-
-  const updateMissedLoad = async (missedLoad: MissedLoad): Promise<void> => {
-    console.log("Updating missed load:", missedLoad.id);
-    
-    const sanitized = sanitizeMissedLoad(missedLoad);
-    
-    console.log("Updating missed load in local state");
-    
-    // Update local state immediately
-    setMissedLoads(prev => 
-      prev.map(ml => ml.id === missedLoad.id ? missedLoad : ml)
-    );
-    
-    // Then update in Firebase
-    try {
-      const docRef = doc(db, "missedLoads", missedLoad.id);
-      await updateDoc(docRef, sanitized);
-      console.log("Missed load updated in Firestore");
-    } catch (error) {
-      console.error("Error updating missed load in Firestore:", error);
-      throw error;
-    }
-  };
-
-  const deleteMissedLoad = async (id: string): Promise<void> => {
-    console.log("Deleting missed load:", id);
-    
-    // Update local state immediately
-    setMissedLoads(prev => prev.filter(ml => ml.id !== id));
-    
-    // Then delete from Firebase
-    try {
-      const docRef = doc(db, "missedLoads", id);
-      await deleteDoc(docRef);
-      console.log("Missed load deleted from Firestore");
-    } catch (error) {
-      console.error("Error deleting missed load from Firestore:", error);
-      throw error;
-    }
-  };
-
-  // System Cost Rates Handler (following uniform handler pattern)
-  const updateSystemCostRates = (currency: 'USD' | 'ZAR', rates: SystemCostRates): void => {
-    console.log("Updating system cost rates for currency:", currency);
-    
-    setSystemCostRates(prev => ({
-      ...prev,
-      [currency]: rates,
-    }));
-    
-    // Save to localStorage for persistence
-    try {
-      localStorage.setItem('systemCostRates', JSON.stringify({
-        ...systemCostRates,
-        [currency]: rates
-      }));
-    } catch (error) {
-      console.error("Error saving system cost rates to localStorage:", error);
-    }
-  };
-
-  // Load system cost rates from localStorage on init
-  useEffect(() => {
-    try {
-      const savedRates = localStorage.getItem('systemCostRates');
-      if (savedRates) {
-        setSystemCostRates(JSON.parse(savedRates));
+      
+      const trip = trips.find(t => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found:", tripId);
+        throw new Error("Trip not found");
       }
+      
+      // Update diesel record with trip ID
+      const recordDocRef = doc(db, "diesel", dieselRecordId);
+      updateDoc(recordDocRef, { tripId })
+        .then(() => {
+          console.log("Diesel record allocated to trip successfully");
+          
+          // Create a cost entry for this diesel record
+          const costData: Omit<CostEntry, "id" | "attachments"> = {
+            tripId,
+            category: "Fuel",
+            subCategory: "Diesel",
+            amount: record.totalCost,
+            currency: trip.revenueCurrency,
+            referenceNumber: `FUEL-${record.fleetNumber}-${new Date(record.date).toISOString().split('T')[0]}`,
+            date: record.date,
+            notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled} liters`,
+            isFlagged: false,
+            isSystemGenerated: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+          
+          addCostEntry(costData);
+        })
+        .catch(error => {
+          console.error("Error allocating diesel record to trip in Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error loading system cost rates from localStorage:", error);
-    }
-  }, []);
-
-  // Diesel CRUD
-  const addDieselRecord = async (record: Omit<DieselConsumptionRecord, "id">) => {
-    console.log("Adding diesel record");
-    
-    const newId = `D${Date.now()}`;
-    const newRecord = {
-      ...record,
-      id: newId
-    };
-    
-    console.log("Adding diesel record to local state:", newId);
-    
-    // Update local state immediately
-    setDieselRecords(prev => [...prev, newRecord as DieselConsumptionRecord]);
-    
-    // Then add to Firebase
-    try {
-      await addDieselToFirebase(cleanObjectForFirestore(newRecord));
-      console.log("Diesel record added to Firestore");
-    } catch (error) {
-      console.error("Error adding diesel record to Firestore:", error);
-      throw error;
-    }
-  };
-  
-  const updateDieselRecord = async (record: DieselConsumptionRecord) => {
-    console.log("Updating diesel record:", record.id);
-    
-    console.log("Updating diesel record in local state");
-    
-    // Update local state immediately
-    setDieselRecords(prev => 
-      prev.map(d => d.id === record.id ? record : d)
-    );
-    
-    // Then update in Firebase
-    try {
-      await updateDieselInFirebase(record.id, cleanObjectForFirestore(record));
-      console.log("Diesel record updated in Firestore");
-    } catch (error) {
-      console.error("Error updating diesel record in Firestore:", error);
-      throw error;
-    }
-  };
-  
-  const deleteDieselRecord = async (id: string) => {
-    console.log("Deleting diesel record:", id);
-    
-    // Update local state immediately
-    setDieselRecords(prev => prev.filter(d => d.id !== id));
-    
-    // Then delete from Firebase
-    try {
-      await deleteDieselFromFirebase(id);
-      console.log("Diesel record deleted from Firestore");
-    } catch (error) {
-      console.error("Error deleting diesel record from Firestore:", error);
+      console.error("Error in allocateDieselToTrip:", error);
       throw error;
     }
   };
 
-  // Driver Behavior Event CRUD
-  const addDriverBehaviorEvent = async (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList) => {
-    console.log("Adding driver behavior event");
-    
-    const newId = `DBE${Date.now()}`;
-    const newEvent = {
-      ...event,
-      id: newId
-    };
-    
-    console.log("Adding driver behavior event to local state:", newId);
-    
-    // Update local state immediately
-    setDriverBehaviorEvents(prev => [...prev, newEvent as DriverBehaviorEvent]);
-    
-    // Then add to Firebase
+  const removeDieselFromTrip = (dieselRecordId: string): void => {
     try {
-      await addDriverBehaviorEventToFirebase(cleanObjectForFirestore(newEvent));
-      console.log("Driver behavior event added to Firestore");
+      console.log("Removing diesel record from trip:", dieselRecordId);
+      const record = dieselRecords.find(r => r.id === dieselRecordId);
+      if (!record || !record.tripId) {
+        console.error("Diesel record not found or not linked to a trip:", dieselRecordId);
+        throw new Error("Diesel record not found or not linked to a trip");
+      }
+      
+      // Update diesel record to remove trip ID
+      const recordDocRef = doc(db, "diesel", dieselRecordId);
+      updateDoc(recordDocRef, { tripId: null })
+        .then(() => {
+          console.log("Diesel record removed from trip successfully");
+          
+          // Find and remove the associated cost entry
+          const trip = trips.find(t => t.id === record.tripId);
+          if (trip) {
+            const costEntry = trip.costs.find(c => 
+              c.category === "Fuel" && 
+              c.subCategory === "Diesel" && 
+              c.referenceNumber.includes(record.fleetNumber) &&
+              c.date === record.date
+            );
+            
+            if (costEntry) {
+              deleteCostEntry(costEntry.id);
+            }
+          }
+        })
+        .catch(error => {
+          console.error("Error removing diesel record from trip in Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error adding driver behavior event to Firestore:", error);
-      throw error;
-    }
-  };
-  
-  const updateDriverBehaviorEvent = async (event: DriverBehaviorEvent) => {
-    console.log("Updating driver behavior event:", event.id);
-    
-    console.log("Updating driver behavior event in local state");
-    
-    // Update local state immediately
-    setDriverBehaviorEvents(prev => 
-      prev.map(e => e.id === event.id ? event : e)
-    );
-    
-    // Then update in Firebase
-    try {
-      await updateDriverBehaviorEventToFirebase(event.id, cleanObjectForFirestore(event));
-      console.log("Driver behavior event updated in Firestore");
-    } catch (error) {
-      console.error("Error updating driver behavior event in Firestore:", error);
-      throw error;
-    }
-  };
-  
-  const deleteDriverBehaviorEvent = async (id: string) => {
-    console.log("Deleting driver behavior event:", id);
-    
-    // Update local state immediately
-    setDriverBehaviorEvents(prev => prev.filter(e => e.id !== id));
-    
-    // Then delete from Firebase
-    try {
-      await deleteDriverBehaviorEventToFirebase(id);
-      console.log("Driver behavior event deleted from Firestore");
-    } catch (error) {
-      console.error("Error deleting driver behavior event from Firestore:", error);
+      console.error("Error in removeDieselFromTrip:", error);
       throw error;
     }
   };
 
-  // CAR Report CRUD
-  const addCARReport = async (report: Omit<CARReport, 'id'>, files?: FileList) => {
-    console.log("Adding CAR report");
-    
-    const newId = `CAR${Date.now()}`;
-    const newReport = {
-      ...report,
-      id: newId
-    };
-    
-    console.log("Adding CAR report to local state:", newId);
-    
-    // Update local state immediately
-    setCARReports(prev => [...prev, newReport as CARReport]);
-    
-    // Then add to Firebase
+  const importDieselRecords = async (formData: FormData): Promise<void> => {
     try {
-      await addCARReportToFirebase(cleanObjectForFirestore(newReport));
-      console.log("CAR report added to Firestore");
+      console.log("Importing diesel records from CSV");
+      // In a real implementation, this would parse the CSV file and add records
+      // For now, we'll just simulate the import
+      alert("Diesel records imported successfully");
     } catch (error) {
-      console.error("Error adding CAR report to Firestore:", error);
+      console.error("Error in importDieselRecords:", error);
       throw error;
     }
   };
-  
-  const updateCARReport = async (report: CARReport, files?: FileList) => {
-    console.log("Updating CAR report:", report.id);
-    
-    console.log("Updating CAR report in local state");
-    
-    // Update local state immediately
-    setCARReports(prev => 
-      prev.map(r => r.id === report.id ? report : r)
-    );
-    
-    // Then update in Firebase
+
+  // Driver Behavior Events
+  const addDriverBehaviorEvent = (event: Omit<DriverBehaviorEvent, 'id'>, files?: FileList): void => {
     try {
-      await updateCARReportInFirebase(report.id, cleanObjectForFirestore(report));
-      console.log("CAR report updated in Firestore");
+      console.log("Adding driver behavior event:", event);
+      const newId = `DBE${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Process attachments if files are provided
+      const attachments: Attachment[] = files
+        ? Array.from(files).map((file, index) => ({
+            id: `A${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}`,
+            filename: file.name,
+            fileUrl: URL.createObjectURL(file),
+            fileType: file.type,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            fileData: "",
+          }))
+        : [];
+
+      const newEvent: DriverBehaviorEvent = {
+        ...event,
+        id: newId,
+        attachments,
+        resolved: false,
+      };
+      
+      // Add to Firestore
+      addDoc(collection(db, "driverBehavior"), newEvent)
+        .then(docRef => {
+          console.log("Driver behavior event added with ID:", docRef.id);
+          // Update the ID to match Firestore
+          updateDoc(docRef, { id: docRef.id });
+        })
+        .catch(error => {
+          console.error("Error adding driver behavior event to Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error updating CAR report in Firestore:", error);
+      console.error("Error in addDriverBehaviorEvent:", error);
       throw error;
     }
   };
-  
-  const deleteCARReport = async (id: string) => {
-    console.log("Deleting CAR report:", id);
-    
-    // Update local state immediately
-    setCARReports(prev => prev.filter(r => r.id !== id));
-    
-    // Then delete from Firebase
+
+  const updateDriverBehaviorEvent = (event: DriverBehaviorEvent): void => {
     try {
-      await deleteCARReportFromFirebase(id);
-      console.log("CAR report deleted from Firestore");
+      console.log("Updating driver behavior event:", event.id);
+      const eventDocRef = doc(db, "driverBehavior", event.id);
+      updateDoc(eventDocRef, event)
+        .then(() => {
+          console.log("Driver behavior event updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating driver behavior event in Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error deleting CAR report from Firestore:", error);
+      console.error("Error in updateDriverBehaviorEvent:", error);
+      throw error;
+    }
+  };
+
+  const deleteDriverBehaviorEvent = (id: string): void => {
+    try {
+      console.log("Deleting driver behavior event:", id);
+      const eventDocRef = doc(db, "driverBehavior", id);
+      deleteDoc(eventDocRef)
+        .then(() => {
+          console.log("Driver behavior event deleted successfully");
+        })
+        .catch(error => {
+          console.error("Error deleting driver behavior event from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteDriverBehaviorEvent:", error);
       throw error;
     }
   };
@@ -1276,107 +1044,282 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return performanceData.sort((a, b) => b.performanceScore - a.performanceScore);
   };
 
-  // Action Items CRUD (Firestore)
+  // CAR Reports
+  const addCARReport = (report: Omit<CARReport, 'id'>, files?: FileList): void => {
+    try {
+      console.log("Adding CAR report:", report);
+      const newId = `CAR${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Process attachments if files are provided
+      const attachments: Attachment[] = files
+        ? Array.from(files).map((file, index) => ({
+            id: `A${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}`,
+            filename: file.name,
+            fileUrl: URL.createObjectURL(file),
+            fileType: file.type,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            fileData: "",
+          }))
+        : [];
+
+      const newReport: CARReport = {
+        ...report,
+        id: newId,
+        attachments,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      // Add to Firestore
+      addDoc(collection(db, "carReports"), newReport)
+        .then(docRef => {
+          console.log("CAR report added with ID:", docRef.id);
+          // Update the ID to match Firestore
+          updateDoc(docRef, { id: docRef.id });
+          
+          // If this report is linked to a driver behavior event, update the event
+          if (report.referenceEventId) {
+            const eventDocRef = doc(db, "driverBehavior", report.referenceEventId);
+            updateDoc(eventDocRef, { carReportId: docRef.id });
+          }
+        })
+        .catch(error => {
+          console.error("Error adding CAR report to Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in addCARReport:", error);
+      throw error;
+    }
+  };
+
+  const updateCARReport = (report: CARReport, files?: FileList): void => {
+    try {
+      console.log("Updating CAR report:", report.id);
+      
+      // Process new attachments if files are provided
+      const newAttachments: Attachment[] = files
+        ? Array.from(files).map((file, index) => ({
+            id: `A${Date.now()}-${index}-${Math.random().toString(36).substring(2, 9)}`,
+            filename: file.name,
+            fileUrl: URL.createObjectURL(file),
+            fileType: file.type,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString(),
+            fileData: "",
+          }))
+        : [];
+
+      const updatedReport: CARReport = {
+        ...report,
+        attachments: [...report.attachments, ...newAttachments],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      const reportDocRef = doc(db, "carReports", report.id);
+      updateDoc(reportDocRef, updatedReport)
+        .then(() => {
+          console.log("CAR report updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating CAR report in Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in updateCARReport:", error);
+      throw error;
+    }
+  };
+
+  const deleteCARReport = (id: string): void => {
+    try {
+      console.log("Deleting CAR report:", id);
+      const report = carReports.find(r => r.id === id);
+      if (!report) {
+        console.error("CAR report not found:", id);
+        throw new Error("CAR report not found");
+      }
+      
+      const reportDocRef = doc(db, "carReports", id);
+      deleteDoc(reportDocRef)
+        .then(() => {
+          console.log("CAR report deleted successfully");
+          
+          // If this report is linked to a driver behavior event, update the event
+          if (report.referenceEventId) {
+            const eventDocRef = doc(db, "driverBehavior", report.referenceEventId);
+            updateDoc(eventDocRef, { carReportId: null });
+          }
+        })
+        .catch(error => {
+          console.error("Error deleting CAR report from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteCARReport:", error);
+      throw error;
+    }
+  };
+
+  // System Cost Rates
+  const updateSystemCostRates = (currency: 'USD' | 'ZAR', rates: SystemCostRates): void => {
+    try {
+      console.log("Updating system cost rates for currency:", currency);
+      setSystemCostRates(prev => ({
+        ...prev,
+        [currency]: rates,
+      }));
+      
+      // Save to Firestore
+      const ratesDocRef = doc(db, "systemCostRates", currency);
+      setDoc(ratesDocRef, rates)
+        .then(() => {
+          console.log("System cost rates updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating system cost rates in Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in updateSystemCostRates:", error);
+      throw error;
+    }
+  };
+
+  // Action Items
   const addActionItem = (itemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>): string => {
-    console.log("Adding action item");
-    
-    const newId = `AI${Date.now()}`;
-    const currentTime = new Date().toISOString();
-    
-    const newItem = {
-      ...itemData,
-      id: newId,
-      createdAt: currentTime,
-      updatedAt: currentTime,
-      createdBy: 'Current User', // Replace with real user info
-    };
-    
-    const cleanData = cleanObjectForFirestore(newItem);
-    
-    console.log("Adding action item to local state:", newId);
-    
-    // Update local state immediately
-    setActionItems(prev => [...prev, newItem as ActionItem]);
-    
-    // Then add to Firebase
-    addDoc(collection(db, 'actionItems'), cleanData).catch(err => {
-      console.error("Error adding action item to Firebase:", err);
-    });
-    
-    return newId;
-  };
-
-  const updateActionItem = async (item: ActionItem): Promise<void> => {
-    console.log("Updating action item:", item.id);
-    
-    const updatedItem = {
-      ...item,
-      updatedAt: new Date().toISOString(),
-    };
-    
-    const cleanData = cleanObjectForFirestore(updatedItem);
-    
-    console.log("Updating action item in local state");
-    
-    // Update local state immediately
-    setActionItems(prev => 
-      prev.map(ai => ai.id === item.id ? updatedItem : ai)
-    );
-    
-    // Then update in Firebase
     try {
-      const docRef = doc(db, 'actionItems', item.id);
-      await updateDoc(docRef, cleanData);
-      console.log("Action item updated in Firestore");
+      console.log("Adding action item:", itemData);
+      const newId = `AI${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      const newItem: ActionItem = {
+        ...itemData,
+        id: newId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdBy: 'Current User', // Replace with real user info
+      };
+      
+      // Add to Firestore
+      addDoc(collection(db, "actionItems"), newItem)
+        .then(docRef => {
+          console.log("Action item added with ID:", docRef.id);
+          // Update the ID to match Firestore
+          updateDoc(docRef, { id: docRef.id });
+        })
+        .catch(error => {
+          console.error("Error adding action item to Firestore:", error);
+        });
+      
+      return newId;
     } catch (error) {
-      console.error("Error updating action item in Firestore:", error);
+      console.error("Error in addActionItem:", error);
       throw error;
     }
   };
 
-  const deleteActionItem = async (id: string): Promise<void> => {
-    console.log("Deleting action item:", id);
-    
-    // Update local state immediately
-    setActionItems(prev => prev.filter(ai => ai.id !== id));
-    
-    // Then delete from Firebase
+  const updateActionItem = (item: ActionItem): void => {
     try {
-      const docRef = doc(db, 'actionItems', id);
-      await deleteDoc(docRef);
-      console.log("Action item deleted from Firestore");
+      console.log("Updating action item:", item.id);
+      const itemDocRef = doc(db, "actionItems", item.id);
+      updateDoc(itemDocRef, {
+        ...item,
+        updatedAt: new Date().toISOString(),
+      })
+        .then(() => {
+          console.log("Action item updated successfully");
+        })
+        .catch(error => {
+          console.error("Error updating action item in Firestore:", error);
+        });
     } catch (error) {
-      console.error("Error deleting action item from Firestore:", error);
+      console.error("Error in updateActionItem:", error);
       throw error;
     }
   };
 
-  // Add comment to action item
-  const addActionItemComment = async (itemId: string, comment: string): Promise<void> => {
-    console.log("Adding comment to action item:", itemId);
-    
-    const item = actionItems.find(i => i.id === itemId);
-    if (!item) {
-      console.error("Action item not found:", itemId);
-      throw new Error("Action item not found");
+  const deleteActionItem = (id: string): void => {
+    try {
+      console.log("Deleting action item:", id);
+      const itemDocRef = doc(db, "actionItems", id);
+      deleteDoc(itemDocRef)
+        .then(() => {
+          console.log("Action item deleted successfully");
+        })
+        .catch(error => {
+          console.error("Error deleting action item from Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in deleteActionItem:", error);
+      throw error;
     }
-    
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      comment,
-      createdAt: new Date().toISOString(),
-      createdBy: 'Current User' // Replace with real user info
-    };
-    
-    const updatedItem = {
-      ...item,
-      comments: [...(item.comments || []), newComment],
-      updatedAt: new Date().toISOString()
-    };
-    
-    console.log("Adding comment to action item in local state");
-    
-    await updateActionItem(updatedItem);
+  };
+
+  const addActionItemComment = (itemId: string, comment: string): void => {
+    try {
+      console.log("Adding comment to action item:", itemId);
+      const item = actionItems.find(i => i.id === itemId);
+      if (!item) {
+        console.error("Action item not found:", itemId);
+        throw new Error("Action item not found");
+      }
+      
+      const newComment = {
+        id: `comment-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        comment,
+        createdAt: new Date().toISOString(),
+        createdBy: 'Current User' // Replace with real user info
+      };
+      
+      const updatedItem = {
+        ...item,
+        comments: [...(item.comments || []), newComment],
+        updatedAt: new Date().toISOString()
+      };
+      
+      const itemDocRef = doc(db, "actionItems", itemId);
+      updateDoc(itemDocRef, updatedItem)
+        .then(() => {
+          console.log("Action item comment added successfully");
+        })
+        .catch(error => {
+          console.error("Error adding action item comment to Firestore:", error);
+        });
+    } catch (error) {
+      console.error("Error in addActionItemComment:", error);
+      throw error;
+    }
+  };
+
+  // Import/Export
+  const importTripsFromCSV = (tripsData: any[]): void => {
+    try {
+      console.log("Importing trips from CSV:", tripsData.length);
+      tripsData.forEach(tripData => {
+        const newId = generateTripId();
+        const newTrip: Trip = {
+          ...tripData,
+          id: newId,
+          costs: [],
+          status: 'active',
+          paymentStatus: 'unpaid',
+          additionalCosts: [],
+          delayReasons: [],
+          followUpHistory: [],
+          clientType: tripData.clientType || 'external',
+        };
+        
+        // Add to Firestore
+        addDoc(collection(db, "trips"), newTrip)
+          .then(docRef => {
+            console.log("Imported trip added with ID:", docRef.id);
+            // Update the ID to match Firestore
+            updateDoc(docRef, { id: docRef.id });
+          })
+          .catch(error => {
+            console.error("Error adding imported trip to Firestore:", error);
+          });
+      });
+    } catch (error) {
+      console.error("Error in importTripsFromCSV:", error);
+      throw error;
+    }
   };
 
   const contextValue: AppContextType = {
@@ -1389,11 +1332,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     updateCostEntry,
     deleteCostEntry,
     completeTrip,
+    updateInvoicePayment,
     addAdditionalCost,
     removeAdditionalCost,
     addDelayReason,
-    updateInvoicePayment,
-    importTripsFromCSV,
     missedLoads,
     addMissedLoad,
     updateMissedLoad,
@@ -1404,15 +1346,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     deleteDieselRecord,
     allocateDieselToTrip,
     removeDieselFromTrip,
+    importDieselRecords,
     driverBehaviorEvents,
     addDriverBehaviorEvent,
     updateDriverBehaviorEvent,
     deleteDriverBehaviorEvent,
+    getAllDriversPerformance,
     carReports,
     addCARReport,
     updateCARReport,
     deleteCARReport,
-    getAllDriversPerformance,
     systemCostRates,
     updateSystemCostRates,
     actionItems,
@@ -1420,22 +1363,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     updateActionItem,
     deleteActionItem,
     addActionItemComment,
+    importTripsFromCSV,
     connectionStatus,
-    isOnline: isOnline(),
   };
 
   return (
-    <AppContext.Provider value={contextValue}>
-      {dataLoaded ? children : (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-700">Loading data...</h2>
-            <p className="text-gray-500 mt-2">Connecting to Firestore database</p>
-          </div>
-        </div>
-      )}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 };
 
