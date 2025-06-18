@@ -55,8 +55,8 @@ const CARReportList: React.FC = () => {
     if (filters.status && report.status !== filters.status) return false;
     if (filters.severity && report.severity !== filters.severity) return false;
     if (filters.responsiblePerson && report.responsiblePerson !== filters.responsiblePerson) return false;
-    if (filters.dateRange.start && report.dateOfIncident < filters.dateRange.start) return false;
-    if (filters.dateRange.end && report.dateOfIncident > filters.dateRange.end) return false;
+    if (filters.dateRange.start && report.incidentDate < filters.dateRange.start) return false;
+    if (filters.dateRange.end && report.incidentDate > filters.dateRange.end) return false;
     return true;
   });
   
@@ -392,7 +392,7 @@ const CARReportList: React.FC = () => {
                             <Calendar className="w-4 h-4 text-gray-400" />
                             <div>
                               <p className="text-sm text-gray-500">Incident Date</p>
-                              <p className="font-medium">{formatDate(report.dateOfIncident)}</p>
+                              <p className="font-medium">{formatDate(report.incidentDate)}</p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -408,7 +408,7 @@ const CARReportList: React.FC = () => {
                         
                         <div className="mb-3">
                           <p className="text-sm text-gray-500">Problem</p>
-                          <p className="text-sm line-clamp-2">{report.problemIdentification}</p>
+                          <p className="text-sm line-clamp-2">{report.description || report.problemIdentification}</p>
                         </div>
                         
                         {report.completedAt && (

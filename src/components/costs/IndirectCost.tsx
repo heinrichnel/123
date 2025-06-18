@@ -1,8 +1,8 @@
 // ─── React ───────────────────────────────────────────────────────
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { Trip, SystemCostRates, CostEntry } from '../../types';
+import { Trip, CostEntry } from '../../types';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import { Calculator, Clock, Navigation, AlertTriangle } from 'lucide-react';

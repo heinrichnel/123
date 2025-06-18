@@ -66,7 +66,7 @@ export const calculateTotalCosts = (costs: CostEntry[]): number => {
 export const calculateKPIs = (trip: Trip) => {
   try {
     const totalRevenue = trip.baseRevenue || 0;
-    const totalExpenses = calculateTotalCosts(trip.costs);
+    const totalExpenses = calculateTotalCosts(trip.costs || []);
     const additionalCosts = trip.additionalCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
     const total = totalExpenses + additionalCosts;
     const netProfit = totalRevenue - total;
@@ -103,7 +103,7 @@ export const getUnresolvedFlagsCount = (costs: CostEntry[]): number =>
   costs?.filter((cost) => cost.isFlagged && cost.investigationStatus !== 'resolved').length || 0;
 
 export const canCompleteTrip = (trip: Trip): boolean =>
-  getUnresolvedFlagsCount(trip.costs) === 0;
+  getUnresolvedFlagsCount(trip.costs || []) === 0;
 
 export const shouldAutoCompleteTrip = (trip: Trip): boolean =>
   trip.status === 'active' &&
@@ -312,19 +312,253 @@ export const generatePlaceholderReportForMultipleTrips = async (trips: Trip[]) =
   }
 };
 
-export const generateCurrencyFleetReport = async (trips: Trip[]) => {
+export const generateCurrencyFleetReport = async (trips: Trip[], currency: 'USD' | 'ZAR') => {
   try {
-    alert(`Generating fleet/currency report for ${trips.length} trip(s)...`);
+    // Calculate basic metrics
+    const totalTrips = trips.length;
+    const activeTrips = trips.filter(t => t.status === 'active').length;
+    const completedTrips = trips.filter(t => t.status === 'completed' || t.status === 'invoiced' || t.status === 'paid').length;
+    
+    const totalRevenue = trips.reduce((sum, trip) => sum + (trip.baseRevenue || 0), 0);
+    const totalExpenses = trips.reduce((sum, trip) => sum + calculateTotalCosts(trip.costs || []), 0);
+    const netProfit = totalRevenue - totalExpenses;
+    
+    const avgRevenuePerTrip = totalTrips > 0 ? totalRevenue / totalTrips : 0;
+    const avgCostPerTrip = totalTrips > 0 ? totalExpenses / totalTrips : 0;
+    const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+    
+    // Client type breakdown
+    const internalTrips = trips.filter(t => t.clientType === 'internal').length;
+    const externalTrips = trips.filter(t => t.clientType === 'external').length;
+    
+    const internalRevenue = trips
+      .filter(t => t.clientType === 'internal')
+      .reduce((sum, trip) => sum + (trip.baseRevenue || 0), 0);
+    
+    const externalRevenue = trips
+      .filter(t => t.clientType === 'external')
+      .reduce((sum, trip) => sum + (trip.baseRevenue || 0), 0);
+    
+    const internalExpenses = trips
+      .filter(t => t.clientType === 'internal')
+      .reduce((sum, trip) => sum + calculateTotalCosts(trip.costs || []), 0);
+    
+    const externalExpenses = trips
+      .filter(t => t.clientType === 'external')
+      .reduce((sum, trip) => sum + calculateTotalCosts(trip.costs || []), 0);
+    
+    const internalProfit = internalRevenue - internalExpenses;
+    const externalProfit = externalRevenue - externalExpenses;
+    
+    const internalProfitMargin = internalRevenue > 0 ? (internalProfit / internalRevenue) * 100 : 0;
+    const externalProfitMargin = externalRevenue > 0 ? (externalProfit / externalRevenue) * 100 : 0;
+    
+    // Investigation metrics
+    const tripsWithInvestigations = trips.filter(t => t.costs.some(c => c.isFlagged)).length;
+    const totalFlags = trips.reduce((sum, trip) => sum + getFlaggedCostsCount(trip.costs || []), 0);
+    const unresolvedFlags = trips.reduce((sum, trip) => sum + getUnresolvedFlagsCount(trip.costs || []), 0);
+    
+    const investigationRate = totalTrips > 0 ? (tripsWithInvestigations / totalTrips) * 100 : 0;
+    const avgFlagsPerTrip = totalTrips > 0 ? totalFlags / totalTrips : 0;
+    
+    // Calculate average resolution time
+    let totalResolutionTime = 0;
+    let resolvedFlagsCount = 0;
+    
+    trips.forEach(trip => {
+      trip.costs.forEach(cost => {
+        if (cost.isFlagged && cost.flaggedAt && cost.resolvedAt && cost.investigationStatus === 'resolved') {
+          const flaggedDate = new Date(cost.flaggedAt);
+          const resolvedDate = new Date(cost.resolvedAt);
+          const resolutionTime = (resolvedDate.getTime() - flaggedDate.getTime()) / (1000 * 60 * 60 * 24); // in days
+          totalResolutionTime += resolutionTime;
+          resolvedFlagsCount++;
+        }
+      });
+    });
+    
+    const avgResolutionTime = resolvedFlagsCount > 0 ? totalResolutionTime / resolvedFlagsCount : 0;
+    
+    // Driver statistics
+    const driverStats: Record<string, any> = {};
+    
+    trips.forEach(trip => {
+      const driver = trip.driverName;
+      if (!driverStats[driver]) {
+        driverStats[driver] = {
+          trips: 0,
+          revenue: 0,
+          expenses: 0,
+          flags: 0,
+          internalTrips: 0,
+          externalTrips: 0
+        };
+      }
+      
+      driverStats[driver].trips++;
+      driverStats[driver].revenue += trip.baseRevenue || 0;
+      driverStats[driver].expenses += calculateTotalCosts(trip.costs || []);
+      driverStats[driver].flags += getFlaggedCostsCount(trip.costs || []);
+      
+      if (trip.clientType === 'internal') {
+        driverStats[driver].internalTrips++;
+      } else {
+        driverStats[driver].externalTrips++;
+      }
+    });
+    
+    return {
+      currency,
+      totalTrips,
+      activeTrips,
+      completedTrips,
+      totalRevenue,
+      totalExpenses,
+      netProfit,
+      avgRevenuePerTrip,
+      avgCostPerTrip,
+      profitMargin,
+      internalTrips,
+      externalTrips,
+      internalRevenue,
+      externalRevenue,
+      internalProfitMargin,
+      externalProfitMargin,
+      tripsWithInvestigations,
+      totalFlags,
+      unresolvedFlags,
+      investigationRate,
+      avgFlagsPerTrip,
+      avgResolutionTime,
+      driverStats
+    };
   } catch (error) {
     console.error('Error generating currency fleet report:', error);
+    return {
+      currency,
+      totalTrips: 0,
+      activeTrips: 0,
+      completedTrips: 0,
+      totalRevenue: 0,
+      totalExpenses: 0,
+      netProfit: 0,
+      avgRevenuePerTrip: 0,
+      avgCostPerTrip: 0,
+      profitMargin: 0,
+      internalTrips: 0,
+      externalTrips: 0,
+      internalRevenue: 0,
+      externalRevenue: 0,
+      internalProfitMargin: 0,
+      externalProfitMargin: 0,
+      tripsWithInvestigations: 0,
+      totalFlags: 0,
+      unresolvedFlags: 0,
+      investigationRate: 0,
+      avgFlagsPerTrip: 0,
+      avgResolutionTime: 0,
+      driverStats: {}
+    };
   }
 };
 
-export const downloadCurrencyFleetReport = async (trips: Trip[]) => {
+export const downloadCurrencyFleetReport = async (trips: Trip[], currency: 'USD' | 'ZAR') => {
   try {
-    alert(`Downloading fleet/currency Excel report for ${trips.length} trip(s)...`);
+    const report = await generateCurrencyFleetReport(trips, currency);
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Summary sheet
+    const summaryData = [
+      ['CURRENCY FLEET REPORT', ''],
+      ['Currency', currency],
+      ['Generated On', new Date().toLocaleDateString()],
+      [''],
+      ['SUMMARY METRICS', ''],
+      ['Total Trips', report.totalTrips],
+      ['Active Trips', report.activeTrips],
+      ['Completed Trips', report.completedTrips],
+      ['Total Revenue', report.totalRevenue],
+      ['Total Expenses', report.totalExpenses],
+      ['Net Profit', report.netProfit],
+      ['Profit Margin', `${report.profitMargin.toFixed(2)}%`],
+      [''],
+      ['CLIENT BREAKDOWN', ''],
+      ['Internal Trips', report.internalTrips],
+      ['External Trips', report.externalTrips],
+      ['Internal Revenue', report.internalRevenue],
+      ['External Revenue', report.externalRevenue],
+      ['Internal Profit Margin', `${report.internalProfitMargin.toFixed(2)}%`],
+      ['External Profit Margin', `${report.externalProfitMargin.toFixed(2)}%`],
+      [''],
+      ['INVESTIGATION METRICS', ''],
+      ['Trips With Flags', report.tripsWithInvestigations],
+      ['Total Flags', report.totalFlags],
+      ['Unresolved Flags', report.unresolvedFlags],
+      ['Investigation Rate', `${report.investigationRate.toFixed(2)}%`],
+      ['Avg Flags Per Trip', report.avgFlagsPerTrip.toFixed(2)],
+      ['Avg Resolution Time (days)', report.avgResolutionTime.toFixed(2)]
+    ];
+    
+    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+    
+    // Driver stats sheet
+    const driverHeaders = ['Driver', 'Trips', 'Revenue', 'Expenses', 'Net Profit', 'Profit Margin', 'Flags', 'Internal Trips', 'External Trips'];
+    const driverRows = Object.entries(report.driverStats).map(([driver, stats]) => {
+      const netProfit = stats.revenue - stats.expenses;
+      const profitMargin = stats.revenue > 0 ? (netProfit / stats.revenue) * 100 : 0;
+      
+      return [
+        driver,
+        stats.trips,
+        stats.revenue,
+        stats.expenses,
+        netProfit,
+        `${profitMargin.toFixed(2)}%`,
+        stats.flags,
+        stats.internalTrips,
+        stats.externalTrips
+      ];
+    });
+    
+    const driverData = [driverHeaders, ...driverRows];
+    const driverWs = XLSX.utils.aoa_to_sheet(driverData);
+    XLSX.utils.book_append_sheet(wb, driverWs, 'Driver Performance');
+    
+    // Trips detail sheet
+    const tripHeaders = ['Fleet', 'Driver', 'Client', 'Route', 'Start Date', 'End Date', 'Status', 'Revenue', 'Costs', 'Profit', 'Margin', 'Flags'];
+    const tripRows = trips.map(trip => {
+      const costs = calculateTotalCosts(trip.costs || []);
+      const profit = (trip.baseRevenue || 0) - costs;
+      const margin = trip.baseRevenue ? (profit / trip.baseRevenue) * 100 : 0;
+      
+      return [
+        trip.fleetNumber,
+        trip.driverName,
+        trip.clientName,
+        trip.route,
+        trip.startDate,
+        trip.endDate,
+        trip.status,
+        trip.baseRevenue,
+        costs,
+        profit,
+        `${margin.toFixed(2)}%`,
+        getFlaggedCostsCount(trip.costs || [])
+      ];
+    });
+    
+    const tripData = [tripHeaders, ...tripRows];
+    const tripWs = XLSX.utils.aoa_to_sheet(tripData);
+    XLSX.utils.book_append_sheet(wb, tripWs, 'Trip Details');
+    
+    // Write file
+    XLSX.writeFile(wb, `${currency}_Fleet_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
   } catch (error) {
     console.error('Error downloading report:', error);
+    alert('Failed to download report. Please try again.');
   }
 };
 

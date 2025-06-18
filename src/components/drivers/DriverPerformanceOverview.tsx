@@ -1,4 +1,4 @@
-// ─── React ───────────────────────────────────────────────────────
+// ─── React & State ───────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
 
 // ─── Context ─────────────────────────────────────────────────────
@@ -203,7 +203,9 @@ const DriverPerformanceOverview: React.FC = () => {
       reportedAt: new Date().toISOString(),
       status: eventForm.status,
       actionTaken: eventForm.actionTaken,
-      points: eventForm.points
+      points: eventForm.points,
+      resolved: false,
+      date: new Date().toISOString() // For compatibility
     };
     
     if (selectedEvent) {
@@ -250,15 +252,15 @@ const DriverPerformanceOverview: React.FC = () => {
     setEventForm({
       driverName: event.driverName,
       fleetNumber: event.fleetNumber,
-      eventDate: event.eventDate,
-      eventTime: event.eventTime,
+      eventDate: event.eventDate || event.date.split('T')[0],
+      eventTime: event.eventTime || '00:00',
       eventType: event.eventType,
       description: event.description,
       location: event.location || '',
-      severity: event.severity,
-      status: event.status,
+      severity: event.severity || 'medium',
+      status: event.status || 'pending',
       actionTaken: event.actionTaken || '',
-      points: event.points
+      points: event.points || 0
     });
     setShowAddEventModal(true);
   };
@@ -401,7 +403,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Driver"
               value={selectedDriver}
-              onChange={(e) => setSelectedDriver(e.target.value)}
+              onChange={(value) => setSelectedDriver(value)}
               options={[
                 { label: 'All Drivers', value: '' },
                 ...DRIVERS.map(driver => ({ label: driver, value: driver }))
@@ -411,7 +413,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Event Type"
               value={selectedEventType}
-              onChange={(e) => setSelectedEventType(e.target.value)}
+              onChange={(value) => setSelectedEventType(value)}
               options={[
                 { label: 'All Event Types', value: '' },
                 ...DRIVER_BEHAVIOR_EVENT_TYPES.map(type => ({ label: type.label, value: type.value }))
@@ -421,7 +423,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Severity"
               value={selectedSeverity}
-              onChange={(e) => setSelectedSeverity(e.target.value)}
+              onChange={(value) => setSelectedSeverity(value)}
               options={[
                 { label: 'All Severities', value: '' },
                 { label: 'Critical', value: 'critical' },
@@ -434,7 +436,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Status"
               value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
+              onChange={(value) => setSelectedStatus(value)}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Pending', value: 'pending' },
@@ -449,13 +451,13 @@ const DriverPerformanceOverview: React.FC = () => {
                 label="From Date"
                 type="date"
                 value={dateRange.start}
-                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                onChange={(value) => setDateRange(prev => ({ ...prev, start: value }))}
               />
               <Input
                 label="To Date"
                 type="date"
                 value={dateRange.end}
-                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                onChange={(value) => setDateRange(prev => ({ ...prev, end: value }))}
               />
             </div>
           </div>
@@ -600,11 +602,11 @@ const DriverPerformanceOverview: React.FC = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <h3 className="text-lg font-medium text-gray-900">{event.driverName}</h3>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(event.severity)}`}>
-                          {event.severity.toUpperCase()}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(event.severity || 'medium')}`}>
+                          {(event.severity || 'medium').toUpperCase()}
                         </span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(event.status)}`}>
-                          {event.status.toUpperCase()}
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(event.status || 'pending')}`}>
+                          {(event.status || 'pending').toUpperCase()}
                         </span>
                       </div>
                       
@@ -618,7 +620,7 @@ const DriverPerformanceOverview: React.FC = () => {
                         <div>
                           <p className="text-sm text-gray-500">Date & Time</p>
                           <p className="font-medium">
-                            {formatDate(event.eventDate)} {event.eventTime}
+                            {formatDate(event.eventDate || event.date)} {event.eventTime || ''}
                           </p>
                         </div>
                         <div>
@@ -647,11 +649,11 @@ const DriverPerformanceOverview: React.FC = () => {
                       )}
                       
                       <div className="flex items-center space-x-3 text-sm text-gray-500">
-                        <span>Reported by {event.reportedBy}</span>
+                        <span>Reported by {event.reportedBy || 'System'}</span>
                         <span>•</span>
-                        <span>{formatDateTime(event.reportedAt)}</span>
+                        <span>{formatDateTime(event.reportedAt || event.date)}</span>
                         <span>•</span>
-                        <span className="font-medium text-red-600">{event.points} points</span>
+                        <span className="font-medium text-red-600">{event.points || 0} points</span>
                       </div>
                     </div>
                     
@@ -719,7 +721,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Driver *"
               value={eventForm.driverName}
-              onChange={(e) => handleFormChange('driverName', e.target.value)}
+              onChange={(value) => handleFormChange('driverName', value)}
               options={[
                 { label: 'Select driver...', value: '' },
                 ...DRIVERS.map(driver => ({ label: driver, value: driver }))
@@ -730,7 +732,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Fleet Number *"
               value={eventForm.fleetNumber}
-              onChange={(e) => handleFormChange('fleetNumber', e.target.value)}
+              onChange={(value) => handleFormChange('fleetNumber', value)}
               options={[
                 { label: 'Select fleet...', value: '' },
                 ...FLEET_NUMBERS.map(fleet => ({ label: fleet, value: fleet }))
@@ -742,7 +744,7 @@ const DriverPerformanceOverview: React.FC = () => {
               label="Event Date *"
               type="date"
               value={eventForm.eventDate}
-              onChange={(e) => handleFormChange('eventDate', e.target.value)}
+              onChange={(value) => handleFormChange('eventDate', value)}
               error={errors.eventDate}
             />
             
@@ -750,14 +752,14 @@ const DriverPerformanceOverview: React.FC = () => {
               label="Event Time *"
               type="time"
               value={eventForm.eventTime}
-              onChange={(e) => handleFormChange('eventTime', e.target.value)}
+              onChange={(value) => handleFormChange('eventTime', value)}
               error={errors.eventTime}
             />
             
             <Select
               label="Event Type *"
               value={eventForm.eventType}
-              onChange={(e) => handleFormChange('eventType', e.target.value)}
+              onChange={(value) => handleFormChange('eventType', value)}
               options={[
                 { label: 'Select event type...', value: '' },
                 ...DRIVER_BEHAVIOR_EVENT_TYPES.map(type => ({ label: type.label, value: type.value }))
@@ -768,7 +770,7 @@ const DriverPerformanceOverview: React.FC = () => {
             <Select
               label="Severity *"
               value={eventForm.severity}
-              onChange={(e) => handleFormChange('severity', e.target.value)}
+              onChange={(value) => handleFormChange('severity', value)}
               options={[
                 { label: 'Critical', value: 'critical' },
                 { label: 'High', value: 'high' },
@@ -781,14 +783,14 @@ const DriverPerformanceOverview: React.FC = () => {
             <Input
               label="Location"
               value={eventForm.location}
-              onChange={(e) => handleFormChange('location', e.target.value)}
+              onChange={(value) => handleFormChange('location', value)}
               placeholder="e.g., Highway A1, Kilometer 45"
             />
             
             <Select
               label="Status"
               value={eventForm.status}
-              onChange={(e) => handleFormChange('status', e.target.value)}
+              onChange={(value) => handleFormChange('status', value)}
               options={[
                 { label: 'Pending', value: 'pending' },
                 { label: 'Acknowledged', value: 'acknowledged' },
@@ -801,7 +803,7 @@ const DriverPerformanceOverview: React.FC = () => {
           <TextArea
             label="Description *"
             value={eventForm.description}
-            onChange={(e) => handleFormChange('description', e.target.value)}
+            onChange={(value) => handleFormChange('description', value)}
             placeholder="Provide details about the behavior event..."
             rows={3}
             error={errors.description}
@@ -810,7 +812,7 @@ const DriverPerformanceOverview: React.FC = () => {
           <TextArea
             label="Action Taken"
             value={eventForm.actionTaken}
-            onChange={(e) => handleFormChange('actionTaken', e.target.value)}
+            onChange={(value) => handleFormChange('actionTaken', value)}
             placeholder="Describe any actions taken to address this behavior..."
             rows={2}
           />
@@ -826,7 +828,7 @@ const DriverPerformanceOverview: React.FC = () => {
                 min="0"
                 max="25"
                 value={eventForm.points.toString()}
-                onChange={(e) => handleFormChange('points', parseInt(e.target.value))}
+                onChange={(value) => handleFormChange('points', parseInt(value))}
                 className="w-20"
               />
               <span className="text-sm text-gray-500">points</span>
@@ -903,11 +905,11 @@ const DriverPerformanceOverview: React.FC = () => {
                   <p className="text-sm text-gray-600">Fleet {selectedEvent.fleetNumber}</p>
                 </div>
                 <div className="flex space-x-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(selectedEvent.severity)}`}>
-                    {selectedEvent.severity.toUpperCase()}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(selectedEvent.severity || 'medium')}`}>
+                    {(selectedEvent.severity || 'medium').toUpperCase()}
                   </span>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(selectedEvent.status)}`}>
-                    {selectedEvent.status.toUpperCase()}
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(selectedEvent.status || 'pending')}`}>
+                    {(selectedEvent.status || 'pending').toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -926,7 +928,7 @@ const DriverPerformanceOverview: React.FC = () => {
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Date & Time</h4>
                   <p className="font-medium text-gray-900">
-                    {formatDate(selectedEvent.eventDate)} at {selectedEvent.eventTime}
+                    {formatDate(selectedEvent.eventDate || selectedEvent.date)} {selectedEvent.eventTime || ''}
                   </p>
                 </div>
                 
@@ -942,15 +944,15 @@ const DriverPerformanceOverview: React.FC = () => {
                 
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Demerit Points</h4>
-                  <p className="font-medium text-red-600">{selectedEvent.points} points</p>
+                  <p className="font-medium text-red-600">{selectedEvent.points || 0} points</p>
                 </div>
               </div>
               
               <div className="space-y-4">
                 <div>
                   <h4 className="text-sm font-medium text-gray-500">Reported By</h4>
-                  <p className="font-medium text-gray-900">{selectedEvent.reportedBy}</p>
-                  <p className="text-xs text-gray-500">{formatDateTime(selectedEvent.reportedAt)}</p>
+                  <p className="font-medium text-gray-900">{selectedEvent.reportedBy || 'System'}</p>
+                  <p className="text-xs text-gray-500">{formatDateTime(selectedEvent.reportedAt || selectedEvent.date)}</p>
                 </div>
                 
                 {selectedEvent.resolvedAt && (
