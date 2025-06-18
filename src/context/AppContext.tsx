@@ -49,15 +49,16 @@ import {
 
 interface AppContextType {
   trips: Trip[];
-  addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => string;
+  addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => Promise<string>;
   updateTrip: (trip: Trip) => Promise<void>;
   deleteTrip: (id: string) => Promise<void>;
   getTrip: (id: string) => Trip | undefined;
 
   addCostEntry: (
+    tripId: string,
     costData: Omit<CostEntry, "id" | "attachments">, 
     files?: FileList
-  ) => string;
+  ) => Promise<string>;
   updateCostEntry: (costEntry: CostEntry) => Promise<void>;
   deleteCostEntry: (id: string) => Promise<void>;
 
@@ -217,35 +218,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Your existing methods now updated to async and use Firestore below:
 
-  const addTrip = (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): string => {
-    // Generate a unique ID for the trip
-    const newId = generateTripId();
-    
-    // Create a new trip object with default values
-    const newTrip: Trip = {
-      ...tripData,
-      id: newId,
-      costs: [],
-      status: 'active',
-      paymentStatus: 'unpaid',
-      additionalCosts: [],
-      delayReasons: [],
-      followUpHistory: [],
-      clientType: tripData.clientType || 'external',
-    };
-    
-    // Add the trip to Firestore
-    const cleanTrip = removeUndefinedValues(newTrip);
-    setDoc(doc(db, "trips", newId), cleanTrip)
-      .catch(error => {
-        console.error("Error adding trip to Firestore:", error);
-        throw error;
-      });
-    
-    // Update local state
-    setTrips(prev => [...prev, newTrip]);
-    
-    return newId;
+  const addTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): Promise<string> => {
+    try {
+      // Generate a unique ID for the trip
+      const newId = generateTripId();
+      
+      // Create a new trip object with default values
+      const newTrip: Trip = {
+        ...tripData,
+        id: newId,
+        costs: [],
+        status: 'active',
+        paymentStatus: 'unpaid',
+        additionalCosts: [],
+        delayReasons: [],
+        followUpHistory: [],
+        clientType: tripData.clientType || 'external',
+      };
+      
+      // Add the trip to Firestore first
+      const cleanTrip = removeUndefinedValues(newTrip);
+      await setDoc(doc(db, "trips", newId), cleanTrip);
+      
+      // Update local state only after successful Firestore operation
+      setTrips(prev => [...prev, newTrip]);
+      
+      return newId;
+    } catch (error) {
+      console.error("Error adding trip:", error);
+      throw error;
+    }
   };
 
   const updateTrip = async (updatedTrip: Trip): Promise<void> => {
@@ -284,10 +286,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Cost Entry Firestore update helpers:
 
-  const addCostEntry = (
+  const addCostEntry = async (
+    tripId: string,
     costData: Omit<CostEntry, "id" | "attachments">,
     files?: FileList
-  ): string => {
+  ): Promise<string> => {
     try {
       // Generate a unique ID for the cost entry
       const newId = `C${Date.now()}`;
@@ -316,7 +319,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       // Find the trip to update
-      const trip = trips.find((t) => t.id === costData.tripId);
+      const trip = trips.find((t) => t.id === tripId);
       if (!trip) {
         throw new Error("Trip document not found in database. Please refresh and try again.");
       }
@@ -328,17 +331,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const cleanCostEntry = removeUndefinedValues(newCostEntry);
       const cleanCosts = updatedCosts.map(cost => removeUndefinedValues(cost));
       
-      // Update the trip document in Firestore
-      updateDoc(doc(db, "trips", costData.tripId), { costs: cleanCosts })
-        .catch(error => {
-          console.error("Error adding cost entry to Firestore:", error);
-          throw error;
-        });
+      // Update the trip document in Firestore first
+      await updateDoc(doc(db, "trips", tripId), { costs: cleanCosts });
       
-      // Update local state
+      // Update local state only after successful Firestore operation
       setTrips(prev => 
         prev.map(t => 
-          t.id === costData.tripId 
+          t.id === tripId 
             ? { ...t, costs: updatedCosts } 
             : t
         )
@@ -537,7 +536,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       
       // Add the cost entry
-      addCostEntry(costData);
+      await addCostEntry(tripId, costData);
       
     } catch (error) {
       console.error("Error allocating diesel to trip:", error);

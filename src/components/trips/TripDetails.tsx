@@ -94,9 +94,9 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   }
 
   // Enhanced handleAddCost with file support
-  const handleAddCost = (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
+  const handleAddCost = async (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
     try {
-      const costId = addCostEntry(trip.id, costData, files);
+      const costId = await addCostEntry(trip.id, costData, files);
       setShowCostForm(false);
       
       // Show success message with cost details
@@ -108,7 +108,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   };
 
   // Enhanced handleUpdateCost with file support
-  const handleUpdateCost = (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
+  const handleUpdateCost = async (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
     if (editingCost) {
       try {
         // Process new files if provided
@@ -129,7 +129,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
           attachments: [...editingCost.attachments, ...newAttachments]
         };
 
-        updateCostEntry(updatedCost);
+        await updateCostEntry(updatedCost);
         setEditingCost(undefined);
         setShowCostForm(false);
         
@@ -146,10 +146,10 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
     setShowCostForm(true);
   };
 
-  const handleDeleteCost = (id: string) => {
+  const handleDeleteCost = async (id: string) => {
     if (confirm('Are you sure you want to delete this cost entry? This action cannot be undone.')) {
       try {
-        deleteCostEntry(id);
+        await deleteCostEntry(id);
         alert('Cost entry deleted successfully!');
       } catch (error) {
         console.error('Error deleting cost entry:', error);
@@ -158,11 +158,11 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
     }
   };
 
-  const handleGenerateSystemCosts = (systemCosts: Omit<CostEntry, 'id' | 'attachments'>[]) => {
+  const handleGenerateSystemCosts = async (systemCosts: Omit<CostEntry, 'id' | 'attachments'>[]) => {
     try {
       // Add each system cost entry individually
       for (const costData of systemCosts) {
-        addCostEntry(trip.id, costData);
+        await addCostEntry(trip.id, costData);
       }
       
       setShowSystemCostGenerator(false);
