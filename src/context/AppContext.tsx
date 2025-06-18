@@ -366,13 +366,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString()
       };
 
+      // Clean the cost entry object to remove undefined values
+      const cleanedCostEntry = cleanObjectForFirestore(newCostEntry) as CostEntry;
+
       // Ensure trip has a costs array
       if (!trip.costs) {
         trip.costs = [];
       }
 
-      // Update the trip's costs array
-      const updatedCosts = [...trip.costs, newCostEntry];
+      // Update the trip's costs array with the cleaned cost entry
+      const updatedCosts = [...trip.costs, cleanedCostEntry];
+      
+      // Clean the entire costs array to ensure no undefined values
+      const cleanedCosts = updatedCosts.map(cost => cleanObjectForFirestore(cost));
       
       // Find the trip document in Firestore
       const tripsCollection = collection(db, "trips");
@@ -383,9 +389,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(`Trip document not found in database: ${tripId}`);
       }
       
-      // Update the document with the new costs array
+      // Update the document with the cleaned costs array
       const tripDoc = querySnapshot.docs[0];
-      await updateDoc(tripDoc.ref, { costs: updatedCosts });
+      await updateDoc(tripDoc.ref, { costs: cleanedCosts });
       
       // Update local state immediately for better UX
       setTrips(prevTrips => 
@@ -412,10 +418,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error("Trip not found for this cost entry");
       }
 
+      // Clean the updated cost entry to remove undefined values
+      const cleanedUpdatedCostEntry = cleanObjectForFirestore(updatedCostEntry) as CostEntry;
+
       // Update the cost entry in the trip's costs array
       const updatedCosts = trip.costs.map(cost => 
-        cost.id === updatedCostEntry.id ? updatedCostEntry : cost
+        cost.id === updatedCostEntry.id ? cleanedUpdatedCostEntry : cost
       );
+
+      // Clean the entire costs array to ensure no undefined values
+      const cleanedCosts = updatedCosts.map(cost => cleanObjectForFirestore(cost));
 
       // Find the trip document in Firestore
       const tripsCollection = collection(db, "trips");
@@ -426,9 +438,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(`Trip document not found: ${trip.id}`);
       }
       
-      // Update the document
+      // Update the document with the cleaned costs array
       const tripDoc = querySnapshot.docs[0];
-      await updateDoc(tripDoc.ref, { costs: updatedCosts });
+      await updateDoc(tripDoc.ref, { costs: cleanedCosts });
       
       // Update local state immediately
       setTrips(prevTrips => 
@@ -456,6 +468,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       // Remove the cost entry from the trip's costs array
       const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
 
+      // Clean the costs array to ensure no undefined values
+      const cleanedCosts = updatedCosts.map(cost => cleanObjectForFirestore(cost));
+
       // Find the trip document in Firestore
       const tripsCollection = collection(db, "trips");
       const q = query(tripsCollection, where("id", "==", trip.id));
@@ -465,9 +480,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(`Trip document not found: ${trip.id}`);
       }
       
-      // Update the document
+      // Update the document with the cleaned costs array
       const tripDoc = querySnapshot.docs[0];
-      await updateDoc(tripDoc.ref, { costs: updatedCosts });
+      await updateDoc(tripDoc.ref, { costs: cleanedCosts });
       
       // Update local state immediately
       setTrips(prevTrips => 
