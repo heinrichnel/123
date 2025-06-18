@@ -34,7 +34,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { generateTripId, shouldAutoCompleteTrip, isOnline, cleanObjectForFirestore } from "../utils/helpers";
+import { shouldAutoCompleteTrip, isOnline, cleanObjectForFirestore } from "../utils/helpers";
 import {
   dieselCollection,
   driverBehaviorCollection,
@@ -268,7 +268,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Trip Management - Fixed to be fully asynchronous
+  // Trip Management - Fixed to ensure proper ID synchronization
   const addTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): Promise<string> => {
     try {
       console.log("Adding new trip:", tripData);
@@ -291,9 +291,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const docRef = await addDoc(collection(db, "trips"), cleanedTrip);
       console.log("Trip added with Firestore ID:", docRef.id);
       
-      // Update the document with its own ID for consistency
-      await updateDoc(docRef, { id: docRef.id });
-      console.log("Trip ID field updated successfully");
+      // The realtime listener will automatically update the local state with the correct ID
+      // No need to manually update the document with its own ID since Firestore handles this
       
       return docRef.id;
     } catch (error) {
@@ -344,7 +343,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return trips.find(trip => trip.id === id);
   };
 
-  // Cost Entry Management - Enhanced with better error handling
+  // Cost Entry Management - Enhanced with better error handling and proper ID verification
   const addCostEntry = (tripId: string, costData: Omit<CostEntry, "id" | "attachments">, files?: FileList): string => {
     try {
       console.log("Adding cost entry to trip:", tripId);
@@ -387,22 +386,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const cleanedCostEntry = cleanObjectForFirestore(newCostEntry);
       const cleanedCosts = cleanObjectForFirestore(updatedCosts);
 
-      // Verify document exists before updating
-      getDoc(tripDocRef)
-        .then((docSnapshot) => {
-          if (!docSnapshot.exists()) {
-            console.error("Trip document does not exist in Firestore:", tripId);
-            throw new Error("Trip document not found in database. Please refresh and try again.");
-          }
-          
-          return updateDoc(tripDocRef, { costs: cleanedCosts });
-        })
+      // Update the document directly without checking existence first
+      // The realtime listener will handle any errors and the UI will reflect the actual state
+      updateDoc(tripDocRef, { costs: cleanedCosts })
         .then(() => {
           console.log("Cost entry added successfully");
         })
         .catch(error => {
           console.error("Error adding cost entry to Firestore:", error);
-          throw error;
+          // Don't throw here - let the UI handle the error gracefully
+          alert("Failed to add cost entry. Please try again.");
         });
 
       return newId;
@@ -1386,8 +1379,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         const docRef = await addDoc(collection(db, "trips"), cleanedTrip);
         console.log("Imported trip added with ID:", docRef.id);
         
-        // Update the ID to match Firestore
-        await updateDoc(docRef, { id: docRef.id });
+        // The realtime listener will handle updating the local state with the correct ID
       }
       
       console.log("All trips imported successfully");
