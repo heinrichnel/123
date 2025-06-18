@@ -188,18 +188,19 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         />
       </div>
       <TextArea
-        label="Trip Description"
-        value={tripDescription}
-        onChange={val => setTripDescription(val)}
-        onBlur={() => handleBlur('tripDescription')}
+        label="Trip Notes"
+        value={tripNotes || ''}
+        onChange={e => setTripNotes(typeof e === 'string' ? e : e.target?.value || '')}
+        placeholder="Notes about this trip..."
         rows={3}
-        required
       />
       <TextArea
-        label="Trip Notes"
-        value={tripNotes}
-        onChange={val => setTripNotes(val)}
+        label="Trip Description"
+        value={tripDescription || ''}
+        onChange={e => setTripDescription(typeof e === 'string' ? e : e.target?.value || '')}
+        placeholder="Description of the trip..."
         rows={3}
+        required
       />
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="secondary" onClick={onCancel}>

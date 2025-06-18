@@ -296,9 +296,9 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
         
         <TextArea
           label="Description *"
-          value={formData.description}
-          onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Provide details about the behavior event..."
+          value={formData.description || ''}
+          onChange={e => setFormData(prev => ({ ...prev, description: typeof e === 'string' ? e : e.target?.value || '' }))}
+          placeholder="Describe the event..."
           rows={3}
           error={errors.description}
         />

@@ -209,7 +209,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
                 {formatCurrency(kpis.netProfit, kpis.currency)}
               </p>
               <p className="text-xs text-gray-400">
-                {kpis.profitMargin.toFixed(1)}% margin
+                {typeof kpis.profitMargin === 'number' ? kpis.profitMargin.toFixed(1) : '0.0'}% margin
               </p>
             </div>
             
@@ -242,7 +242,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
                     <div>
                       <span className="font-medium text-gray-900">{item.category}</span>
                       <span className="ml-2 text-sm text-gray-500">
-                        ({item.percentage.toFixed(1)}%)
+                        ({typeof item.percentage === 'number' ? item.percentage.toFixed(1) : '0.0'}%)
                       </span>
                     </div>
                   </div>

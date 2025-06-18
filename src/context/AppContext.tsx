@@ -77,6 +77,12 @@ interface AppContextType {
   systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
   updateSystemCostRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
 
+  // Action Items
+  actionItems: ActionItem[];
+  addActionItem: (item: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => Promise<string>;
+  updateActionItem: (item: ActionItem) => Promise<void>;
+  deleteActionItem: (id: string) => Promise<void>;
+
   connectionStatus: "connected" | "disconnected" | "reconnecting";
   isOnline: boolean;
 }
@@ -122,11 +128,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     // Driver Behavior Events realtime sync
     const driverBehaviorUnsub = listenToDriverBehaviorEvents(driverBehaviorCollection, setDriverBehaviorEvents);
 
+    // Action Items realtime sync
+    const actionItemsUnsub = onSnapshot(collection(db, 'actionItems'), (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as ActionItem[];
+      setActionItems(items);
+    }, (error) => {
+      console.error("Action items listener error:", error);
+      setConnectionStatus('disconnected');
+    });
+
     return () => {
       tripsUnsub();
       missedLoadsUnsub();
       dieselUnsub();
       driverBehaviorUnsub();
+      actionItemsUnsub();
       // Unsubscribe other listeners similarly
     };
   }, []);
@@ -284,14 +300,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Missed Loads Handlers (following uniform handler pattern)
+  // Helper to sanitize missed load fields for Firestore
+  function sanitizeMissedLoad(load: any) {
+    return {
+      ...load,
+      compensationNotes: typeof load.compensationNotes === 'string' ? load.compensationNotes : '',
+      resolutionNotes: typeof load.resolutionNotes === 'string' ? load.resolutionNotes : '',
+      reasonDescription: typeof load.reasonDescription === 'string' ? load.reasonDescription : '',
+      // Add more fields as needed
+    };
+  }
+
   const addMissedLoad = async (missedLoadData: Omit<MissedLoad, "id">): Promise<string> => {
-    const docRef = await addDoc(collection(db, "missedLoads"), missedLoadData);
+    const sanitized = sanitizeMissedLoad(missedLoadData);
+    const docRef = await addDoc(collection(db, "missedLoads"), sanitized);
     return docRef.id;
   };
 
   const updateMissedLoad = async (missedLoad: MissedLoad): Promise<void> => {
+    const sanitized = sanitizeMissedLoad(missedLoad);
     const docRef = doc(db, "missedLoads", missedLoad.id);
-    await updateDoc(docRef, missedLoad);
+    await updateDoc(docRef, sanitized);
   };
 
   const deleteMissedLoad = async (id: string): Promise<void> => {
@@ -331,6 +360,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await deleteDriverBehaviorEventToFirebase(id);
   };
 
+  // Action Items CRUD (Firestore)
+  const addActionItem = async (itemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
+    const docRef = await addDoc(collection(db, 'actionItems'), {
+      ...itemData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: 'Current User', // Replace with real user info
+    });
+    return docRef.id;
+  };
+
+  const updateActionItem = async (item: ActionItem) => {
+    const docRef = doc(db, 'actionItems', item.id);
+    await updateDoc(docRef, {
+      ...item,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const deleteActionItem = async (id: string) => {
+    const docRef = doc(db, 'actionItems', id);
+    await deleteDoc(docRef);
+  };
+
   const contextValue: AppContextType = {
     trips,
     addTrip,
@@ -355,6 +408,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     deleteDriverBehaviorEvent,
     systemCostRates,
     updateSystemCostRates,
+    actionItems,
+    addActionItem,
+    updateActionItem,
+    deleteActionItem,
     connectionStatus: "connected",
     isOnline: isOnline(),
   };

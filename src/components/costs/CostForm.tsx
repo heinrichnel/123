@@ -6,7 +6,7 @@ import { CostEntry, COST_CATEGORIES } from '../../types/index';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
-import { Input, Select, Textarea } from '../ui/FormElements';
+import { Input, Select, TextArea } from '../ui/FormElements';
 // ─── Icons ───────────────────────────────────────────────────────
 import {
   AlertTriangle,
@@ -110,14 +110,14 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
     // Document attachment validation - MANDATORY REQUIREMENT
     const hasFiles = selectedFiles && selectedFiles.length > 0;
     const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
-    const hasNoDocumentReason = formData.noDocumentReason.trim().length > 0;
+    const hasNoDocumentReason = String(formData.noDocumentReason ?? '').trim().length > 0;
 
     if (!cost && !hasFiles && !hasNoDocumentReason) {
       newErrors.documents = 'Either attach a receipt/document OR provide a reason for missing documentation';
     }
 
     // Manual flag validation
-    if (formData.isFlagged && !formData.flagReason.trim()) {
+    if (formData.isFlagged && !String(formData.flagReason ?? '').trim()) {
       newErrors.flagReason = 'Flag reason is required when manually flagging a cost entry';
     }
 
@@ -143,12 +143,12 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
       
       // Determine flag reason
       let flagReason = '';
-      if (formData.isFlagged && formData.flagReason.trim()) {
-        flagReason = formData.flagReason.trim();
+      if (formData.isFlagged && String(formData.flagReason ?? '').trim()) {
+        flagReason = String(formData.flagReason ?? '').trim();
       } else if (isHighRisk) {
         flagReason = `High-risk category: ${formData.category} - ${formData.subCategory} requires review`;
       } else if (missingDocumentation) {
-        flagReason = `Missing documentation: ${formData.noDocumentReason.trim()}`;
+        flagReason = `Missing documentation: ${String(formData.noDocumentReason ?? '').trim()}`;
       }
 
       const costData = {
@@ -157,12 +157,12 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
         subCategory: formData.subCategory,
         amount: Number(formData.amount),
         currency: formData.currency,
-        referenceNumber: formData.referenceNumber.trim(),
+        referenceNumber: String(formData.referenceNumber ?? '').trim(),
         date: formData.date,
-        notes: formData.notes.trim(),
+        notes: String(formData.notes ?? '').trim(),
         isFlagged: shouldFlag,
         flagReason: flagReason || undefined,
-        noDocumentReason: formData.noDocumentReason.trim() || undefined,
+        noDocumentReason: String(formData.noDocumentReason ?? '').trim() || undefined,
         investigationStatus: shouldFlag ? 'pending' as const : undefined,
         flaggedAt: shouldFlag ? new Date().toISOString() : undefined,
         flaggedBy: shouldFlag ? 'Current User' : undefined, // In real app, use actual user
@@ -284,8 +284,8 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
 
       <TextArea
         label="Notes (Optional)"
-        value={formData.notes}
-        onChange={(e) => handleChange('notes', e.target.value)}
+        value={formData.notes || ''}
+        onChange={e => handleChange('notes', typeof e === 'string' ? e : e.target?.value || '')}
         placeholder="Additional notes about this cost entry..."
         rows={3}
       />
@@ -355,7 +355,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             <TextArea
               label="Reason for Missing Documentation *"
               value={formData.noDocumentReason}
-              onChange={(e) => handleChange('noDocumentReason', e.target.value)}
+              onChange={val => handleChange('noDocumentReason', val)}
               placeholder="Explain why no receipt/document is available (e.g., 'Receipt lost during trip', 'Digital payment - no physical receipt', 'Emergency expense - receipt not provided')..."
               rows={3}
             />
@@ -389,7 +389,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             <TextArea
               label="Flag Reason *"
               value={formData.flagReason}
-              onChange={(e) => handleChange('flagReason', e.target.value)}
+              onChange={val => handleChange('flagReason', val)}
               placeholder="Explain why this cost is being flagged (e.g., 'Amount seems excessive', 'Unusual expense for this route', 'Requires management approval')..."
               rows={2}
               error={errors.flagReason}
