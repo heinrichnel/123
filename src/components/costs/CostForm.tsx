@@ -288,7 +288,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
       <TextArea
         label="Notes (Optional)"
         value={formData.notes || ''}
-        onChange={(e) => handleChange('notes', typeof e === 'string' ? e : e.target?.value || '')}
+        onChange={(value) => handleChange('notes', value)}
         placeholder="Additional notes about this cost entry..."
         rows={3}
       />
@@ -358,7 +358,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             <TextArea
               label="Reason for Missing Documentation *"
               value={formData.noDocumentReason}
-              onChange={(e) => handleChange('noDocumentReason', typeof e === 'string' ? e : e.target?.value || '')}
+              onChange={(value) => handleChange('noDocumentReason', value)}
               placeholder="Explain why no receipt/document is available (e.g., 'Receipt lost during trip', 'Digital payment - no physical receipt', 'Emergency expense - receipt not provided')..."
               rows={3}
             />
@@ -392,7 +392,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             <TextArea
               label="Flag Reason *"
               value={formData.flagReason}
-              onChange={(e) => handleChange('flagReason', typeof e === 'string' ? e : e.target?.value || '')}
+              onChange={(value) => handleChange('flagReason', value)}
               placeholder="Explain why this cost is being flagged (e.g., 'Amount seems excessive', 'Unusual expense for this route', 'Requires management approval')..."
               rows={2}
               error={errors.flagReason}
