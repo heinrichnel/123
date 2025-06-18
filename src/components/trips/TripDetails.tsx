@@ -91,7 +91,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   // Enhanced handleAddCost with file support
   const handleAddCost = (costData: Omit<CostEntry, 'id' | 'attachments'>, files?: FileList) => {
     try {
-      const costId = addCostEntry(costData, files);
+      const costId = addCostEntry(trip.id, costData, files);
       setShowCostForm(false);
       
       // Show success message with cost details
@@ -157,7 +157,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
     try {
       // Add each system cost entry individually
       for (const costData of systemCosts) {
-        addCostEntry(costData);
+        addCostEntry(trip.id, costData);
       }
       
       setShowSystemCostGenerator(false);
