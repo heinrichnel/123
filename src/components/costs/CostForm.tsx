@@ -249,7 +249,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
         <Select
           label="Currency *"
           value={formData.currency}
-          onChange={(e) => handleChange('currency', e.target.value)}
+          onChange={(value) => handleChange('currency', value)}
           options={[
             { label: 'ZAR (R)', value: 'ZAR' },
             { label: 'USD ($)', value: 'USD' }
@@ -263,7 +263,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
           step="0.01"
           min="0.01"
           value={formData.amount}
-          onChange={(e) => handleChange('amount', e.target.value)}
+          onChange={(value) => handleChange('amount', value)}
           placeholder="0.00"
           error={errors.amount}
         />
@@ -271,7 +271,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
         <Input
           label="Reference Number *"
           value={formData.referenceNumber}
-          onChange={(e) => handleChange('referenceNumber', e.target.value)}
+          onChange={(value) => handleChange('referenceNumber', value)}
           placeholder="e.g., INV-123456, RECEIPT-001"
           error={errors.referenceNumber}
         />
@@ -280,7 +280,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
           label="Date *"
           type="date"
           value={formData.date}
-          onChange={(e) => handleChange('date', e.target.value)}
+          onChange={(value) => handleChange('date', value)}
           error={errors.date}
         />
       </div>
