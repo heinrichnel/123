@@ -14,6 +14,7 @@ export const firebaseConfig = {
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  databaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
 };
 
 // 🔥 Initialize Firebase App

@@ -10,7 +10,13 @@ import {
   deleteDoc,
   doc,
   Firestore,
-  DocumentData
+  DocumentData,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  limit
 } from "firebase/firestore";
 import { firebaseApp } from "./firebaseConfig";
 
