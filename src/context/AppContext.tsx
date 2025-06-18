@@ -331,8 +331,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const cleanCostEntry = removeUndefinedValues(newCostEntry);
       const cleanCosts = updatedCosts.map(cost => removeUndefinedValues(cost));
       
-      // Update the trip document in Firestore first
-      await updateDoc(doc(db, "trips", tripId), { costs: cleanCosts });
+      // Use setDoc with merge to handle cases where the trip document doesn't exist in Firestore
+      await setDoc(doc(db, "trips", tripId), { costs: cleanCosts }, { merge: true });
       
       // Update local state only after successful Firestore operation
       setTrips(prev => 
