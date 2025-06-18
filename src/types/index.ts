@@ -60,13 +60,15 @@ export interface AdditionalCost {
 export interface DelayReason {
   id: string;
   tripId: string;
+  delayType: string;
+  description: string;
   delayDuration: number;
-  reason: string;
-  delayType?: string;
-  description?: string;
-  date: string;
-  createdAt: string;
-  updatedAt: string;
+  reportedAt: string;
+  reportedBy: string;
+  severity?: 'minor' | 'moderate' | 'major';
+  date?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type TripStatus = "active" | "flagged" | "completed" | "invoiced" | "paid";
@@ -83,14 +85,22 @@ export interface Trip {
   revenueCurrency: "USD" | "ZAR";
   distanceKm: number;
   clientType: "internal" | "external";
-  tripDescription: string;
+  description?: string;
+  tripDescription?: string;
   tripNotes?: string;
   costs: CostEntry[];
   additionalCosts: AdditionalCost[];
   delayReasons: DelayReason[];
   investigationNotes?: string;
   plannedArrivalDateTime?: string;
+  plannedOffloadDateTime?: string;
+  plannedDepartureDateTime?: string;
   actualArrivalDateTime?: string;
+  actualOffloadDateTime?: string;
+  actualDepartureDateTime?: string;
+  finalArrivalDateTime?: string;
+  finalOffloadDateTime?: string;
+  finalDepartureDateTime?: string;
   followUpHistory?: any[];
   status: TripStatus;
   invoiceNumber?: string;
@@ -99,12 +109,27 @@ export interface Trip {
   invoiceDueDate?: string;
   invoiceDate?: string;
   paymentStatus?: "unpaid" | "partial" | "paid";
+  paymentAmount?: number;
+  paymentReceivedDate?: string;
+  paymentMethod?: string;
+  bankReference?: string;
+  paymentNotes?: string;
+  paymentUpdatedAt?: string;
+  paymentUpdatedBy?: string;
   timelineValidated?: boolean;
   timelineValidatedAt?: string;
+  timelineValidatedBy?: string;
+  invoiceValidationNotes?: string;
+  proofOfDelivery?: Attachment[];
+  signedInvoice?: Attachment[];
   autoCompletedAt?: string;
   autoCompletedReason?: string;
   completedAt?: string;
   completedBy?: string;
+  hasInvestigation?: boolean;
+  investigationDate?: string;
+  editHistory?: any[];
+  lastFollowUpDate?: string;
 }
 
 // Missed Load Types
@@ -141,13 +166,18 @@ export interface DieselConsumptionRecord {
   previousKmReading?: number;
   distanceTravelled?: number;
   litresFilled: number;
-  costPerLitre: number;
+  costPerLitre?: number;
   totalCost: number;
   fuelStation: string;
   driverName: string;
   notes?: string;
   tripId?: string;
   kmPerLitre?: number;
+  currency?: 'USD' | 'ZAR';
+  probeReading?: number;
+  probeDiscrepancy?: number;
+  probeVerified?: boolean;
+  updatedAt?: string;
 }
 
 // System Cost Configuration Types
@@ -192,7 +222,7 @@ export interface TripEditRecord {
   fieldChanged: string;
   oldValue: string;
   newValue: string;
-  changeType: "update" | "status_change" | "completion" | "auto_completion";
+  changeType: "edit_completed_trip" | "update" | "status_change" | "completion" | "auto_completion";
 }
 
 export interface CostEditRecord {
@@ -248,24 +278,37 @@ export interface DriverBehaviorEvent {
   id: string;
   driverName: string;
   fleetNumber: string;
-  eventType: string; // e.g., 'Fuel Discrepancy', 'Speeding', etc.
+  eventType: DriverBehaviorEventType;
   description: string;
-  date: string;
-  eventDate?: string;
-  eventTime?: string;
+  date?: string;
+  eventDate: string;
+  eventTime: string;
   location?: string;
-  reportedBy?: string;
-  reportedAt?: string;
-  resolved: boolean;
+  reportedBy: string;
+  reportedAt: string;
+  resolved?: boolean;
   resolvedAt?: string;
   resolvedBy?: string;
   notes?: string;
-  status?: 'open' | 'in_progress' | 'resolved';
+  status: 'pending' | 'acknowledged' | 'resolved' | 'disputed';
   actionTaken?: string;
   attachments?: Attachment[];
   carReportId?: string;
-  severity?: 'low' | 'medium' | 'high';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  points: number;
 }
+
+export type DriverBehaviorEventType = 
+  | 'speeding'
+  | 'harsh_braking'
+  | 'harsh_acceleration'
+  | 'idling'
+  | 'route_deviation'
+  | 'unauthorized_stop'
+  | 'fatigue_alert'
+  | 'phone_usage'
+  | 'seatbelt_violation'
+  | 'other';
 
 // Driver Performance Types
 export interface DriverPerformance {
@@ -280,6 +323,7 @@ export interface DriverPerformance {
   performanceScore: number; // calculated score out of 100
   lastEventDate?: string;
   improvementTrend: 'improving' | 'stable' | 'declining';
+  behaviorScore: number; // Add this for compatibility
 }
 
 // Action Item Types
@@ -287,80 +331,86 @@ export interface ActionItem {
   id: string;
   title: string;
   description: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
-  assignedTo: string;
+  responsiblePerson: string;
+  startDate: string;
   dueDate: string;
-  category: string;
-  relatedTripId?: string;
-  relatedDriverName?: string;
-  relatedFleetNumber?: string;
+  status: 'initiated' | 'in_progress' | 'completed';
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  completedAt?: string;
+  completedBy?: string;
+  overdueReason?: string;
+  attachments?: Attachment[];
+  comments?: {
+    id: string;
+    comment: string;
+    createdAt: string;
+    createdBy: string;
+  }[];
   createdAt: string;
   updatedAt: string;
   createdBy: string;
-  completedAt?: string;
-  completedBy?: string;
-  notes?: string;
 }
 
 // CAR Report Types
 export interface CARReport {
   id: string;
-  driverName: string;
-  fleetNumber: string;
-  incidentDate: string;
-  incidentTime: string;
-  location: string;
-  incidentType: 'accident' | 'traffic_violation';
-  description: string;
-  severity: 'minor' | 'moderate' | 'severe';
-  injuriesReported: boolean;
-  policeInvolved: boolean;
-  policeReportNumber?: string;
-  witnessDetails?: string;
-  actionsTaken: string;
-  followUpRequired: boolean;
-  followUpDate?: string;
-  status: 'open' | 'under_investigation' | 'resolved';
-  investigationNotes?: string;
-  attachments: Attachment[];
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
-  resolvedAt?: string;
-  resolvedBy?: string;
+  reportNumber: string;
+  responsibleReporter: string;
+  responsiblePerson: string;
+  referenceEventId?: string;
+  dateOfIncident: string;
+  dateDue: string;
+  clientReport: string;
+  severity: 'low' | 'medium' | 'high';
+  problemIdentification: string;
+  causeAnalysisPeople?: string;
+  causeAnalysisMaterials?: string;
+  causeAnalysisEquipment?: string;
+  causeAnalysisMethods?: string;
+  causeAnalysisMetrics?: string;
+  causeAnalysisEnvironment?: string;
+  rootCauseAnalysis?: string;
+  correctiveActions?: string;
+  preventativeActionsImmediate?: string;
+  preventativeActionsLongTerm?: string;
+  financialImpact?: string;
+  generalComments?: string;
+  status: 'draft' | 'submitted' | 'in_progress' | 'completed';
+  completedAt?: string;
+  completedBy?: string;
+  attachments?: Attachment[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Invoice Aging Types
 export interface InvoiceAging {
-  id: string;
   tripId: string;
   invoiceNumber: string;
-  clientName: string;
-  invoiceAmount: number;
-  currency: 'USD' | 'ZAR';
+  customerName: string;
   invoiceDate: string;
   dueDate: string;
-  daysPastDue: number;
-  agingCategory: '0-30' | '31-60' | '61-90' | '90+';
+  amount: number;
+  currency: 'USD' | 'ZAR';
+  agingDays: number;
+  status: 'current' | 'warning' | 'critical' | 'overdue';
   paymentStatus: 'unpaid' | 'partial' | 'paid';
-  lastFollowUpDate?: string;
-  nextFollowUpDate?: string;
-  followUpNotes?: string;
+  lastFollowUp?: string;
 }
 
 // Customer Performance Types
 export interface CustomerPerformance {
-  clientName: string;
+  customerName: string;
   totalTrips: number;
   totalRevenue: number;
   currency: 'USD' | 'ZAR';
   averagePaymentDays: number;
-  onTimePaymentRate: number;
-  outstandingAmount: number;
+  paymentScore: number;
   lastTripDate: string;
-  paymentTrend: 'improving' | 'stable' | 'declining';
   riskLevel: 'low' | 'medium' | 'high';
+  isAtRisk: boolean;
+  isProfitable: boolean;
+  isTopClient: boolean;
 }
 
 // Constants for form options
@@ -537,20 +587,71 @@ export const TRIP_EDIT_REASONS = [
   "Correction",
   "Update",
   "Admin Edit",
-  "Other"
+  "Other (specify in comments)"
 ];
 
 export const TRIP_DELETION_REASONS = [
   "Duplicate",
   "Error",
   "Cancelled",
-  "Other"
+  "Other (specify in comments)"
 ];
 
-export const AGING_THRESHOLDS = [7, 14, 30, 60, 90];
-export const FOLLOW_UP_THRESHOLDS = [3, 7, 14];
+export const AGING_THRESHOLDS = {
+  ZAR: {
+    current: { min: 0, max: 20 },
+    warning: { min: 21, max: 29 },
+    critical: { min: 30, max: 30 },
+    overdue: { min: 31, max: Infinity }
+  },
+  USD: {
+    current: { min: 0, max: 10 },
+    warning: { min: 11, max: 13 },
+    critical: { min: 14, max: 14 },
+    overdue: { min: 15, max: Infinity }
+  }
+};
+
+export const FOLLOW_UP_THRESHOLDS = {
+  ZAR: 15, // days
+  USD: 7   // days
+};
 
 export const COST_CATEGORIES: Record<string, string[]> = {
+  "Border Costs": [
+    'Beitbridge Border Fee', 'Gate Pass', 'Coupon', 'Carbon Tax Horse', 'CVG Horse', 'CVG Trailer',
+    'Insurance (1 Month Horse)', 'Insurance (3 Months Trailer)', 'Insurance (2 Months Trailer)',
+    'Insurance (1 Month Trailer)', 'Carbon Tax (3 Months Horse)', 'Carbon Tax (2 Months Horse)',
+    'Carbon Tax (1 Month Horse)', 'Carbon Tax (3 Months Trailer)', 'Carbon Tax (2 Months Trailer)',
+    'Carbon Tax (1 Month Trailer)', 'Road Access', 'Bridge Fee', 'Road Toll Fee', 'Counseling Leavy',
+    'Transit Permit Horse', 'Transit Permit Trailer', 'National Road Safety Fund Horse',
+    'National Road Safety Fund Trailer', 'Electronic Seal', 'EME Permit', 'Zim Clearing',
+    'Zim Supervision', 'SA Clearing', 'Runner Fee Beitbridge', 'Runner Fee Zambia Kazungula',
+    'Runner Fee Chirundu'
+  ],
+  "Parking": [
+    'Bubi', 'Lunde', 'Mvuma', 'Gweru', 'Kadoma', 'Chegutu', 'Norton', 'Harare', 'Ruwa',
+    'Marondera', 'Rusape', 'Mutare', 'Nyanga', 'Bindura', 'Shamva', 'Centenary', 'Guruve',
+    'Karoi', 'Chinhoyi', 'Kariba', 'Hwange', 'Victoria Falls', 'Bulawayo', 'Gwanda',
+    'Beitbridge', 'Masvingo', 'Zvishavane', 'Shurugwi', 'Kwekwe'
+  ],
+  "Diesel": [
+    'ACM Petroleum Chirundu - Reefer', 'ACM Petroleum Chirundu - Horse', 'RAM Petroleum Harare - Reefer',
+    'RAM Petroleum Harare - Horse', 'Engen Beitbridge - Reefer', 'Engen Beitbridge - Horse',
+    'Shell Mutare - Reefer', 'Shell Mutare - Horse', 'BP Bulawayo - Reefer', 'BP Bulawayo - Horse',
+    'Total Gweru - Reefer', 'Total Gweru - Horse', 'Puma Masvingo - Reefer', 'Puma Masvingo - Horse',
+    'Zuva Petroleum Kadoma - Reefer', 'Zuva Petroleum Kadoma - Horse', 'Mobil Chinhoyi - Reefer',
+    'Mobil Chinhoyi - Horse', 'Caltex Kwekwe - Reefer', 'Caltex Kwekwe - Horse'
+  ],
+  "Non-Value-Added Costs": [
+    'Fines', 'Penalties', 'Passport Stamping', 'Push Documents', 'Jump Queue', 'Dismiss Inspection',
+    'Parcels', 'Labour'
+  ],
+  "Trip Allowances": ['Food', 'Airtime', 'Taxi'],
+  "Tolls": [
+    'Tolls BB to JHB', 'Tolls Cape Town to JHB', 'Tolls JHB to CPT', 'Tolls Mutare to BB',
+    'Tolls JHB to Martinsdrift', 'Tolls BB to Harare', 'Tolls Zambia'
+  ],
   "Fuel": [
     "Diesel",
     "Petrol",
@@ -558,13 +659,6 @@ export const COST_CATEGORIES: Record<string, string[]> = {
     "Fuel Card Charges",
     "Fuel Discrepancy",
     "Emergency Fuel"
-  ],
-  "Tolls": [
-    "Highway Tolls",
-    "Bridge Tolls",
-    "Border Tolls",
-    "City Tolls",
-    "Electronic Toll Collection"
   ],
   "Maintenance": [
     "Scheduled Service",
@@ -592,16 +686,16 @@ export const COST_CATEGORIES: Record<string, string[]> = {
     "Insurance Excess"
   ],
   "System Costs": [
-    "Repair & Maintenance (per KM)",
-    "Tyre Cost (per KM)",
-    "GIT Insurance (per Day)",
-    "Short Term Insurance (per Day)",
-    "Tracking Cost (per Day)",
-    "Fleet Management System (per Day)",
-    "Licensing (per Day)",
-    "VID Roadworthy (per Day)",
-    "Wages (per Day)",
-    "Depreciation (per Day)"
+    "Repair & Maintenance per KM",
+    "Tyre Cost per KM",
+    "GIT Insurance",
+    "Short-Term Insurance",
+    "Tracking Cost",
+    "Fleet Management System",
+    "Licensing",
+    "VID / Roadworthy",
+    "Wages",
+    "Depreciation"
   ],
   "Other": [
     "Parking Fees",
@@ -632,9 +726,9 @@ export const DEFAULT_SYSTEM_COST_RATES: Record<'USD' | 'ZAR', SystemCostRates> =
       wages: 20,
       depreciation: 10,
     },
-    lastUpdated: '',
-    updatedBy: '',
-    effectiveDate: '',
+    lastUpdated: new Date().toISOString(),
+    updatedBy: 'System Default',
+    effectiveDate: new Date().toISOString(),
   },
   ZAR: {
     currency: 'ZAR',
@@ -652,9 +746,9 @@ export const DEFAULT_SYSTEM_COST_RATES: Record<'USD' | 'ZAR', SystemCostRates> =
       wages: 300,
       depreciation: 150,
     },
-    lastUpdated: '',
-    updatedBy: '',
-    effectiveDate: '',
+    lastUpdated: new Date().toISOString(),
+    updatedBy: 'System Default',
+    effectiveDate: new Date().toISOString(),
   },
 };
 
