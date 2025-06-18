@@ -4,7 +4,7 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
-// ✅ Gebruik omgewingsveranderlikes uit .env
+// ✅ Use environment variables from .env
 export const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -16,7 +16,7 @@ export const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// 🔥 Firebase App initialiseer
+// 🔥 Initialize Firebase App
 export const firebaseApp = initializeApp(firebaseConfig);
 
 // ✅ Initialize Firebase App Check with reCAPTCHA v3
@@ -25,7 +25,7 @@ const appCheck = initializeAppCheck(firebaseApp, {
   isTokenAutoRefreshEnabled: true,
 });
 
-// 📊 Optioneel: Analytics initialiseer net as dit beskikbaar is
+// 📊 Optional: Initialize Analytics if supported
 export const initAnalytics = async () => {
   if (await isSupported()) {
     return getAnalytics(firebaseApp);
