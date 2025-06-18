@@ -137,7 +137,7 @@ const ActionLog: React.FC = () => {
     const newErrors: Record<string, string> = {};
     
     if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.description.trim()) newErrors.description = 'Description is required';
+    if (!String(formData.description || '').trim()) newErrors.description = 'Description is required';
     if (!formData.responsiblePerson) newErrors.responsiblePerson = 'Responsible person is required';
     if (!formData.dueDate) newErrors.dueDate = 'Due date is required';
     
@@ -164,7 +164,7 @@ const ActionLog: React.FC = () => {
     
     const actionItemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> = {
       title: formData.title.trim(),
-      description: formData.description.trim(),
+      description: String(formData.description || '').trim(),
       responsiblePerson: formData.responsiblePerson,
       startDate: today,
       dueDate: formData.dueDate,
