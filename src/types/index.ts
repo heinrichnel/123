@@ -3,7 +3,32 @@
 // Base types for the application
 export interface Attachment {
   id: string;
-  // add other fields if needed
+  costEntryId?: string;
+  filename: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  uploadedAt: string;
+  fileData: string;
+}
+
+export interface CostEntry {
+  id: string;
+  tripId: string;
+  amount: number;
+  category: string;
+  subcategory?: string;
+  description?: string;
+  date: string;
+  referenceNumber?: string;
+  isFlagged?: boolean;
+  isSystemGenerated?: boolean;
+  investigationStatus?: 'pending' | 'in_progress' | 'resolved';
+  flaggedAt?: string;
+  resolvedAt?: string;
+  attachments: Attachment[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CostData {
@@ -20,12 +45,28 @@ export interface CostData {
   // ...add any other fields used in your code
 }
 
+export interface AdditionalCost {
+  id: string;
+  tripId: string;
+  type: string;
+  amount: number;
+  currency: 'USD' | 'ZAR';
+  description?: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DelayReason {
+  id: string;
+  tripId: string;
   delayDuration: number;
   reason: string;
   delayType?: string;
   description?: string;
-  id?: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type TripStatus = "active" | "flagged" | "completed";
@@ -42,8 +83,8 @@ export interface Trip {
   revenueCurrency: "USD" | "ZAR";
   distanceKm: number;
   clientType: "internal" | "external";
-  costs: CostData[];
-  additionalCosts: CostData[];
+  costs: CostEntry[];
+  additionalCosts: AdditionalCost[];
   delayReasons: DelayReason[];
   investigationNotes?: string;
   plannedArrivalDateTime?: string;
@@ -64,6 +105,48 @@ export interface Trip {
   completedBy?: string;
   invoiceDate?: string;
   // ...add any other fields referenced in your code
+}
+
+// Missed Load Types
+export interface MissedLoad {
+  id: string;
+  clientName: string;
+  route: string;
+  loadDate: string;
+  reason: string;
+  reasonDescription?: string;
+  potentialRevenue: number;
+  currency: 'USD' | 'ZAR';
+  followUpRequired: boolean;
+  followUpDate?: string;
+  followUpNotes?: string;
+  compensationOffered: boolean;
+  compensationAmount?: number;
+  compensationNotes?: string;
+  status: 'open' | 'resolved' | 'cancelled';
+  resolutionDate?: string;
+  resolutionNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+// Diesel Consumption Types
+export interface DieselConsumptionRecord {
+  id: string;
+  driverName: string;
+  fleetNumber: string;
+  date: string;
+  startOdometer: number;
+  endOdometer: number;
+  distanceTraveled: number;
+  dieselPurchased: number;
+  fuelEfficiency: number;
+  route?: string;
+  tripId?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // System Cost Configuration Types
@@ -167,10 +250,84 @@ export interface DriverBehaviorEvent {
   eventType: string; // e.g., 'Fuel Discrepancy', 'Speeding', etc.
   description: string;
   date: string;
+  eventDate?: string;
+  eventTime?: string;
+  location?: string;
+  reportedBy?: string;
+  reportedAt?: string;
   resolved: boolean;
   resolvedAt?: string;
   resolvedBy?: string;
   notes?: string;
+  status?: 'open' | 'in_progress' | 'resolved';
+  actionTaken?: string;
+  attachments?: Attachment[];
+  carReportId?: string;
+  severity?: 'low' | 'medium' | 'high';
+}
+
+// Driver Performance Types
+export interface DriverPerformance {
+  driverName: string;
+  fleetNumber: string;
+  totalEvents: number;
+  resolvedEvents: number;
+  pendingEvents: number;
+  averageResolutionTime: number; // in days
+  eventsByType: Record<string, number>;
+  eventsBySeverity: Record<string, number>;
+  performanceScore: number; // calculated score out of 100
+  lastEventDate?: string;
+  improvementTrend: 'improving' | 'stable' | 'declining';
+}
+
+// Action Item Types
+export interface ActionItem {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'open' | 'in_progress' | 'completed' | 'cancelled';
+  assignedTo: string;
+  dueDate: string;
+  category: string;
+  relatedTripId?: string;
+  relatedDriverName?: string;
+  relatedFleetNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  completedAt?: string;
+  completedBy?: string;
+  notes?: string;
+}
+
+// CAR Report Types
+export interface CARReport {
+  id: string;
+  driverName: string;
+  fleetNumber: string;
+  incidentDate: string;
+  incidentTime: string;
+  location: string;
+  incidentType: 'accident' | 'traffic_violation';
+  description: string;
+  severity: 'minor' | 'moderate' | 'severe';
+  injuriesReported: boolean;
+  policeInvolved: boolean;
+  policeReportNumber?: string;
+  witnessDetails?: string;
+  actionsTaken: string;
+  followUpRequired: boolean;
+  followUpDate?: string;
+  status: 'open' | 'under_investigation' | 'resolved';
+  investigationNotes?: string;
+  attachments: Attachment[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
 }
 
 // Constants for form options

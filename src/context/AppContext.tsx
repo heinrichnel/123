@@ -8,6 +8,7 @@ import {
   MissedLoad,
   DieselConsumptionRecord,
   DriverBehaviorEvent,
+  DriverPerformance,
   ActionItem,
   CARReport,
   SystemCostRates,
@@ -72,6 +73,9 @@ interface AppContextType {
   addDriverBehaviorEvent: (event: Omit<DriverBehaviorEvent, 'id'>) => Promise<void>;
   updateDriverBehaviorEvent: (event: DriverBehaviorEvent) => Promise<void>;
   deleteDriverBehaviorEvent: (id: string) => Promise<void>;
+
+  // Driver Performance
+  getAllDriversPerformance: () => DriverPerformance[];
 
   // System Cost Rates (following centralized context pattern)
   systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
@@ -360,6 +364,129 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await deleteDriverBehaviorEventToFirebase(id);
   };
 
+  // Driver Performance Analytics
+  const getAllDriversPerformance = (): DriverPerformance[] => {
+    // Group events by driver
+    const driverEventMap = new Map<string, DriverBehaviorEvent[]>();
+    
+    driverBehaviorEvents.forEach(event => {
+      const key = `${event.driverName}-${event.fleetNumber}`;
+      if (!driverEventMap.has(key)) {
+        driverEventMap.set(key, []);
+      }
+      driverEventMap.get(key)!.push(event);
+    });
+
+    // Calculate performance metrics for each driver
+    const performanceData: DriverPerformance[] = [];
+
+    driverEventMap.forEach((events, driverKey) => {
+      const [driverName, fleetNumber] = driverKey.split('-');
+      
+      const totalEvents = events.length;
+      const resolvedEvents = events.filter(e => e.resolved).length;
+      const pendingEvents = totalEvents - resolvedEvents;
+
+      // Calculate average resolution time
+      const resolvedEventsWithTime = events.filter(e => e.resolved && e.resolvedAt && e.date);
+      let averageResolutionTime = 0;
+      
+      if (resolvedEventsWithTime.length > 0) {
+        const totalResolutionTime = resolvedEventsWithTime.reduce((sum, event) => {
+          const eventDate = new Date(event.date);
+          const resolvedDate = new Date(event.resolvedAt!);
+          const diffTime = resolvedDate.getTime() - eventDate.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          return sum + diffDays;
+        }, 0);
+        averageResolutionTime = totalResolutionTime / resolvedEventsWithTime.length;
+      }
+
+      // Group events by type
+      const eventsByType: Record<string, number> = {};
+      events.forEach(event => {
+        eventsByType[event.eventType] = (eventsByType[event.eventType] || 0) + 1;
+      });
+
+      // Group events by severity
+      const eventsBySeverity: Record<string, number> = {
+        low: 0,
+        medium: 0,
+        high: 0
+      };
+      events.forEach(event => {
+        const severity = event.severity || 'medium';
+        eventsBySeverity[severity] = (eventsBySeverity[severity] || 0) + 1;
+      });
+
+      // Calculate performance score (0-100)
+      let performanceScore = 100;
+      
+      // Deduct points based on unresolved events
+      performanceScore -= pendingEvents * 5;
+      
+      // Deduct points based on high severity events
+      performanceScore -= eventsBySeverity.high * 10;
+      performanceScore -= eventsBySeverity.medium * 5;
+      performanceScore -= eventsBySeverity.low * 2;
+      
+      // Bonus for quick resolution
+      if (averageResolutionTime > 0 && averageResolutionTime <= 3) {
+        performanceScore += 10;
+      } else if (averageResolutionTime > 7) {
+        performanceScore -= 5;
+      }
+
+      // Ensure score is between 0 and 100
+      performanceScore = Math.max(0, Math.min(100, performanceScore));
+
+      // Determine improvement trend (simplified logic)
+      const recentEvents = events.filter(e => {
+        const eventDate = new Date(e.date);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return eventDate >= thirtyDaysAgo;
+      });
+
+      const olderEvents = events.filter(e => {
+        const eventDate = new Date(e.date);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        return eventDate >= sixtyDaysAgo && eventDate < thirtyDaysAgo;
+      });
+
+      let improvementTrend: 'improving' | 'stable' | 'declining' = 'stable';
+      if (recentEvents.length < olderEvents.length) {
+        improvementTrend = 'improving';
+      } else if (recentEvents.length > olderEvents.length) {
+        improvementTrend = 'declining';
+      }
+
+      // Get last event date
+      const lastEventDate = events.length > 0 
+        ? events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0].date
+        : undefined;
+
+      performanceData.push({
+        driverName,
+        fleetNumber,
+        totalEvents,
+        resolvedEvents,
+        pendingEvents,
+        averageResolutionTime,
+        eventsByType,
+        eventsBySeverity,
+        performanceScore,
+        lastEventDate,
+        improvementTrend
+      });
+    });
+
+    return performanceData.sort((a, b) => b.performanceScore - a.performanceScore);
+  };
+
   // Action Items CRUD (Firestore)
   const addActionItem = async (itemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
     const docRef = await addDoc(collection(db, 'actionItems'), {
@@ -406,6 +533,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addDriverBehaviorEvent,
     updateDriverBehaviorEvent,
     deleteDriverBehaviorEvent,
+    getAllDriversPerformance,
     systemCostRates,
     updateSystemCostRates,
     actionItems,
