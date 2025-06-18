@@ -381,6 +381,22 @@ export interface CARReport {
   attachments?: Attachment[];
   createdAt?: string;
   updatedAt?: string;
+  
+  // Additional fields for compatibility
+  driverName: string;
+  fleetNumber: string;
+  incidentDate: string;
+  incidentTime: string;
+  location: string;
+  incidentType: 'accident' | 'traffic_violation';
+  description: string;
+  injuriesReported: boolean;
+  policeInvolved: boolean;
+  policeReportNumber?: string;
+  witnessDetails?: string;
+  actionsTaken: string;
+  followUpRequired: boolean;
+  followUpDate?: string;
 }
 
 // Invoice Aging Types
@@ -411,6 +427,8 @@ export interface CustomerPerformance {
   isAtRisk: boolean;
   isProfitable: boolean;
   isTopClient: boolean;
+  daysSinceLastTrip: number;
+  clientType: string;
 }
 
 // Constants for form options
@@ -641,7 +659,20 @@ export const COST_CATEGORIES: Record<string, string[]> = {
     'Shell Mutare - Reefer', 'Shell Mutare - Horse', 'BP Bulawayo - Reefer', 'BP Bulawayo - Horse',
     'Total Gweru - Reefer', 'Total Gweru - Horse', 'Puma Masvingo - Reefer', 'Puma Masvingo - Horse',
     'Zuva Petroleum Kadoma - Reefer', 'Zuva Petroleum Kadoma - Horse', 'Mobil Chinhoyi - Reefer',
-    'Mobil Chinhoyi - Horse', 'Caltex Kwekwe - Reefer', 'Caltex Kwekwe - Horse'
+    'Mobil Chinhoyi - Horse', 'Caltex Kwekwe - Reefer', 'Caltex Kwekwe - Horse',
+    'ACM Petroleum Chirundu (Zambia)', 'Adami\'s Fuel Cradock (Sa)', 'African Truck Stop JHB (Sa)',
+    'Beitbridge Depot (Afric Oil) (Zim)', 'BF Distributors/Caltex Polokwane (Sa)', 'Bomponi',
+    'Brandhill', 'Bulawayo Depot', 'Bulawayo Drum', 'Burma Estate', 'Burma Valley depot',
+    'Energy Park Nyamapgay (Zimbabwe)', 'Energy ParkPetrol (Zimbabwe)', 'Engen Beaufort West (Sa)',
+    'Engen Gaborone (Botswana)', 'Engen Kazangula (Botswana)', 'Fangdui', 'Fuel 1 Kraaifontein',
+    'Fuel 1 Retail Belville Cape Town (Sa)', 'G FUEL', 'G Fuel Bulawayo (Zimbabwe)',
+    'Harare Truck Stop (Zimbabwe)', 'HASS Petroleum Kasumbalesa (Zambia)',
+    'Industry Petroleum (Pty) Ltd - Musina', 'KK Service (Zimbabwe)', 'Korridor Chingola Truck Stop (Zambia)',
+    'Korridor Kapiri Mposhi Truck Stop (Zambia)', 'Korridor Livingstone Truck Stop (Zambia)',
+    'Korridor Lusaka Truck Stop (Zambia)', 'Kwa Nokeng Francistown', 'Kwa Nokeng Kazungula',
+    'Kwa Nokeng Martins Drift', 'Lemba Truck Stop Louise Trichardt', 'MBT Zeerust Truckstop (Sa)',
+    'TOTAL ENERGIES', 'Tswana Fuel Kazungula (Botswana)', 'Wine Routes Truck Stop (Sa)',
+    'Xtreme Harare (Zimbabwe)', 'Zuva Harare (Zimbabwe)', 'Others'
   ],
   "Non-Value-Added Costs": [
     'Fines', 'Penalties', 'Passport Stamping', 'Push Documents', 'Jump Queue', 'Dismiss Inspection',
@@ -761,3 +792,47 @@ export const DEFAULT_SYSTEM_COST_REMINDER: SystemCostReminder = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
+
+// List of fuel stations for dropdown
+export const FUEL_STATIONS = [
+  'ACM Petroleum Chirundu (Zambia)',
+  'Adami\'s Fuel Cradock (Sa)',
+  'African Truck Stop JHB (Sa)',
+  'Beitbridge Depot (Afric Oil) (Zim)',
+  'BF Distributors/Caltex Polokwane (Sa)',
+  'Bomponi',
+  'Brandhill',
+  'Bulawayo Depot',
+  'Bulawayo Drum',
+  'Burma Estate',
+  'Burma Valley depot',
+  'Energy Park Nyamapgay (Zimbabwe)',
+  'Energy ParkPetrol (Zimbabwe)',
+  'Engen Beaufort West (Sa)',
+  'Engen Gaborone (Botswana)',
+  'Engen Kazangula (Botswana)',
+  'Fangdui',
+  'Fuel 1 Kraaifontein',
+  'Fuel 1 Retail Belville Cape Town (Sa)',
+  'G FUEL',
+  'G Fuel Bulawayo (Zimbabwe)',
+  'Harare Truck Stop (Zimbabwe)',
+  'HASS Petroleum Kasumbalesa (Zambia)',
+  'Industry Petroleum (Pty) Ltd - Musina',
+  'KK Service (Zimbabwe)',
+  'Korridor Chingola Truck Stop (Zambia)',
+  'Korridor Kapiri Mposhi Truck Stop (Zambia)',
+  'Korridor Livingstone Truck Stop (Zambia)',
+  'Korridor Lusaka Truck Stop (Zambia)',
+  'Kwa Nokeng Francistown',
+  'Kwa Nokeng Kazungula',
+  'Kwa Nokeng Martins Drift',
+  'Lemba Truck Stop Louise Trichardt',
+  'MBT Zeerust Truckstop (Sa)',
+  'TOTAL ENERGIES',
+  'Tswana Fuel Kazungula (Botswana)',
+  'Wine Routes Truck Stop (Sa)',
+  'Xtreme Harare (Zimbabwe)',
+  'Zuva Harare (Zimbabwe)',
+  'Others'
+];

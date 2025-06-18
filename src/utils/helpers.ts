@@ -595,3 +595,42 @@ export const getAllFlaggedCosts = (trips: Trip[]): FlaggedCost[] => {
     return [];
   }
 };
+
+// -------------------- Trip Sorting by Date --------------------
+
+export const sortTripsByLoadingDate = (trips: Trip[]): Record<string, Trip[]> => {
+  // Group trips by loading date (start date)
+  const tripsByDate: Record<string, Trip[]> = {};
+  
+  trips.forEach(trip => {
+    const loadDate = trip.startDate;
+    if (!tripsByDate[loadDate]) {
+      tripsByDate[loadDate] = [];
+    }
+    tripsByDate[loadDate].push(trip);
+  });
+  
+  // Sort dates in descending order (newest first)
+  const sortedDates = Object.keys(tripsByDate).sort((a, b) => 
+    new Date(b).getTime() - new Date(a).getTime()
+  );
+  
+  // Create a new object with sorted dates
+  const sortedTripsByDate: Record<string, Trip[]> = {};
+  sortedDates.forEach(date => {
+    sortedTripsByDate[date] = tripsByDate[date];
+  });
+  
+  return sortedTripsByDate;
+};
+
+// Format date for display in headers
+export const formatDateForHeader = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+};
