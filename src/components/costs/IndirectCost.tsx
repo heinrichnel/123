@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Trip, CostEntry } from '../../types';
 
 // ─── Icons ───────────────────────────────────────────────────────
-import { Calculator, Clock, Navigation, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Calculator, Clock, Navigation } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency } from '../../utils/helpers';

@@ -117,7 +117,7 @@ const CARReportList: React.FC = () => {
   };
   
   // Get status badge class
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusClass = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'in_progress': return 'bg-blue-100 text-blue-800';
@@ -127,7 +127,7 @@ const CARReportList: React.FC = () => {
   };
   
   // Get severity badge class
-  const getSeverityBadgeClass = (severity: string) => {
+  const getSeverityClass = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-100 text-red-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
@@ -366,11 +366,11 @@ const CARReportList: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h3 className="text-lg font-medium text-gray-900">CAR-{report.reportNumber}</h3>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(report.status)}`}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(report.status)}`}>
                             {report.status === 'in_progress' ? 'In Progress' : 
                              report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityBadgeClass(report.severity)}`}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(report.severity)}`}>
                             {report.severity.toUpperCase()} Severity
                           </span>
                           {isOverdue && (
