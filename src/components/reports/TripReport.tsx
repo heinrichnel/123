@@ -38,6 +38,11 @@ interface TripReportProps {
 }
 
 const TripReport: React.FC<TripReportProps> = ({ trip }) => {
+  // Ensure trip has costs array to prevent errors
+  if (!trip.costs) {
+    trip.costs = [];
+  }
+  
   const report = generateReport(trip);
   const kpis = calculateKPIs(trip);
 
