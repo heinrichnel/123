@@ -11,7 +11,8 @@ import { useAppContext } from '../../context/AppContext';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Input, Select, TextArea, FileUpload } from '../ui/FormElements';
+import { Input, Select, TextArea } from '../ui/FormElements';
+import FileUpload from '../ui/FileUpload';
 
 // ─── Custom Modules ──────────────────────────────────────────────
 import CostForm from '../costs/CostForm';
