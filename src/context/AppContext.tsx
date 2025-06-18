@@ -60,7 +60,7 @@ interface AppContextType {
   deleteTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
 
-  addCostEntry: (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => string;
+  addCostEntry: (tripId: string, costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => string;
   updateCostEntry: (updatedCost: CostEntry) => void;
   deleteCostEntry: (id: string) => void;
 
@@ -349,9 +349,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Cost Entry Management
-  const addCostEntry = (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList): string => {
+  const addCostEntry = (tripId: string, costData: Omit<CostEntry, "id" | "attachments">, files?: FileList): string => {
     try {
-      console.log("Adding cost entry to trip:", costData.tripId);
+      console.log("Adding cost entry to trip:", tripId);
       const newId = `C${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
       // Process attachments if files are provided
@@ -376,14 +376,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString(),
       };
 
-      const trip = trips.find((t) => t.id === costData.tripId);
+      const trip = trips.find((t) => t.id === tripId);
       if (!trip) {
-        console.error("Trip not found:", costData.tripId);
+        console.error("Trip not found:", tripId);
         throw new Error("Trip not found");
       }
 
       const updatedCosts = [...(trip.costs || []), newCostEntry];
-      const tripDocRef = doc(db, "trips", costData.tripId);
+      const tripDocRef = doc(db, "trips", tripId);
 
       // Clean the cost entry to remove undefined values
       const cleanedCostEntry = cleanObjectForFirestore(newCostEntry);
@@ -821,7 +821,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             updatedAt: new Date().toISOString(),
           };
           
-          addCostEntry(costData);
+          addCostEntry(tripId, costData);
         })
         .catch(error => {
           console.error("Error allocating diesel record to trip in Firestore:", error);
