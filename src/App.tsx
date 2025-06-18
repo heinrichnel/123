@@ -48,10 +48,10 @@ const AppContent: React.FC = () => {
   const [showTripForm, setShowTripForm] = useState(false);
   const [editingTrip, setEditingTrip] = useState<Trip | undefined>();
 
-  // Show trip details after adding a trip (like your working version)
+  // Show trip details after adding a trip (like your working version) - Fixed to be async
   const handleAddTrip = async (tripData: Omit<Trip, "id" | "costs" | "status">) => {
     try {
-      const tripId = addTrip(tripData);
+      const tripId = await addTrip(tripData);
       setShowTripForm(false);
       setEditingTrip(undefined);
       

@@ -80,7 +80,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
         description: row.description || ''
       }));
 
-      importTripsFromCSV(trips);
+      await importTripsFromCSV(trips);
       alert(`Successfully imported ${trips.length} trips from CSV file.${connectionStatus !== 'connected' ? '\n\nData will be synced when your connection is restored.' : ''}`);
       onClose();
     } catch (error) {

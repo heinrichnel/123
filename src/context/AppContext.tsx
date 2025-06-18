@@ -55,7 +55,7 @@ import {
 
 interface AppContextType {
   trips: Trip[];
-  addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => string;
+  addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => Promise<string>;
   updateTrip: (trip: Trip) => void;
   deleteTrip: (id: string) => void;
   getTrip: (id: string) => Trip | undefined;
@@ -116,7 +116,7 @@ interface AppContextType {
   addActionItemComment: (itemId: string, comment: string) => void;
 
   // Import/Export
-  importTripsFromCSV: (trips: any[]) => void;
+  importTripsFromCSV: (trips: any[]) => Promise<void>;
 
   // Connection Status
   connectionStatus: "connected" | "disconnected" | "reconnecting";
@@ -268,14 +268,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  // Trip Management
-  const addTrip = (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): string => {
+  // Trip Management - Fixed to be fully asynchronous
+  const addTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): Promise<string> => {
     try {
       console.log("Adding new trip:", tripData);
-      const newId = generateTripId();
-      const newTrip: Trip = {
+      
+      const newTrip: Omit<Trip, 'id'> = {
         ...tripData,
-        id: newId,
         costs: [],
         status: 'active',
         paymentStatus: 'unpaid',
@@ -288,18 +287,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       // Clean the object to remove undefined values
       const cleanedTrip = cleanObjectForFirestore(newTrip);
       
-      // Add to Firestore
-      addDoc(collection(db, "trips"), cleanedTrip)
-        .then(docRef => {
-          console.log("Trip added with ID:", docRef.id);
-          // Update the ID to match Firestore
-          updateDoc(docRef, { id: docRef.id });
-        })
-        .catch(error => {
-          console.error("Error adding trip to Firestore:", error);
-        });
+      // Add to Firestore and wait for the document to be created
+      const docRef = await addDoc(collection(db, "trips"), cleanedTrip);
+      console.log("Trip added with Firestore ID:", docRef.id);
       
-      return newId;
+      // Update the document with its own ID for consistency
+      await updateDoc(docRef, { id: docRef.id });
+      console.log("Trip ID field updated successfully");
+      
+      return docRef.id;
     } catch (error) {
       console.error("Error in addTrip:", error);
       throw error;
@@ -348,10 +344,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     return trips.find(trip => trip.id === id);
   };
 
-  // Cost Entry Management
+  // Cost Entry Management - Enhanced with better error handling
   const addCostEntry = (tripId: string, costData: Omit<CostEntry, "id" | "attachments">, files?: FileList): string => {
     try {
       console.log("Adding cost entry to trip:", tripId);
+      
+      // First, verify the trip exists in our local state
+      const trip = trips.find((t) => t.id === tripId);
+      if (!trip) {
+        console.error("Trip not found in local state:", tripId);
+        throw new Error("Trip not found. Please ensure the trip is fully loaded before adding cost entries.");
+      }
+
       const newId = `C${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
       // Process attachments if files are provided
@@ -376,12 +380,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString(),
       };
 
-      const trip = trips.find((t) => t.id === tripId);
-      if (!trip) {
-        console.error("Trip not found:", tripId);
-        throw new Error("Trip not found");
-      }
-
       const updatedCosts = [...(trip.costs || []), newCostEntry];
       const tripDocRef = doc(db, "trips", tripId);
 
@@ -389,12 +387,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const cleanedCostEntry = cleanObjectForFirestore(newCostEntry);
       const cleanedCosts = cleanObjectForFirestore(updatedCosts);
 
-      updateDoc(tripDocRef, { costs: cleanedCosts })
+      // Verify document exists before updating
+      getDoc(tripDocRef)
+        .then((docSnapshot) => {
+          if (!docSnapshot.exists()) {
+            console.error("Trip document does not exist in Firestore:", tripId);
+            throw new Error("Trip document not found in database. Please refresh and try again.");
+          }
+          
+          return updateDoc(tripDocRef, { costs: cleanedCosts });
+        })
         .then(() => {
           console.log("Cost entry added successfully");
         })
         .catch(error => {
           console.error("Error adding cost entry to Firestore:", error);
+          throw error;
         });
 
       return newId;
@@ -1353,15 +1361,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Import/Export
-  const importTripsFromCSV = (tripsData: any[]): void => {
+  // Import/Export - Fixed to be fully asynchronous
+  const importTripsFromCSV = async (tripsData: any[]): Promise<void> => {
     try {
       console.log("Importing trips from CSV:", tripsData.length);
-      tripsData.forEach(tripData => {
-        const newId = generateTripId();
-        const newTrip: Trip = {
+      
+      // Process trips sequentially to avoid race conditions
+      for (const tripData of tripsData) {
+        const newTrip: Omit<Trip, 'id'> = {
           ...tripData,
-          id: newId,
           costs: [],
           status: 'active',
           paymentStatus: 'unpaid',
@@ -1374,17 +1382,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         // Clean the trip to remove undefined values
         const cleanedTrip = cleanObjectForFirestore(newTrip);
         
-        // Add to Firestore
-        addDoc(collection(db, "trips"), cleanedTrip)
-          .then(docRef => {
-            console.log("Imported trip added with ID:", docRef.id);
-            // Update the ID to match Firestore
-            updateDoc(docRef, { id: docRef.id });
-          })
-          .catch(error => {
-            console.error("Error adding imported trip to Firestore:", error);
-          });
-      });
+        // Add to Firestore and wait for completion
+        const docRef = await addDoc(collection(db, "trips"), cleanedTrip);
+        console.log("Imported trip added with ID:", docRef.id);
+        
+        // Update the ID to match Firestore
+        await updateDoc(docRef, { id: docRef.id });
+      }
+      
+      console.log("All trips imported successfully");
     } catch (error) {
       console.error("Error in importTripsFromCSV:", error);
       throw error;
