@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from 'react';
 
 // ─── Types & Constants ───────────────────────────────────────────
-import { Trip, CLIENTS, DRIVERS } from '../../types';
+import { Trip, CLIENTS, DRIVERS, FLEET_NUMBERS } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
 import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Edit, Trash2, Eye, AlertTriangle, Upload } from 'lucide-react';
+import { Edit, Trash2, Eye, AlertTriangle, Upload, Filter } from 'lucide-react';
 import { formatCurrency, calculateTotalCosts, getFlaggedCostsCount } from '../../utils/helpers';
 import LoadImportModal from './LoadImportModal';
 
@@ -23,6 +23,10 @@ interface ActiveTripsProps {
 
 const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onView, onCompleteTrip }) => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [filterFleet, setFilterFleet] = useState<string>('');
+  const [filterDriver, setFilterDriver] = useState<string>('');
+  const [filterClient, setFilterClient] = useState<string>('');
+  const [showFilters, setShowFilters] = useState(false);
 
   const openImportModal = () => setIsImportModalOpen(true);
   const closeImportModal = () => setIsImportModalOpen(false);
@@ -38,6 +42,26 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
     }
   };
 
+  // Apply filters
+  const filteredTrips = trips.filter(trip => {
+    if (filterFleet && trip.fleetNumber !== filterFleet) return false;
+    if (filterDriver && trip.driverName !== filterDriver) return false;
+    if (filterClient && trip.clientName !== filterClient) return false;
+    return true;
+  });
+
+  // Get unique values for filters
+  const uniqueFleets = [...new Set(trips.map(t => t.fleetNumber))].sort();
+  const uniqueDrivers = [...new Set(trips.map(t => t.driverName))].sort();
+  const uniqueClients = [...new Set(trips.map(t => t.clientName))].sort();
+
+  // Clear filters
+  const clearFilters = () => {
+    setFilterFleet('');
+    setFilterDriver('');
+    setFilterClient('');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -45,23 +69,87 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
           <h2 className="text-2xl font-bold text-gray-900">Active Trips</h2>
           <p className="text-gray-500">{trips.length} active trip{trips.length !== 1 ? 's' : ''}</p>
         </div>
-        <Button icon={<Upload className="w-4 h-4" />} onClick={openImportModal}>
-          Import Trips
-        </Button>
-      </div>
-
-      {trips.length === 0 && (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No active trips found</h3>
-          <p className="text-gray-500">Create your first trip or import data to start tracking.</p>
+        <div className="flex space-x-3">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFilters(!showFilters)}
+            icon={<Filter className="w-4 h-4" />}
+          >
+            {showFilters ? 'Hide Filters' : 'Show Filters'}
+          </Button>
           <Button icon={<Upload className="w-4 h-4" />} onClick={openImportModal}>
             Import Trips
           </Button>
         </div>
+      </div>
+
+      {/* Filters */}
+      {showFilters && (
+        <Card>
+          <CardHeader title="Filter Trips" />
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Select
+                label="Fleet"
+                value={filterFleet}
+                onChange={(e) => setFilterFleet(e.target.value)}
+                options={[
+                  { label: 'All Fleets', value: '' },
+                  ...uniqueFleets.map(fleet => ({ label: fleet, value: fleet }))
+                ]}
+              />
+              <Select
+                label="Driver"
+                value={filterDriver}
+                onChange={(e) => setFilterDriver(e.target.value)}
+                options={[
+                  { label: 'All Drivers', value: '' },
+                  ...uniqueDrivers.map(driver => ({ label: driver, value: driver }))
+                ]}
+              />
+              <Select
+                label="Client"
+                value={filterClient}
+                onChange={(e) => setFilterClient(e.target.value)}
+                options={[
+                  { label: 'All Clients', value: '' },
+                  ...uniqueClients.map(client => ({ label: client, value: client }))
+                ]}
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={clearFilters}
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {filteredTrips.length === 0 && (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No active trips found</h3>
+          <p className="text-gray-500">
+            {trips.length > 0 
+              ? 'No trips match your current filter criteria.' 
+              : 'Create your first trip or import data to start tracking.'}
+          </p>
+          {trips.length === 0 && (
+            <div className="mt-4">
+              <Button icon={<Upload className="w-4 h-4" />} onClick={openImportModal}>
+                Import Trips
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="grid gap-4">
-        {trips.map((trip) => {
+        {filteredTrips.map((trip) => {
           const currency = trip.revenueCurrency;
           const totalCosts = calculateTotalCosts(trip.costs);
           const profit = (trip.baseRevenue || 0) - totalCosts;

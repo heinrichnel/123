@@ -121,21 +121,13 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
 
       const date = new Date(offloadDate);
 
-      // Get the day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-      const dayOfWeek = date.getDay();
-      
-      // Calculate Monday of the week (ISO week starts Monday)
-      // If today is Sunday (0), go back 6 days
-      // If today is Monday (1), go back 0 days
-      // If today is Tuesday (2), go back 1 day, etc.
+      // Monday of the week (ISO week starts Monday)
       const monday = new Date(date);
-      monday.setDate(date.getDate() - ((dayOfWeek + 6) % 7));
-      monday.setHours(0, 0, 0, 0);
+      monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
 
-      // Calculate Sunday of the week
+      // Sunday of the week
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
-      sunday.setHours(23, 59, 59, 999);
 
       const weekKey = `${monday.getFullYear()}-W${getWeekNumber(monday)}`;
 
@@ -156,13 +148,13 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       }
 
       const week = weeklyData[weekKey];
-      const tripCosts = calculateTotalCosts(trip.costs || []);
+      const tripCosts = calculateTotalCosts(trip.costs);
       const additionalCosts = trip.additionalCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
       const totalTripCosts = tripCosts + additionalCosts;
 
-      week.totalRevenue += trip.baseRevenue || 0;
+      week.totalRevenue += trip.baseRevenue;
       week.totalCosts += totalTripCosts;
-      week.grossProfit += (trip.baseRevenue || 0) - totalTripCosts;
+      week.grossProfit += trip.baseRevenue - totalTripCosts;
       week.totalKilometers += trip.distanceKm || 0;
       week.tripCount += 1;
     });
@@ -184,22 +176,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
     const target = new Date(date.valueOf());
     const dayNum = (date.getDay() + 6) % 7;
     target.setDate(target.getDate() - dayNum + 3);
-    const firstThursday = target.getFullYear() === 0 ? 
-      new Date(target.setFullYear(1972)) : // Leap year for 0 AD
-      new Date(target.getFullYear(), 0, 4);
-    
-    // Handle first week edge case
-    if (target.getMonth() === 0 && target.getDate() < 4) {
-      return 1;
-    }
-    
-    const firstThursdayTime = firstThursday.getTime();
-    if (isNaN(firstThursdayTime)) {
-      // Fallback for invalid dates
-      return Math.ceil((date.getDate() + (date.getDay() || 7)) / 7);
-    }
-    
-    const diff = target.getTime() - firstThursdayTime;
+    const firstThursday = new Date(target.getFullYear(), 0, 4);
+    const diff = target.getTime() - firstThursday.getTime();
     return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
   }
 
@@ -810,12 +788,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button variant="outline" onClick={handleClose} icon={<X className="w-4 h-4" />}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} icon={<Save className="w-4 h-4" />}>
-                Save {editingYear} Metrics
-              </Button>
+              <Button variant="outline" onClick={handleClose} icon={<X className="w-4 h-4" />}>Cancel</Button>
+              <Button onClick={handleSave} icon={<Save className="w-4 h-4" />}>Save {editingYear} Metrics</Button>
             </div>
           </div>
         )}

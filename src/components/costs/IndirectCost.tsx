@@ -1,11 +1,11 @@
 // ─── React ───────────────────────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { Trip, CostEntry } from '../../types';
+import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES, CostEntry } from '../../types';
 
 // ─── Icons ───────────────────────────────────────────────────────
-import { AlertTriangle, Calculator, Clock, Navigation } from 'lucide-react';
+import { Calculator, Clock, Navigation, AlertTriangle } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency } from '../../utils/helpers';
@@ -23,11 +23,31 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
   trip, 
   onGenerateSystemCosts 
 }) => {
-  // Get the system cost rates from the app context
+  const [systemRates, setSystemRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
+  
+  // Get the latest system cost rates from the admin configuration
   const { systemCostRates } = useAppContext();
   
-  // Use the rates from context for the trip's currency
-  const rates = systemCostRates[trip.revenueCurrency];
+  useEffect(() => {
+    if (systemCostRates) {
+      setSystemRates(systemCostRates);
+    }
+  }, [systemCostRates]);
+  
+  // Use effective date logic to determine which rates to apply
+  const getApplicableRates = (currency: 'USD' | 'ZAR'): SystemCostRates => {
+    const rates = systemRates[currency];
+    const tripStartDate = new Date(trip.startDate);
+    const rateEffectiveDate = new Date(rates.effectiveDate);
+    
+    if (tripStartDate >= rateEffectiveDate) {
+      return rates;
+    }
+    
+    return rates; // Simplified fallback
+  };
+  
+  const rates = getApplicableRates(trip.revenueCurrency);
   
   // Calculate trip duration in days
   const startDate = new Date(trip.startDate);
@@ -122,7 +142,7 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
       subCategory: cost.subCategory,
       amount: cost.amount,
       currency: trip.revenueCurrency,
-      referenceNumber: `SYS-${trip.id}-${String(index + 1).padStart(3, '0')}`,
+      referenceNumber: `SYS-${trip.id.substring(0, 8)}-${String(index + 1).padStart(3, '0')}`,
       date: trip.startDate,
       notes: `System-generated operational overhead cost. ${cost.calculation}`,
       isFlagged: false,
@@ -156,9 +176,9 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
         <h4 className="text-sm font-medium text-green-800 mb-2">Applied Rate Version</h4>
         <div className="text-sm text-green-700 space-y-1">
           <p><strong>Currency:</strong> {rates.currency}</p>
-          <p><strong>Effective Date:</strong> {rates.effectiveDate ? new Date(rates.effectiveDate).toLocaleDateString() : 'Not set'}</p>
-          <p><strong>Last Updated:</strong> {rates.lastUpdated ? new Date(rates.lastUpdated).toLocaleDateString() : 'Not set'}</p>
-          <p><strong>Updated By:</strong> {rates.updatedBy || 'System Default'}</p>
+          <p><strong>Effective Date:</strong> {new Date(rates.effectiveDate).toLocaleDateString()}</p>
+          <p><strong>Last Updated:</strong> {new Date(rates.lastUpdated).toLocaleDateString()}</p>
+          <p><strong>Updated By:</strong> {rates.updatedBy}</p>
           <p className="text-xs mt-2 text-green-600">
             ✓ These rates are applicable to this trip based on the trip start date ({new Date(trip.startDate).toLocaleDateString()})
           </p>
