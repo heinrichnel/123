@@ -28,6 +28,16 @@ import TripForm from "./components/trips/TripForm";
 // Utilities & Types
 import { Trip } from "./types";
 
+const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
+  );
+};
+
 const AppContent: React.FC = () => {
   const {
     trips,
@@ -195,13 +205,5 @@ const AppContent: React.FC = () => {
     </div>
   );
 };
-
-const App: React.FC = () => (
-  <ErrorBoundary>
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
-  </ErrorBoundary>
-);
 
 export default App;
