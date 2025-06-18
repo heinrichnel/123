@@ -33,7 +33,9 @@ import {
   formatCurrency,
   formatDate,
   formatDateTime,
-  calculateTotalCosts
+  calculateTotalCosts,
+  downloadTripExcel,
+  downloadTripPDF
 } from '../../utils/helpers';
 
 
@@ -289,10 +291,10 @@ const CompletedTrips: React.FC<CompletedTripsProps> = ({ trips, onView }) => {
                     <Button size="sm" variant="outline" icon={<Eye />} onClick={() => onView(trip)}>
                       View
                     </Button>
-                    <Button size="sm" variant="outline" icon={<FileSpreadsheet />}>
+                    <Button size="sm" variant="outline" icon={<FileSpreadsheet />} onClick={() => downloadTripExcel(trip)}>
                       Excel
                     </Button>
-                    <Button size="sm" variant="outline" icon={<Download />}>
+                    <Button size="sm" variant="outline" icon={<Download />} onClick={() => downloadTripPDF(trip)}>
                       PDF
                     </Button>
                     <Button size="sm" variant="outline" icon={<Edit />} onClick={() => setEditingTrip(trip)}>

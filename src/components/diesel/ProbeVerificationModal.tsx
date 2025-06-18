@@ -174,7 +174,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
             step="0.1"
             min="0"
             value={formData.probeReading}
-            onChange={(e) => handleChange('probeReading', e.target.value)}
+            onChange={value => handleChange('probeReading', value)}
             placeholder="Enter actual probe reading in litres"
             error={errors.probeReading}
           />
@@ -221,7 +221,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
           <TextArea
             label={`Verification Notes ${hasLargeDiscrepancy ? '*' : '(Optional)'}`}
             value={formData.verificationNotes}
-            onChange={(e) => handleChange('verificationNotes', e.target.value)}
+            onChange={value => handleChange('verificationNotes', value)}
             placeholder={hasLargeDiscrepancy ? 
               "Explain the reason for the large discrepancy (e.g., 'Probe malfunction', 'Suspected fuel theft', 'Calibration issue')" : 
               "Add any notes about the verification process (optional)"}
@@ -232,7 +232,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
           <TextArea
             label="Action Taken (Optional)"
             value={formData.actionTaken}
-            onChange={(e) => handleChange('actionTaken', e.target.value)}
+            onChange={value => handleChange('actionTaken', value)}
             placeholder="Describe any actions taken to address discrepancies (e.g., 'Recalibrated probe', 'Reported to management', 'Scheduled maintenance')"
             rows={2}
           />

@@ -385,7 +385,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Select
               label="Currency"
               value={filters.currency}
-              onChange={(e) => handleFilterChange('currency', e.target.value)}
+              onChange={value => handleFilterChange('currency', value)}
               options={[
                 { label: 'All Currencies', value: '' },
                 { label: 'ZAR (R)', value: 'ZAR' },
@@ -395,7 +395,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Select
               label="Payment Status"
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={value => handleFilterChange('status', value)}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Unpaid', value: 'unpaid' },
@@ -406,7 +406,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Select
               label="Aging Category"
               value={filters.agingCategory}
-              onChange={(e) => handleFilterChange('agingCategory', e.target.value)}
+              onChange={value => handleFilterChange('agingCategory', value)}
               options={[
                 { label: 'All Categories', value: '' },
                 { label: 'Current', value: 'current' },
@@ -418,7 +418,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Input
               label="Customer"
               value={filters.customer}
-              onChange={(e) => handleFilterChange('customer', e.target.value)}
+              onChange={value => handleFilterChange('customer', value)}
               placeholder="Search customer..."
             />
           </div>

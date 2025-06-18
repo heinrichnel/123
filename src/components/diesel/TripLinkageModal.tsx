@@ -140,7 +140,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
                 <Select
                   label="Select Trip to Link *"
                   value={selectedTripId}
-                  onChange={(e) => handleChange(e.target.value)}
+                  onChange={value => handleChange(value)}
                   options={[
                     { label: 'Select a trip...', value: '' },
                     ...availableTrips.map(trip => ({ 

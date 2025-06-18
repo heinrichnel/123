@@ -707,7 +707,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="1"
                 value={formData.totalKms?.toString() || ''}
-                onChange={e => handleChange('totalKms', e.target.value)}
+                onChange={value => handleChange('totalKms', value)}
                 error={errors.totalKms}
               />
 
@@ -716,7 +716,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ipk?.toString() || ''}
-                onChange={e => handleChange('ipk', e.target.value)}
+                onChange={value => handleChange('ipk', value)}
                 error={errors.ipk}
               />
 
@@ -725,7 +725,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.operationalCpk?.toString() || ''}
-                onChange={e => handleChange('operationalCpk', e.target.value)}
+                onChange={value => handleChange('operationalCpk', value)}
                 error={errors.operationalCpk}
               />
 
@@ -734,7 +734,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.revenue?.toString() || ''}
-                onChange={e => handleChange('revenue', e.target.value)}
+                onChange={value => handleChange('revenue', value)}
                 error={errors.revenue}
               />
 
@@ -743,7 +743,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ebit?.toString() || ''}
-                onChange={e => handleChange('ebit', e.target.value)}
+                onChange={value => handleChange('ebit', value)}
               />
 
               <Input
@@ -751,7 +751,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ebitMargin?.toString() || ''}
-                onChange={e => handleChange('ebitMargin', e.target.value)}
+                onChange={value => handleChange('ebitMargin', value)}
               />
 
               <Input
@@ -759,7 +759,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.netProfit?.toString() || ''}
-                onChange={e => handleChange('netProfit', e.target.value)}
+                onChange={value => handleChange('netProfit', value)}
               />
 
               <Input
@@ -767,7 +767,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.netProfitMargin?.toString() || ''}
-                onChange={e => handleChange('netProfitMargin', e.target.value)}
+                onChange={value => handleChange('netProfitMargin', value)}
               />
 
               <Input
@@ -775,7 +775,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.roe?.toString() || ''}
-                onChange={e => handleChange('roe', e.target.value)}
+                onChange={value => handleChange('roe', value)}
               />
 
               <Input
@@ -783,7 +783,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.roic?.toString() || ''}
-                onChange={e => handleChange('roic', e.target.value)}
+                onChange={value => handleChange('roic', value)}
               />
             </div>
 

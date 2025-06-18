@@ -170,6 +170,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Your existing methods now updated to async and use Firestore below:
 
   const addTrip = async (tripData: Omit<Trip, 'id' | 'costs' | 'status'>): Promise<string> => {
+    // Backend validation for End Date
+    if (!tripData.endDate) {
+      throw new Error('End Date is required');
+    }
+    if (tripData.startDate && tripData.endDate < tripData.startDate) {
+      throw new Error('End Date cannot be earlier than Start Date');
+    }
     const newId = generateTripId();
     const newTrip: Trip = {
       ...tripData,

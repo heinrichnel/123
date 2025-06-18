@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES,FLEET_NUMBERS } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
-import { Input, Select, Textarea } from '../ui/FormElements';
+import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
 
 
@@ -58,7 +58,11 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
     if (!driver.trim()) newErrors.driver = 'Driver is required';
     if (!route.trim()) newErrors.route = 'Route is required';
     if (!startDate) newErrors.startDate = 'Start Date is required';
-    if (!endDate) newErrors.endDate = 'End Date is required';
+    if (!endDate) {
+      newErrors.endDate = 'End Date is required';
+    } else if (startDate && endDate < startDate) {
+      newErrors.endDate = 'End Date cannot be earlier than Start Date';
+    }
     if (!distanceKm || distanceKm <= 0) newErrors.distanceKm = 'Distance must be greater than 0';
     if (!baseRevenue || baseRevenue <= 0) newErrors.baseRevenue = 'Base Revenue must be greater than 0';
     if (!revenueCurrency) newErrors.revenueCurrency = 'Currency is required';
@@ -183,7 +187,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           error={touched.revenueCurrency && errors.revenueCurrency}
         />
       </div>
-      <Textarea
+      <TextArea
         label="Trip Description"
         value={tripDescription}
         onChange={e => setTripDescription(e.target.value)}
@@ -191,7 +195,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         rows={3}
         required
       />
-      <Textarea
+      <TextArea
         label="Trip Notes"
         value={tripNotes}
         onChange={e => setTripNotes(e.target.value)}

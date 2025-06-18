@@ -1,7 +1,3 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 /* Global body styles */
 body {
   background-color: #f3f4f6; /* Tailwind bg-gray-100 */

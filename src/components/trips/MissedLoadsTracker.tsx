@@ -532,7 +532,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
             <Select
               label="Customer Name *"
               value={formData.customerName}
-              onChange={(e) => handleChange('customerName', e.target.value)}
+              onChange={value => handleChange('customerName', value)}
               options={[
                 { label: 'Select customer...', value: '' },
                 ...CLIENTS.map(c => ({ label: c, value: c })),
@@ -545,7 +545,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
               label="Load Request Date *"
               type="date"
               value={formData.loadRequestDate}
-              onChange={(e) => handleChange('loadRequestDate', e.target.value)}
+              onChange={value => handleChange('loadRequestDate', value)}
               error={errors.loadRequestDate}
             />
 
@@ -553,7 +553,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
               label="Requested Pickup Date *"
               type="date"
               value={formData.requestedPickupDate}
-              onChange={(e) => handleChange('requestedPickupDate', e.target.value)}
+              onChange={value => handleChange('requestedPickupDate', value)}
               error={errors.requestedPickupDate}
             />
 
@@ -561,14 +561,14 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
               label="Requested Delivery Date *"
               type="date"
               value={formData.requestedDeliveryDate}
-              onChange={(e) => handleChange('requestedDeliveryDate', e.target.value)}
+              onChange={value => handleChange('requestedDeliveryDate', value)}
               error={errors.requestedDeliveryDate}
             />
 
             <Input
               label="Route *"
               value={formData.route}
-              onChange={(e) => handleChange('route', e.target.value)}
+              onChange={value => handleChange('route', value)}
               placeholder="e.g., Johannesburg to Cape Town"
               error={errors.route}
             />
@@ -577,7 +577,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
               <Select
                 label="Currency *"
                 value={formData.currency}
-                onChange={(e) => handleChange('currency', e.target.value)}
+                onChange={value => handleChange('currency', value)}
                 options={[
                   { label: 'ZAR (R)', value: 'ZAR' },
                   { label: 'USD ($)', value: 'USD' }
@@ -589,7 +589,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                 step="0.01"
                 min="0"
                 value={formData.estimatedRevenue}
-                onChange={(e) => handleChange('estimatedRevenue', e.target.value)}
+                onChange={value => handleChange('estimatedRevenue', value)}
                 placeholder="0.00"
                 error={errors.estimatedRevenue}
               />
@@ -598,7 +598,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
             <Select
               label="Reason for Missing Load *"
               value={formData.reason}
-              onChange={(e) => handleChange('reason', e.target.value)}
+              onChange={value => handleChange('reason', value)}
               options={[
                 { label: 'Select reason...', value: '' },
                 ...MISSED_LOAD_REASONS
@@ -609,7 +609,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
             <Select
               label="Business Impact"
               value={formData.impact}
-              onChange={(e) => handleChange('impact', e.target.value)}
+              onChange={value => handleChange('impact', value)}
               options={[
                 { label: 'Low Impact', value: 'low' },
                 { label: 'Medium Impact', value: 'medium' },
@@ -620,7 +620,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
             <Select
               label="Resolution Status"
               value={formData.resolutionStatus}
-              onChange={(e) => handleChange('resolutionStatus', e.target.value)}
+              onChange={value => handleChange('resolutionStatus', value)}
               options={[
                 { label: 'Pending', value: 'pending' },
                 { label: 'Resolved', value: 'resolved' },
@@ -633,7 +633,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
           <TextArea
             label="Additional Details"
             value={formData.reasonDescription}
-            onChange={(e) => handleChange('reasonDescription', e.target.value)}
+            onChange={value => handleChange('reasonDescription', value)}
             placeholder="Provide additional context about why this load was missed and any lessons learned..."
             rows={3}
           />
@@ -644,7 +644,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                 type="checkbox"
                 id="followUpRequired"
                 checked={formData.followUpRequired}
-                onChange={(e) => handleChange('followUpRequired', e.target.checked)}
+                onChange={e => handleChange('followUpRequired', e.target.checked)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="followUpRequired" className="text-sm font-medium text-gray-700">
@@ -657,7 +657,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                 type="checkbox"
                 id="competitorWon"
                 checked={formData.competitorWon}
-                onChange={(e) => handleChange('competitorWon', e.target.checked)}
+                onChange={e => handleChange('competitorWon', e.target.checked)}
                 className="rounded border-gray-300 text-red-600 focus:ring-red-500"
               />
               <label htmlFor="competitorWon" className="text-sm font-medium text-gray-700">
@@ -728,7 +728,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
               <TextArea
                 label="Resolution Notes *"
                 value={resolutionData.resolutionNotes}
-                onChange={(e) => handleResolutionChange('resolutionNotes', e.target.value)}
+                onChange={value => handleResolutionChange('resolutionNotes', value)}
                 placeholder="Describe how this missed load was resolved, what actions were taken, and the outcome..."
                 rows={4}
                 error={errors.resolutionNotes}
@@ -741,7 +741,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                   step="0.01"
                   min="0"
                   value={resolutionData.compensationOffered}
-                  onChange={(e) => handleResolutionChange('compensationOffered', e.target.value)}
+                  onChange={value => handleResolutionChange('compensationOffered', value)}
                   placeholder="0.00"
                 />
                 <div></div>
@@ -750,7 +750,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
               <TextArea
                 label="Compensation Notes"
                 value={resolutionData.compensationNotes}
-                onChange={(e) => handleResolutionChange('compensationNotes', e.target.value)}
+                onChange={value => handleResolutionChange('compensationNotes', value)}
                 placeholder="Details about any compensation or goodwill gestures offered..."
                 rows={3}
               />

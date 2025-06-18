@@ -306,21 +306,21 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
               label="Final Arrival Date & Time *"
               type="datetime-local"
               value={formData.finalArrivalDateTime}
-              onChange={(e) => handleChange('finalArrivalDateTime', e.target.value)}
+              onChange={value => handleChange('finalArrivalDateTime', value)}
               error={errors.finalArrivalDateTime}
             />
             <Input
               label="Final Offload Date & Time *"
               type="datetime-local"
               value={formData.finalOffloadDateTime}
-              onChange={(e) => handleChange('finalOffloadDateTime', e.target.value)}
+              onChange={value => handleChange('finalOffloadDateTime', value)}
               error={errors.finalOffloadDateTime}
             />
             <Input
               label="Final Departure Date & Time *"
               type="datetime-local"
               value={formData.finalDepartureDateTime}
-              onChange={(e) => handleChange('finalDepartureDateTime', e.target.value)}
+              onChange={value => handleChange('finalDepartureDateTime', value)}
               error={errors.finalDepartureDateTime}
             />
           </div>
@@ -329,7 +329,7 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
             <TextArea
               label="Timeline Validation Notes *"
               value={formData.validationNotes}
-              onChange={(e) => handleChange('validationNotes', e.target.value)}
+              onChange={value => handleChange('validationNotes', value)}
               placeholder="Explain the timeline discrepancies and any delays encountered..."
               rows={3}
               error={errors.validationNotes}

@@ -1,5 +1,7 @@
 import { Trip, CostEntry, FlaggedCost } from '../types/index';
 import { v4 as uuidv4 } from 'uuid';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
 
 // -------------------- Date Formatting --------------------
 
@@ -171,21 +173,64 @@ export const getFileIcon = (fileType: string): string => {
 
 // -------------------- Download Placeholders --------------------
 
-export const downloadTripPDF = async (tripId: string) => {
+export const downloadTripPDF = async (trip: Trip) => {
   try {
-    alert(`Generating PDF for trip ${tripId}`);
-    // TODO: Integrate actual PDF generation
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text('Trip Report', 10, 10);
+    doc.setFontSize(10);
+    const fields = [
+      ['Fleet Number', trip.fleetNumber],
+      ['Client', trip.clientName],
+      ['Driver', trip.driverName],
+      ['Route', trip.route],
+      ['Start Date', trip.startDate],
+      ['End Date', trip.endDate],
+      ['Distance (KM)', String(trip.distanceKm)],
+      ['Base Revenue', String(trip.baseRevenue)],
+      ['Revenue Currency', trip.revenueCurrency],
+      ['Trip Description', trip.tripDescription],
+      ['Trip Notes', trip.tripNotes || '']
+    ];
+    let y = 20;
+    fields.forEach(([label, value]) => {
+      doc.text(`${label}: ${value}`, 10, y);
+      y += 7;
+    });
+    doc.save(`Trip_${trip.fleetNumber}_${trip.startDate}.pdf`);
   } catch (error) {
-    console.error('Error downloading trip PDF:', error);
+    console.error('Error exporting trip to PDF:', error);
+    alert('Failed to export trip to PDF.');
   }
 };
 
-export const downloadTripExcel = async (tripId: string) => {
+export const downloadTripExcel = async (trip: Trip) => {
   try {
-    alert(`Generating Excel report for trip ${tripId}`);
-    // TODO: Integrate actual Excel export
+    const wsData = [
+      [
+        'Fleet Number', 'Client', 'Driver', 'Route', 'Start Date', 'End Date', 'Distance (KM)', 'Base Revenue', 'Revenue Currency', 'Trip Description', 'Trip Notes'
+      ],
+      [
+        trip.fleetNumber,
+        trip.clientName,
+        trip.driverName,
+        trip.route,
+        trip.startDate,
+        trip.endDate,
+        trip.distanceKm,
+        trip.baseRevenue,
+        trip.revenueCurrency,
+        trip.tripDescription,
+        trip.tripNotes || ''
+      ]
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Trip');
+    XLSX.writeFile(wb, `Trip_${trip.fleetNumber}_${trip.startDate}.xlsx`);
   } catch (error) {
-    console.error('Error downloading trip Excel:', error);
+    console.error('Error exporting trip to Excel:', error);
+    alert('Failed to export trip to Excel.');
   }
 };
 
