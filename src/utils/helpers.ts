@@ -312,7 +312,7 @@ export const generatePlaceholderReportForMultipleTrips = async (trips: Trip[]) =
   }
 };
 
-export const generateCurrencyFleetReport = async (trips: Trip[], currency: 'USD' | 'ZAR') => {
+export const generateCurrencyFleetReport = (trips: Trip[], currency: 'USD' | 'ZAR') => {
   try {
     // Calculate basic metrics
     const totalTrips = trips.length;
@@ -466,7 +466,7 @@ export const generateCurrencyFleetReport = async (trips: Trip[], currency: 'USD'
 
 export const downloadCurrencyFleetReport = async (trips: Trip[], currency: 'USD' | 'ZAR') => {
   try {
-    const report = await generateCurrencyFleetReport(trips, currency);
+    const report = generateCurrencyFleetReport(trips, currency);
     
     // Create workbook
     const wb = XLSX.utils.book_new();
