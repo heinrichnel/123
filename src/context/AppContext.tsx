@@ -29,14 +29,19 @@ import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpe
 import {
   dieselCollection,
   driverBehaviorCollection,
+  carReportsCollection,
   listenToDieselRecords,
   listenToDriverBehaviorEvents,
+  listenToCARReports,
   addDieselToFirebase,
   updateDieselInFirebase,
   deleteDieselFromFirebase,
   addDriverBehaviorEventToFirebase,
   updateDriverBehaviorEventToFirebase,
-  deleteDriverBehaviorEventToFirebase
+  deleteDriverBehaviorEventToFirebase,
+  addCARReportToFirebase,
+  updateCARReportInFirebase,
+  deleteCARReportFromFirebase
 } from '../firebase';
 
 interface AppContextType {
@@ -77,6 +82,12 @@ interface AppContextType {
   // Driver Performance
   getAllDriversPerformance: () => DriverPerformance[];
 
+  // CAR Reports
+  carReports: CARReport[];
+  addCARReport: (report: Omit<CARReport, 'id'>) => Promise<void>;
+  updateCARReport: (report: CARReport) => Promise<void>;
+  deleteCARReport: (id: string) => Promise<void>;
+
   // System Cost Rates (following centralized context pattern)
   systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
   updateSystemCostRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
@@ -100,8 +111,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const [missedLoads, setMissedLoads] = useState<MissedLoad[]>([]);
   const [dieselRecords, setDieselRecords] = useState<DieselConsumptionRecord[]>([]);
   const [driverBehaviorEvents, setDriverBehaviorEvents] = useState<DriverBehaviorEvent[]>([]);
-  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [carReports, setCARReports] = useState<CARReport[]>([]);
+  const [actionItems, setActionItems] = useState<ActionItem[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('connected');
   
   // System Cost Rates (following centralized context pattern)
@@ -129,8 +140,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Diesel Records realtime sync
     const dieselUnsub = listenToDieselRecords(dieselCollection, setDieselRecords);
+    
     // Driver Behavior Events realtime sync
     const driverBehaviorUnsub = listenToDriverBehaviorEvents(driverBehaviorCollection, setDriverBehaviorEvents);
+
+    // CAR Reports realtime sync
+    const carReportsUnsub = listenToCARReports(carReportsCollection, setCARReports);
 
     // Action Items realtime sync
     const actionItemsUnsub = onSnapshot(collection(db, 'actionItems'), (snapshot) => {
@@ -146,8 +161,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       missedLoadsUnsub();
       dieselUnsub();
       driverBehaviorUnsub();
+      carReportsUnsub();
       actionItemsUnsub();
-      // Unsubscribe other listeners similarly
     };
   }, []);
 
@@ -364,6 +379,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     await deleteDriverBehaviorEventToFirebase(id);
   };
 
+  // CAR Report CRUD
+  const addCARReport = async (report: Omit<CARReport, 'id'>) => {
+    await addCARReportToFirebase(report);
+  };
+  const updateCARReport = async (report: CARReport) => {
+    await updateCARReportInFirebase(report.id, report);
+  };
+  const deleteCARReport = async (id: string) => {
+    await deleteCARReportFromFirebase(id);
+  };
+
   // Driver Performance Analytics
   const getAllDriversPerformance = (): DriverPerformance[] => {
     // Group events by driver
@@ -533,6 +559,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     addDriverBehaviorEvent,
     updateDriverBehaviorEvent,
     deleteDriverBehaviorEvent,
+    carReports,
+    addCARReport,
+    updateCARReport,
+    deleteCARReport,
     getAllDriversPerformance,
     systemCostRates,
     updateSystemCostRates,

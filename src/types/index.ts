@@ -17,44 +17,44 @@ export interface CostEntry {
   tripId: string;
   amount: number;
   category: string;
-  subcategory?: string;
-  description?: string;
+  subCategory: string;
+  currency: 'USD' | 'ZAR';
+  referenceNumber: string;
   date: string;
-  referenceNumber?: string;
-  isFlagged?: boolean;
-  isSystemGenerated?: boolean;
+  notes?: string;
+  isFlagged: boolean;
+  flagReason?: string;
+  noDocumentReason?: string;
   investigationStatus?: 'pending' | 'in_progress' | 'resolved';
   flaggedAt?: string;
+  flaggedBy?: string;
   resolvedAt?: string;
+  resolvedBy?: string;
+  investigationNotes?: string;
+  isSystemGenerated: boolean;
+  systemCostType?: string;
+  calculationDetails?: string;
   attachments: Attachment[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CostData {
-  id: string;
-  amount: number;
-  category: string;
-  referenceNumber?: string;
-  isFlagged?: boolean;
-  isSystemGenerated?: boolean;
-  investigationStatus?: string;
-  flaggedAt?: string;
-  resolvedAt?: string;
-  attachments?: Attachment[];
-  // ...add any other fields used in your code
+export interface FlaggedCost extends CostEntry {
+  tripFleetNumber: string;
+  tripRoute: string;
+  tripDriverName: string;
 }
 
 export interface AdditionalCost {
   id: string;
   tripId: string;
-  type: string;
+  costType: string;
   amount: number;
   currency: 'USD' | 'ZAR';
-  description?: string;
-  date: string;
-  createdAt: string;
-  updatedAt: string;
+  supportingDocuments: Attachment[];
+  notes?: string;
+  addedAt: string;
+  addedBy: string;
 }
 
 export interface DelayReason {
@@ -69,7 +69,7 @@ export interface DelayReason {
   updatedAt: string;
 }
 
-export type TripStatus = "active" | "flagged" | "completed";
+export type TripStatus = "active" | "flagged" | "completed" | "invoiced" | "paid";
 
 export interface Trip {
   id: string;
@@ -83,6 +83,8 @@ export interface Trip {
   revenueCurrency: "USD" | "ZAR";
   distanceKm: number;
   clientType: "internal" | "external";
+  tripDescription: string;
+  tripNotes?: string;
   costs: CostEntry[];
   additionalCosts: AdditionalCost[];
   delayReasons: DelayReason[];
@@ -90,12 +92,12 @@ export interface Trip {
   plannedArrivalDateTime?: string;
   actualArrivalDateTime?: string;
   followUpHistory?: any[];
-  status?: TripStatus;
-  description?: string;
+  status: TripStatus;
   invoiceNumber?: string;
   invoiceSubmittedAt?: string;
   invoiceSubmittedBy?: string;
   invoiceDueDate?: string;
+  invoiceDate?: string;
   paymentStatus?: "unpaid" | "partial" | "paid";
   timelineValidated?: boolean;
   timelineValidatedAt?: string;
@@ -103,50 +105,49 @@ export interface Trip {
   autoCompletedReason?: string;
   completedAt?: string;
   completedBy?: string;
-  invoiceDate?: string;
-  // ...add any other fields referenced in your code
 }
 
 // Missed Load Types
 export interface MissedLoad {
   id: string;
-  clientName: string;
+  customerName: string;
+  loadRequestDate: string;
+  requestedPickupDate: string;
+  requestedDeliveryDate: string;
   route: string;
-  loadDate: string;
+  estimatedRevenue: number;
+  currency: 'USD' | 'ZAR';
   reason: string;
   reasonDescription?: string;
-  potentialRevenue: number;
-  currency: 'USD' | 'ZAR';
+  resolutionStatus: 'pending' | 'resolved' | 'lost_opportunity' | 'rescheduled';
   followUpRequired: boolean;
-  followUpDate?: string;
-  followUpNotes?: string;
-  compensationOffered: boolean;
-  compensationAmount?: number;
-  compensationNotes?: string;
-  status: 'open' | 'resolved' | 'cancelled';
-  resolutionDate?: string;
+  competitorWon?: boolean;
+  recordedBy: string;
+  recordedAt: string;
+  impact: 'low' | 'medium' | 'high';
   resolutionNotes?: string;
-  createdAt: string;
-  updatedAt: string;
-  createdBy: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  compensationOffered?: number;
+  compensationNotes?: string;
 }
 
 // Diesel Consumption Types
 export interface DieselConsumptionRecord {
   id: string;
-  driverName: string;
   fleetNumber: string;
   date: string;
-  startOdometer: number;
-  endOdometer: number;
-  distanceTraveled: number;
-  dieselPurchased: number;
-  fuelEfficiency: number;
-  route?: string;
-  tripId?: string;
+  kmReading: number;
+  previousKmReading?: number;
+  distanceTravelled?: number;
+  litresFilled: number;
+  costPerLitre: number;
+  totalCost: number;
+  fuelStation: string;
+  driverName: string;
   notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  tripId?: string;
+  kmPerLitre?: number;
 }
 
 // System Cost Configuration Types
@@ -328,6 +329,38 @@ export interface CARReport {
   createdBy: string;
   resolvedAt?: string;
   resolvedBy?: string;
+}
+
+// Invoice Aging Types
+export interface InvoiceAging {
+  id: string;
+  tripId: string;
+  invoiceNumber: string;
+  clientName: string;
+  invoiceAmount: number;
+  currency: 'USD' | 'ZAR';
+  invoiceDate: string;
+  dueDate: string;
+  daysPastDue: number;
+  agingCategory: '0-30' | '31-60' | '61-90' | '90+';
+  paymentStatus: 'unpaid' | 'partial' | 'paid';
+  lastFollowUpDate?: string;
+  nextFollowUpDate?: string;
+  followUpNotes?: string;
+}
+
+// Customer Performance Types
+export interface CustomerPerformance {
+  clientName: string;
+  totalTrips: number;
+  totalRevenue: number;
+  currency: 'USD' | 'ZAR';
+  averagePaymentDays: number;
+  onTimePaymentRate: number;
+  outstandingAmount: number;
+  lastTripDate: string;
+  paymentTrend: 'improving' | 'stable' | 'declining';
+  riskLevel: 'low' | 'medium' | 'high';
 }
 
 // Constants for form options
@@ -557,6 +590,18 @@ export const COST_CATEGORIES: Record<string, string[]> = {
     "Third Party Insurance",
     "Comprehensive Insurance",
     "Insurance Excess"
+  ],
+  "System Costs": [
+    "Repair & Maintenance (per KM)",
+    "Tyre Cost (per KM)",
+    "GIT Insurance (per Day)",
+    "Short Term Insurance (per Day)",
+    "Tracking Cost (per Day)",
+    "Fleet Management System (per Day)",
+    "Licensing (per Day)",
+    "VID Roadworthy (per Day)",
+    "Wages (per Day)",
+    "Depreciation (per Day)"
   ],
   "Other": [
     "Parking Fees",

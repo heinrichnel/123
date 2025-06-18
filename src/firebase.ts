@@ -100,19 +100,19 @@ export const updateDriverBehaviorEventToFirebase = (id: string, data: object) =>
 export const deleteDriverBehaviorEventToFirebase = (id: string) =>
   deleteDocById(driverBehaviorCollection, id);
 
+// 🚗 CAR Reports
+export const addCARReportToFirebase = (data: object) => createDoc(carReportsCollection, data);
+export const updateCARReportInFirebase = (id: string, data: object) =>
+  updateDocById(carReportsCollection, id, data);
+export const deleteCARReportFromFirebase = (id: string) =>
+  deleteDocById(carReportsCollection, id);
+
 // ✅ Action Items
 export const addActionItemToFirebase = (data: object) => createDoc(actionItemsCollection, data);
 export const updateActionItemInFirebase = (id: string, data: object) =>
   updateDocById(actionItemsCollection, id, data);
 export const deleteActionItemFromFirebase = (id: string) =>
   deleteDocById(actionItemsCollection, id);
-
-// 📄 CAR Reports
-export const addCARReportToFirebase = (data: object) => createDoc(carReportsCollection, data);
-export const updateCARReportInFirebase = (id: string, data: object) =>
-  updateDocById(carReportsCollection, id, data);
-export const deleteCARReportFromFirebase = (id: string) =>
-  deleteDocById(carReportsCollection, id);
 
 // 🔌 Monitor connectivity
 export const monitorConnectionStatus = (
