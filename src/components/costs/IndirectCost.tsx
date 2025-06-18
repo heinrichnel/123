@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES, CostEntry } from '../../types';
+import { Trip, SystemCostRates, CostEntry } from '../../types';
 
 // ─── Icons ───────────────────────────────────────────────────────
 import { Calculator, Clock, Navigation, AlertTriangle } from 'lucide-react';
@@ -23,48 +23,11 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
   trip, 
   onGenerateSystemCosts 
 }) => {
-  const [systemRates, setSystemRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
+  // Get the system cost rates from the app context
+  const { systemCostRates } = useAppContext();
   
-  // Get the latest system cost rates from the admin configuration
-  const { trips } = useAppContext();
-  
-  // Find the most recent trip with system costs to get the latest rates
-  useEffect(() => {
-    const tripsWithSystemCosts = trips.filter(t => 
-      t.costs.some(c => c.isSystemGenerated) && 
-      t.revenueCurrency === trip.revenueCurrency
-    );
-    
-    if (tripsWithSystemCosts.length > 0) {
-      // Sort by date to get the most recent
-      tripsWithSystemCosts.sort((a, b) => 
-        new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-      );
-      
-      const mostRecentTrip = tripsWithSystemCosts[0];
-      const systemCost = mostRecentTrip.costs.find(c => c.isSystemGenerated);
-      
-      if (systemCost && systemCost.calculationDetails) {
-        // For now, we'll just keep default rates; extend here if needed
-        console.log('Found system costs from recent trip:', mostRecentTrip.id);
-      }
-    }
-  }, [trips, trip.revenueCurrency]);
-  
-  // Use effective date logic to determine which rates to apply
-  const getApplicableRates = (currency: 'USD' | 'ZAR'): SystemCostRates => {
-    const rates = systemRates[currency];
-    const tripStartDate = new Date(trip.startDate);
-    const rateEffectiveDate = new Date(rates.effectiveDate);
-    
-    if (tripStartDate >= rateEffectiveDate) {
-      return rates;
-    }
-    
-    return rates; // Simplified fallback
-  };
-  
-  const rates = getApplicableRates(trip.revenueCurrency);
+  // Use the rates from context for the trip's currency
+  const rates = systemCostRates[trip.revenueCurrency];
   
   // Calculate trip duration in days
   const startDate = new Date(trip.startDate);
@@ -165,7 +128,9 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
       isFlagged: false,
       isSystemGenerated: true,
       systemCostType: cost.subCategory.includes('per KM') ? 'per-km' : 'per-day',
-      calculationDetails: cost.calculation
+      calculationDetails: cost.calculation,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     }));
 
     onGenerateSystemCosts(systemCostEntries);
@@ -191,9 +156,9 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
         <h4 className="text-sm font-medium text-green-800 mb-2">Applied Rate Version</h4>
         <div className="text-sm text-green-700 space-y-1">
           <p><strong>Currency:</strong> {rates.currency}</p>
-          <p><strong>Effective Date:</strong> {new Date(rates.effectiveDate).toLocaleDateString()}</p>
-          <p><strong>Last Updated:</strong> {new Date(rates.lastUpdated).toLocaleDateString()}</p>
-          <p><strong>Updated By:</strong> {rates.updatedBy}</p>
+          <p><strong>Effective Date:</strong> {rates.effectiveDate ? new Date(rates.effectiveDate).toLocaleDateString() : 'Not set'}</p>
+          <p><strong>Last Updated:</strong> {rates.lastUpdated ? new Date(rates.lastUpdated).toLocaleDateString() : 'Not set'}</p>
+          <p><strong>Updated By:</strong> {rates.updatedBy || 'System Default'}</p>
           <p className="text-xs mt-2 text-green-600">
             ✓ These rates are applicable to this trip based on the trip start date ({new Date(trip.startDate).toLocaleDateString()})
           </p>

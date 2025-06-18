@@ -52,14 +52,14 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => downloadTripExcel(trip.id)}
+                onClick={() => downloadTripExcel(trip)}
                 icon={<FileSpreadsheet className="w-4 h-4" />}
               >
                 Excel
               </Button>
               <Button
                 size="sm"
-                onClick={() => downloadTripPDF(trip.id)}
+                onClick={() => downloadTripPDF(trip)}
                 icon={<Download className="w-4 h-4" />}
               >
                 PDF Report
@@ -124,37 +124,30 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
             )}
           </div>
 
-          {trip.description && (
+          {trip.tripDescription && (
             <div className="mb-4">
               <p className="text-sm text-gray-500">Description</p>
-              <p className="text-gray-900">{trip.description}</p>
+              <p className="text-gray-900">{trip.tripDescription}</p>
             </div>
           )}
 
           {/* Investigation Alert */}
-          {trip.hasInvestigation && (
+          {trip.investigationNotes && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-3">
                 <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-yellow-800">Under Investigation</h4>
-                  {trip.investigationDate && (
-                    <p className="text-sm text-yellow-700">
-                      Flagged on: {formatDate(trip.investigationDate)}
-                    </p>
-                  )}
-                  {trip.investigationNotes && (
-                    <p className="text-sm text-yellow-700 mt-1">
-                      {trip.investigationNotes}
-                    </p>
-                  )}
+                  <p className="text-sm text-yellow-700 mt-1">
+                    {trip.investigationNotes}
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Missing Receipts Alert */}
-          {report.missingReceipts.length > 0 && (
+          {report?.missingReceipts?.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-3">
                 <FileX className="w-5 h-5 text-red-600 mt-0.5" />
@@ -200,7 +193,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
               <p className="text-2xl font-bold text-red-600">
                 {formatCurrency(kpis.totalExpenses, kpis.currency)}
               </p>
-              <p className="text-xs text-gray-400">{trip.costs.length} entries</p>
+              <p className="text-xs text-gray-400">{trip.costs?.length || 0} entries</p>
             </div>
             
             <div className={`text-center p-4 rounded-lg ${kpis.netProfit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
@@ -230,7 +223,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
       <Card>
         <CardHeader title="Cost Breakdown by Category" />
         <CardContent>
-          {report.costBreakdown.length > 0 ? (
+          {report?.costBreakdown?.length > 0 ? (
             <div className="space-y-3">
               {report.costBreakdown.map((item, index) => (
                 <div key={index} className="flex justify-between items-center py-3 border-b border-gray-200">
@@ -259,7 +252,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
       </Card>
 
       {/* Detailed Cost Entries */}
-      {trip.costs.length > 0 && (
+      {trip.costs && trip.costs.length > 0 && (
         <Card>
           <CardHeader title="Detailed Cost Entries" />
           <CardContent>
@@ -273,6 +266,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
                     <th className="px-4 py-2">Currency</th>
                     <th className="px-4 py-2">Date</th>
                     <th className="px-4 py-2">Attachments</th>
+                    <th className="px-4 py-2">Type</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,7 +278,18 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
                       <td className="px-4 py-2">{cost.currency}</td>
                       <td className="px-4 py-2">{formatDate(cost.date)}</td>
                       <td className="px-4 py-2">
-                        {cost.attachments.length}
+                        {cost.attachments?.length || 0}
+                      </td>
+                      <td className="px-4 py-2">
+                        {cost.isSystemGenerated ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            System
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Manual
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

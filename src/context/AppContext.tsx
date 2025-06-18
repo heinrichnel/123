@@ -25,7 +25,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
+import { generateTripId, shouldAutoCompleteTrip, isOnline, cleanObjectForFirestore } from "../utils/helpers";
 import {
   dieselCollection,
   driverBehaviorCollection,
@@ -189,13 +189,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Firebase operations for trips
   const addTripToFirebase = async (trip: Trip) => {
-    const docRef = await addDoc(collection(db, "trips"), trip);
+    const cleanTrip = cleanObjectForFirestore(trip);
+    const docRef = await addDoc(collection(db, "trips"), cleanTrip);
     return docRef.id;
   };
 
   const updateTripInFirebase = async (id: string, trip: Trip) => {
+    const cleanTrip = cleanObjectForFirestore(trip);
     const docRef = doc(db, "trips", id);
-    await updateDoc(docRef, trip);
+    await updateDoc(docRef, cleanTrip);
   };
 
   const deleteTripFromFirebase = async (id: string) => {
@@ -230,8 +232,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const updateTrip = async (updatedTrip: Trip): Promise<void> => {
+    const cleanTrip = cleanObjectForFirestore(updatedTrip);
     const tripDocRef = doc(db, "trips", updatedTrip.id);
-    await updateDoc(tripDocRef, updatedTrip);
+    await updateDoc(tripDocRef, cleanTrip);
   };
 
   const deleteTrip = async (id: string): Promise<void> => {
@@ -250,6 +253,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     files?: FileList
   ): Promise<string> => {
     const newId = `C${Date.now()}`;
+    const currentTime = new Date().toISOString();
+    
     const attachments: Attachment[] = files
       ? Array.from(files).map((file, index) => ({
           id: `A${Date.now()}-${index}`,
@@ -258,7 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           fileUrl: URL.createObjectURL(file),
           fileType: file.type,
           fileSize: file.size,
-          uploadedAt: new Date().toISOString(),
+          uploadedAt: currentTime,
           fileData: "",
         }))
       : [];
@@ -267,15 +272,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       ...costEntryData,
       id: newId,
       attachments,
+      createdAt: currentTime,
+      updatedAt: currentTime,
     };
 
     const trip = trips.find((t) => t.id === tripId);
     if (!trip) throw new Error("Trip not found");
 
     const updatedCosts = [...(trip.costs || []), newCostEntry];
+    const cleanCosts = cleanObjectForFirestore(updatedCosts);
     const tripDocRef = doc(db, "trips", tripId);
 
-    await updateDoc(tripDocRef, { costs: updatedCosts });
+    await updateDoc(tripDocRef, { costs: cleanCosts });
 
     return newId;
   };
@@ -284,17 +292,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const trip = trips.find(t => t.id === updatedCostEntry.tripId);
     if (!trip) throw new Error("Trip not found");
 
-    const updatedCosts = trip.costs.map(cost => cost.id === updatedCostEntry.id ? updatedCostEntry : cost);
+    const costEntryWithTimestamp = {
+      ...updatedCostEntry,
+      updatedAt: new Date().toISOString()
+    };
+
+    const updatedCosts = trip.costs.map(cost => 
+      cost.id === updatedCostEntry.id ? costEntryWithTimestamp : cost
+    );
+    
+    const cleanCosts = cleanObjectForFirestore(updatedCosts);
     const tripDocRef = doc(db, "trips", updatedCostEntry.tripId);
-    await updateDoc(tripDocRef, { costs: updatedCosts });
+    await updateDoc(tripDocRef, { costs: cleanCosts });
   };
 
   const deleteCostEntry = async (costEntryId: string): Promise<void> => {
     const trip = trips.find(t => t.costs.some(c => c.id === costEntryId));
     if (!trip) throw new Error("Trip not found");
     const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
+    const cleanCosts = cleanObjectForFirestore(updatedCosts);
     const tripDocRef = doc(db, "trips", trip.id);
-    await updateDoc(tripDocRef, { costs: updatedCosts });
+    await updateDoc(tripDocRef, { costs: cleanCosts });
   };
 
   // Complete Trip
@@ -311,24 +329,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       );
     }
 
-    const tripDocRef = doc(db, "trips", tripId);
-    await updateDoc(tripDocRef, {
+    const updateData = cleanObjectForFirestore({
       status: "completed",
       completedAt: new Date().toISOString(),
       completedBy: "User", // Replace with real user info
     });
+
+    const tripDocRef = doc(db, "trips", tripId);
+    await updateDoc(tripDocRef, updateData);
   };
 
   // Missed Loads Handlers (following uniform handler pattern)
   // Helper to sanitize missed load fields for Firestore
   function sanitizeMissedLoad(load: any) {
-    return {
+    return cleanObjectForFirestore({
       ...load,
       compensationNotes: typeof load.compensationNotes === 'string' ? load.compensationNotes : '',
       resolutionNotes: typeof load.resolutionNotes === 'string' ? load.resolutionNotes : '',
       reasonDescription: typeof load.reasonDescription === 'string' ? load.reasonDescription : '',
       // Add more fields as needed
-    };
+    });
   }
 
   const addMissedLoad = async (missedLoadData: Omit<MissedLoad, "id">): Promise<string> => {
@@ -517,21 +537,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Action Items CRUD (Firestore)
   const addActionItem = async (itemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
-    const docRef = await addDoc(collection(db, 'actionItems'), {
+    const cleanData = cleanObjectForFirestore({
       ...itemData,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       createdBy: 'Current User', // Replace with real user info
     });
+    const docRef = await addDoc(collection(db, 'actionItems'), cleanData);
     return docRef.id;
   };
 
   const updateActionItem = async (item: ActionItem) => {
-    const docRef = doc(db, 'actionItems', item.id);
-    await updateDoc(docRef, {
+    const cleanData = cleanObjectForFirestore({
       ...item,
       updatedAt: new Date().toISOString(),
     });
+    const docRef = doc(db, 'actionItems', item.id);
+    await updateDoc(docRef, cleanData);
   };
 
   const deleteActionItem = async (id: string) => {
