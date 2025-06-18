@@ -108,7 +108,7 @@ export const canCompleteTrip = (trip: Trip): boolean =>
 export const shouldAutoCompleteTrip = (trip: Trip): boolean =>
   trip.status === 'active' &&
   trip.costs.some((c) => c.isFlagged) &&
-  getUnresolvedFlagsCount(trip.costs) === 0;
+  getUnresolvedFlagsCount(trip.costs || []) === 0;
 
 // -------------------- Filtering Functions --------------------
 
@@ -213,7 +213,7 @@ export const downloadTripPDF = async (trip: Trip) => {
       ['Distance (KM)', String(trip.distanceKm)],
       ['Base Revenue', String(trip.baseRevenue)],
       ['Revenue Currency', trip.revenueCurrency],
-      ['Trip Description', trip.tripDescription],
+      ['Trip Description', trip.tripDescription || ''],
       ['Trip Notes', trip.tripNotes || '']
     ];
     let y = 20;
@@ -244,7 +244,7 @@ export const downloadTripExcel = async (trip: Trip) => {
         trip.distanceKm,
         trip.baseRevenue,
         trip.revenueCurrency,
-        trip.tripDescription,
+        trip.tripDescription || '',
         trip.tripNotes || ''
       ]
     ];

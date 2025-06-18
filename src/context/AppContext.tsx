@@ -34,7 +34,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";
+import { generateTripId, shouldAutoCompleteTrip, isOnline, cleanObjectForFirestore } from "../utils/helpers";
 import {
   dieselCollection,
   driverBehaviorCollection,
@@ -285,8 +285,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         clientType: tripData.clientType || 'external',
       };
       
+      // Clean the object to remove undefined values
+      const cleanedTrip = cleanObjectForFirestore(newTrip);
+      
       // Add to Firestore
-      addDoc(collection(db, "trips"), newTrip)
+      addDoc(collection(db, "trips"), cleanedTrip)
         .then(docRef => {
           console.log("Trip added with ID:", docRef.id);
           // Update the ID to match Firestore
@@ -307,7 +310,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       console.log("Updating trip:", updatedTrip.id);
       const tripDocRef = doc(db, "trips", updatedTrip.id);
-      updateDoc(tripDocRef, updatedTrip)
+      
+      // Clean the object to remove undefined values
+      const cleanedTrip = cleanObjectForFirestore(updatedTrip);
+      
+      updateDoc(tripDocRef, cleanedTrip)
         .then(() => {
           console.log("Trip updated successfully");
         })
@@ -378,7 +385,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const updatedCosts = [...(trip.costs || []), newCostEntry];
       const tripDocRef = doc(db, "trips", costData.tripId);
 
-      updateDoc(tripDocRef, { costs: updatedCosts })
+      // Clean the cost entry to remove undefined values
+      const cleanedCostEntry = cleanObjectForFirestore(newCostEntry);
+      const cleanedCosts = cleanObjectForFirestore(updatedCosts);
+
+      updateDoc(tripDocRef, { costs: cleanedCosts })
         .then(() => {
           console.log("Cost entry added successfully");
         })
@@ -402,12 +413,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error("Trip not found");
       }
 
-      const updatedCosts = trip.costs.map(cost => 
+      const updatedCosts = (trip.costs || []).map(cost => 
         cost.id === updatedCost.id ? { ...updatedCost, updatedAt: new Date().toISOString() } : cost
       );
       
       const tripDocRef = doc(db, "trips", updatedCost.tripId);
-      updateDoc(tripDocRef, { costs: updatedCosts })
+      
+      // Clean the costs array to remove undefined values
+      const cleanedCosts = cleanObjectForFirestore(updatedCosts);
+      
+      updateDoc(tripDocRef, { costs: cleanedCosts })
         .then(() => {
           console.log("Cost entry updated successfully");
         })
@@ -423,13 +438,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const deleteCostEntry = (costEntryId: string): void => {
     try {
       console.log("Deleting cost entry:", costEntryId);
-      const trip = trips.find(t => t.costs.some(c => c.id === costEntryId));
+      const trip = trips.find(t => t.costs && t.costs.some(c => c.id === costEntryId));
       if (!trip) {
         console.error("Trip not found for cost entry:", costEntryId);
         throw new Error("Trip not found for cost entry");
       }
       
-      const updatedCosts = trip.costs.filter(c => c.id !== costEntryId);
+      const updatedCosts = (trip.costs || []).filter(c => c.id !== costEntryId);
       const tripDocRef = doc(db, "trips", trip.id);
       
       updateDoc(tripDocRef, { costs: updatedCosts })
@@ -480,7 +495,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const updatedAdditionalCosts = [...(trip.additionalCosts || []), newCost];
       const tripDocRef = doc(db, "trips", tripId);
       
-      updateDoc(tripDocRef, { additionalCosts: updatedAdditionalCosts })
+      // Clean the additional costs array to remove undefined values
+      const cleanedAdditionalCosts = cleanObjectForFirestore(updatedAdditionalCosts);
+      
+      updateDoc(tripDocRef, { additionalCosts: cleanedAdditionalCosts })
         .then(() => {
           console.log("Additional cost added successfully");
         })
@@ -539,7 +557,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const updatedDelayReasons = [...(trip.delayReasons || []), newDelay];
       const tripDocRef = doc(db, "trips", tripId);
       
-      updateDoc(tripDocRef, { delayReasons: updatedDelayReasons })
+      // Clean the delay reasons array to remove undefined values
+      const cleanedDelayReasons = cleanObjectForFirestore(updatedDelayReasons);
+      
+      updateDoc(tripDocRef, { delayReasons: cleanedDelayReasons })
         .then(() => {
           console.log("Delay reason added successfully");
         })
@@ -602,7 +623,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const tripDocRef = doc(db, "trips", tripId);
-      updateDoc(tripDocRef, {
+      
+      // Clean the payment data to remove undefined values
+      const cleanedPaymentData = cleanObjectForFirestore({
         paymentStatus: paymentData.paymentStatus,
         paymentAmount: paymentData.paymentAmount,
         paymentReceivedDate: paymentData.paymentReceivedDate,
@@ -610,7 +633,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         paymentMethod: paymentData.paymentMethod,
         bankReference: paymentData.bankReference,
         updatedAt: new Date().toISOString(),
-      })
+      });
+      
+      updateDoc(tripDocRef, cleanedPaymentData)
         .then(() => {
           console.log("Invoice payment updated successfully");
         })
@@ -633,8 +658,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         id: newId,
       };
       
+      // Clean the missed load to remove undefined values
+      const cleanedMissedLoad = cleanObjectForFirestore(newMissedLoad);
+      
       // Add to Firestore
-      addDoc(collection(db, "missedLoads"), newMissedLoad)
+      addDoc(collection(db, "missedLoads"), cleanedMissedLoad)
         .then(docRef => {
           console.log("Missed load added with ID:", docRef.id);
           // Update the ID to match Firestore
@@ -655,7 +683,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       console.log("Updating missed load:", missedLoad.id);
       const missedLoadDocRef = doc(db, "missedLoads", missedLoad.id);
-      updateDoc(missedLoadDocRef, missedLoad)
+      
+      // Clean the missed load to remove undefined values
+      const cleanedMissedLoad = cleanObjectForFirestore(missedLoad);
+      
+      updateDoc(missedLoadDocRef, cleanedMissedLoad)
         .then(() => {
           console.log("Missed load updated successfully");
         })
@@ -695,8 +727,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         id: newId,
       };
       
+      // Clean the diesel record to remove undefined values
+      const cleanedRecord = cleanObjectForFirestore(newRecord);
+      
       // Add to Firestore
-      addDoc(collection(db, "diesel"), newRecord)
+      addDoc(collection(db, "diesel"), cleanedRecord)
         .then(docRef => {
           console.log("Diesel record added with ID:", docRef.id);
           // Update the ID to match Firestore
@@ -715,7 +750,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       console.log("Updating diesel record:", record.id);
       const recordDocRef = doc(db, "diesel", record.id);
-      updateDoc(recordDocRef, record)
+      
+      // Clean the diesel record to remove undefined values
+      const cleanedRecord = cleanObjectForFirestore(record);
+      
+      updateDoc(recordDocRef, cleanedRecord)
         .then(() => {
           console.log("Diesel record updated successfully");
         })
@@ -868,10 +907,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         id: newId,
         attachments,
         resolved: false,
+        date: new Date().toISOString(), // Add date field for compatibility
       };
       
+      // Clean the event to remove undefined values
+      const cleanedEvent = cleanObjectForFirestore(newEvent);
+      
       // Add to Firestore
-      addDoc(collection(db, "driverBehavior"), newEvent)
+      addDoc(collection(db, "driverBehavior"), cleanedEvent)
         .then(docRef => {
           console.log("Driver behavior event added with ID:", docRef.id);
           // Update the ID to match Firestore
@@ -890,7 +933,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       console.log("Updating driver behavior event:", event.id);
       const eventDocRef = doc(db, "driverBehavior", event.id);
-      updateDoc(eventDocRef, event)
+      
+      // Clean the event to remove undefined values
+      const cleanedEvent = cleanObjectForFirestore(event);
+      
+      updateDoc(eventDocRef, cleanedEvent)
         .then(() => {
           console.log("Driver behavior event updated successfully");
         })
@@ -1071,8 +1118,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString(),
       };
       
+      // Clean the report to remove undefined values
+      const cleanedReport = cleanObjectForFirestore(newReport);
+      
       // Add to Firestore
-      addDoc(collection(db, "carReports"), newReport)
+      addDoc(collection(db, "carReports"), cleanedReport)
         .then(docRef => {
           console.log("CAR report added with ID:", docRef.id);
           // Update the ID to match Firestore
@@ -1112,12 +1162,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const updatedReport: CARReport = {
         ...report,
-        attachments: [...report.attachments, ...newAttachments],
+        attachments: [...(report.attachments || []), ...newAttachments],
         updatedAt: new Date().toISOString(),
       };
       
+      // Clean the report to remove undefined values
+      const cleanedReport = cleanObjectForFirestore(updatedReport);
+      
       const reportDocRef = doc(db, "carReports", report.id);
-      updateDoc(reportDocRef, updatedReport)
+      updateDoc(reportDocRef, cleanedReport)
         .then(() => {
           console.log("CAR report updated successfully");
         })
@@ -1168,9 +1221,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         [currency]: rates,
       }));
       
+      // Clean the rates to remove undefined values
+      const cleanedRates = cleanObjectForFirestore(rates);
+      
       // Save to Firestore
       const ratesDocRef = doc(db, "systemCostRates", currency);
-      setDoc(ratesDocRef, rates)
+      setDoc(ratesDocRef, cleanedRates)
         .then(() => {
           console.log("System cost rates updated successfully");
         })
@@ -1196,8 +1252,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         createdBy: 'Current User', // Replace with real user info
       };
       
+      // Clean the item to remove undefined values
+      const cleanedItem = cleanObjectForFirestore(newItem);
+      
       // Add to Firestore
-      addDoc(collection(db, "actionItems"), newItem)
+      addDoc(collection(db, "actionItems"), cleanedItem)
         .then(docRef => {
           console.log("Action item added with ID:", docRef.id);
           // Update the ID to match Firestore
@@ -1218,10 +1277,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       console.log("Updating action item:", item.id);
       const itemDocRef = doc(db, "actionItems", item.id);
-      updateDoc(itemDocRef, {
+      
+      // Clean the item to remove undefined values
+      const cleanedItem = cleanObjectForFirestore({
         ...item,
         updatedAt: new Date().toISOString(),
-      })
+      });
+      
+      updateDoc(itemDocRef, cleanedItem)
         .then(() => {
           console.log("Action item updated successfully");
         })
@@ -1273,8 +1336,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         updatedAt: new Date().toISOString()
       };
       
+      // Clean the item to remove undefined values
+      const cleanedItem = cleanObjectForFirestore(updatedItem);
+      
       const itemDocRef = doc(db, "actionItems", itemId);
-      updateDoc(itemDocRef, updatedItem)
+      updateDoc(itemDocRef, cleanedItem)
         .then(() => {
           console.log("Action item comment added successfully");
         })
@@ -1305,8 +1371,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           clientType: tripData.clientType || 'external',
         };
         
+        // Clean the trip to remove undefined values
+        const cleanedTrip = cleanObjectForFirestore(newTrip);
+        
         // Add to Firestore
-        addDoc(collection(db, "trips"), newTrip)
+        addDoc(collection(db, "trips"), cleanedTrip)
           .then(docRef => {
             console.log("Imported trip added with ID:", docRef.id);
             // Update the ID to match Firestore
