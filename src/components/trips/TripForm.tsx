@@ -120,7 +120,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         <Select
           label="Client Type"
           value={clientType}
-          onChange={e => setClientType(e.target.value as 'internal' | 'external')}
+          onChange={val => setClientType(val as 'internal' | 'external')}
           onBlur={() => handleBlur('clientType')}
           options={CLIENT_TYPES}
           required
@@ -129,7 +129,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         <Select
           label="Fleet Number"
           value={fleetNumber}
-          onChange={e => setFleetNumber(e.target.value)}
+          onChange={val => setFleetNumber(val)}
           onBlur={() => handleBlur('fleetNumber')}
           options={[{ label: 'Select fleet number...', value: '' }, ...FLEET_NUMBERS.map(f => ({ label: f, value: f }))]}
           required
@@ -138,7 +138,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         <Select
           label="Client"
           value={client}
-          onChange={e => setClient(e.target.value)}
+          onChange={val => setClient(val)}
           onBlur={() => handleBlur('client')}
           options={[{ label: 'Select client...', value: '' }, ...CLIENTS.map(c => ({ label: c, value: c }))]}
           required
@@ -147,15 +147,15 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         <Select
           label="Driver"
           value={driver}
-          onChange={e => setDriver(e.target.value)}
+          onChange={val => setDriver(val)}
           onBlur={() => handleBlur('driver')}
           options={[{ label: 'Select driver...', value: '' }, ...DRIVERS.map(d => ({ label: d, value: d }))]}
           required
           error={touched.driver && errors.driver}
         />
-        <Input label="Route (semicolon separated)" value={route} onChange={e => setRoute(e.target.value)} onBlur={() => handleBlur('route')} required error={touched.route && errors.route} placeholder="e.g. Harare;Bulawayo;Gweru" />
-        <Input label="Start Date" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onBlur={() => handleBlur('startDate')} required error={touched.startDate && errors.startDate} />
-        <Input label="End Date" type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onBlur={() => handleBlur('endDate')} required error={touched.endDate && errors.endDate} />
+        <Input label="Route (semicolon separated)" value={route} onChange={val => setRoute(val)} onBlur={() => handleBlur('route')} required error={touched.route && errors.route} placeholder="e.g. Harare;Bulawayo;Gweru" />
+        <Input label="Start Date" type="date" value={startDate} onChange={val => setStartDate(val)} onBlur={() => handleBlur('startDate')} required error={touched.startDate && errors.startDate} />
+        <Input label="End Date" type="date" value={endDate} onChange={val => setEndDate(val)} onBlur={() => handleBlur('endDate')} required error={touched.endDate && errors.endDate} />
         <Input
           label="Distance (KM)"
           type="number"
@@ -177,7 +177,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         <Select
           label="Revenue Currency"
           value={revenueCurrency}
-          onChange={e => setRevenueCurrency(e.target.value as 'USD' | 'ZAR')}
+          onChange={val => setRevenueCurrency(val as 'USD' | 'ZAR')}
           onBlur={() => handleBlur('revenueCurrency')}
           options={[
             { label: 'USD', value: 'USD' },
@@ -190,7 +190,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
       <TextArea
         label="Trip Description"
         value={tripDescription}
-        onChange={e => setTripDescription(e.target.value)}
+        onChange={val => setTripDescription(val)}
         onBlur={() => handleBlur('tripDescription')}
         rows={3}
         required
@@ -198,7 +198,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
       <TextArea
         label="Trip Notes"
         value={tripNotes}
-        onChange={e => setTripNotes(e.target.value)}
+        onChange={val => setTripNotes(val)}
         rows={3}
       />
       <div className="flex justify-end space-x-2 pt-4">

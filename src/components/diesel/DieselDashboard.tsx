@@ -179,13 +179,13 @@ const DieselDashboard: React.FC = () => {
     if (record) {
       setEditingId(recordId);
       setEditData({
-        litresFilled: record.litresFilled.toString(),
-        totalCost: record.totalCost.toString(),
-        kmReading: record.kmReading.toString(),
-        previousKmReading: record.previousKmReading?.toString() || '',
+        litresFilled: record.litresFilled !== undefined ? String(record.litresFilled) : '',
+        totalCost: record.totalCost !== undefined ? String(record.totalCost) : '',
+        kmReading: record.kmReading !== undefined ? String(record.kmReading) : '',
+        previousKmReading: record.previousKmReading !== undefined ? String(record.previousKmReading) : '',
         tripId: record.tripId || '',
         currency: record.currency || 'ZAR',
-        probeReading: record.probeReading?.toString() || ''
+        probeReading: record.probeReading !== undefined ? String(record.probeReading) : ''
       });
     }
   };
@@ -193,20 +193,23 @@ const DieselDashboard: React.FC = () => {
   const handleSave = (recordId: string) => {
     const record = dieselRecords.find(r => r.id === recordId);
     if (record) {
+      // Always parse numbers safely, fallback to 0 if invalid
       const litresFilled = parseFloat(editData.litresFilled);
       const totalCost = parseFloat(editData.totalCost);
       const kmReading = parseFloat(editData.kmReading);
       const previousKmReading = editData.previousKmReading ? parseFloat(editData.previousKmReading) : undefined;
       const probeReading = editData.probeReading ? parseFloat(editData.probeReading) : undefined;
-      
+      // Validate number fields
+      if (isNaN(litresFilled) || isNaN(totalCost) || isNaN(kmReading)) {
+        alert('Please enter valid numbers for litres filled, total cost, and km reading.');
+        return;
+      }
       // Calculate derived values
-      const distanceTravelled = previousKmReading ? kmReading - previousKmReading : record.distanceTravelled;
+      const distanceTravelled = previousKmReading !== undefined ? kmReading - previousKmReading : record.distanceTravelled;
       const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
       const costPerLitre = litresFilled > 0 ? totalCost / litresFilled : 0;
-      
       // Calculate probe discrepancy if applicable
       const probeDiscrepancy = probeReading !== undefined ? litresFilled - probeReading : undefined;
-      
       updateDieselRecord({
         ...record,
         litresFilled,

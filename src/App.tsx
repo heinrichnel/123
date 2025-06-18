@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { AppProvider, useAppContext } from "./context/AppContext";
+import ErrorBoundary from './components/ErrorBoundary';
 
 // UI Components
 import Header from "./components/layout/Header";
@@ -196,9 +197,11 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => (
-  <AppProvider>
-    <AppContent />
-  </AppProvider>
+  <ErrorBoundary>
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  </ErrorBoundary>
 );
 
 export default App;

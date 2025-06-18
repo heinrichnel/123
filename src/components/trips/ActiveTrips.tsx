@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Trip, CLIENTS, DRIVERS } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
-import { Input, Select, Textarea } from '../ui/FormElements';
+import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import { Edit, Trash2, Eye, AlertTriangle, Upload } from 'lucide-react';

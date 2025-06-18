@@ -62,14 +62,19 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Always coerce to string for string fields
+    if (typeof formData[field as keyof typeof formData] === 'string') {
+      setFormData(prev => ({ ...prev, [field]: String(value ?? '') }));
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }));
+    }
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
   const handleResolutionChange = (field: string, value: string) => {
-    setResolutionData(prev => ({ ...prev, [field]: value }));
+    setResolutionData(prev => ({ ...prev, [field]: String(value ?? '') }));
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -77,8 +82,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.customerName.trim()) {
+    if (!String(formData.customerName ?? '').trim()) {
       newErrors.customerName = 'Customer name is required';
     }
     if (!formData.loadRequestDate) {
@@ -90,7 +94,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
     if (!formData.requestedDeliveryDate) {
       newErrors.requestedDeliveryDate = 'Requested delivery date is required';
     }
-    if (!formData.route.trim()) {
+    if (!String(formData.route ?? '').trim()) {
       newErrors.route = 'Route is required';
     }
     if (!formData.estimatedRevenue || Number(formData.estimatedRevenue) <= 0) {
@@ -99,35 +103,31 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
     if (!formData.reason) {
       newErrors.reason = 'Reason for missing load is required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validateResolutionForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!resolutionData.resolutionNotes.trim()) {
+    if (!String(resolutionData.resolutionNotes ?? '').trim()) {
       newErrors.resolutionNotes = 'Resolution notes are required';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = () => {
     if (!validateForm()) return;
-
     const missedLoadData: Omit<MissedLoad, 'id'> = {
-      customerName: formData.customerName.trim(),
+      customerName: String(formData.customerName ?? '').trim(),
       loadRequestDate: formData.loadRequestDate,
       requestedPickupDate: formData.requestedPickupDate,
       requestedDeliveryDate: formData.requestedDeliveryDate,
-      route: formData.route.trim(),
+      route: String(formData.route ?? '').trim(),
       estimatedRevenue: Number(formData.estimatedRevenue),
       currency: formData.currency,
       reason: formData.reason as any,
-      reasonDescription: formData.reasonDescription.trim() || undefined,
+      reasonDescription: String(formData.reasonDescription ?? '').trim() || undefined,
       resolutionStatus: formData.resolutionStatus,
       followUpRequired: formData.followUpRequired,
       competitorWon: formData.competitorWon,
@@ -135,7 +135,6 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
       recordedAt: new Date().toISOString(),
       impact: formData.impact
     };
-
     if (editingLoad) {
       onUpdateMissedLoad({ ...missedLoadData, id: editingLoad.id });
       alert('Missed load updated successfully!');
@@ -143,27 +142,22 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
       onAddMissedLoad(missedLoadData);
       alert('Missed load recorded successfully!');
     }
-
     handleClose();
   };
 
   const handleResolutionSubmit = () => {
     if (!validateResolutionForm() || !resolvingLoad) return;
-
     const updatedLoad: MissedLoad = {
       ...resolvingLoad,
       resolutionStatus: 'resolved',
-      resolutionNotes: resolutionData.resolutionNotes.trim(),
+      resolutionNotes: String(resolutionData.resolutionNotes ?? '').trim(),
       resolvedAt: new Date().toISOString(),
       resolvedBy: 'Current User',
       compensationOffered: resolutionData.compensationOffered ? Number(resolutionData.compensationOffered) : undefined,
-      compensationNotes: resolutionData.compensationNotes.trim() || undefined
+      compensationNotes: String(resolutionData.compensationNotes ?? '').trim() || undefined
     };
-
     onUpdateMissedLoad(updatedLoad);
-    
     alert(`Missed load resolved successfully!\n\nResolution: ${resolutionData.resolutionNotes}\n${resolutionData.compensationOffered ? `Compensation offered: ${formatCurrency(Number(resolutionData.compensationOffered), resolvingLoad.currency)}` : ''}`);
-    
     setShowResolutionModal(false);
     setResolvingLoad(null);
     setResolutionData({
@@ -381,127 +375,130 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              {missedLoads.map((load) => (
-                <div key={load.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">{load.customerName}</h3>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(load.resolutionStatus)}`}>
-                          {load.resolutionStatus.replace('_', ' ').toUpperCase()}
-                        </span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getImpactColor(load.impact)}`}>
-                          {load.impact.toUpperCase()} IMPACT
-                        </span>
-                        {load.competitorWon && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            COMPETITOR WON
+              {missedLoads.map((load) => {
+                const safeResolutionNotes = typeof load.resolutionNotes === 'string' ? load.resolutionNotes : '';
+                return (
+                  <div key={load.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-medium text-gray-900">{load.customerName}</h3>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(load.resolutionStatus)}`}>
+                            {load.resolutionStatus.replace('_', ' ').toUpperCase()}
                           </span>
-                        )}
-                        {load.resolutionStatus === 'resolved' && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            RESOLVED
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getImpactColor(load.impact)}`}>
+                            {load.impact.toUpperCase()} IMPACT
                           </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm text-gray-500">Route</p>
-                            <p className="font-medium">{load.route}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Calendar className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm text-gray-500">Requested Dates</p>
-                            <p className="font-medium text-sm">
-                              {formatDate(load.requestedPickupDate)} - {formatDate(load.requestedDeliveryDate)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <DollarSign className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm text-gray-500">Estimated Revenue</p>
-                            <p className="font-medium text-red-600">
-                              {formatCurrency(load.estimatedRevenue, load.currency)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <div>
-                            <p className="text-sm text-gray-500">Recorded By</p>
-                            <p className="font-medium text-sm">{load.recordedBy}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mb-3">
-                        <p className="text-sm text-gray-500">Reason</p>
-                        <p className="font-medium">
-                          {MISSED_LOAD_REASONS.find(r => r.value === load.reason)?.label || load.reason}
-                        </p>
-                        {load.reasonDescription && (
-                          <p className="text-sm text-gray-600 mt-1">{load.reasonDescription}</p>
-                        )}
-                      </div>
-
-                      {load.resolutionStatus === 'resolved' && load.resolutionNotes && (
-                        <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
-                          <p className="text-sm font-medium text-green-800">Resolution Notes:</p>
-                          <p className="text-sm text-green-700">{load.resolutionNotes}</p>
-                          {load.compensationOffered && (
-                            <p className="text-sm text-green-700 mt-1">
-                              <strong>Compensation Offered:</strong> {formatCurrency(load.compensationOffered, load.currency)}
-                            </p>
+                          {load.competitorWon && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                              COMPETITOR WON
+                            </span>
                           )}
-                          <p className="text-xs text-green-600 mt-1">
-                            Resolved by {load.resolvedBy} on {load.resolvedAt ? formatDate(load.resolvedAt) : 'Unknown'}
-                          </p>
+                          {load.resolutionStatus === 'resolved' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              RESOLVED
+                            </span>
+                          )}
                         </div>
-                      )}
 
-                      <div className="text-xs text-gray-500">
-                        Recorded on {formatDate(load.recordedAt)} • 
-                        {load.followUpRequired && <span className="text-amber-600 font-medium ml-1">Follow-up required</span>}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                          <div className="flex items-center space-x-2">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <div>
+                              <p className="text-sm text-gray-500">Route</p>
+                              <p className="font-medium">{load.route}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <div>
+                              <p className="text-sm text-gray-500">Requested Dates</p>
+                              <p className="font-medium text-sm">
+                                {formatDate(load.requestedPickupDate)} - {formatDate(load.requestedDeliveryDate)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="w-4 h-4 text-gray-400" />
+                            <div>
+                              <p className="text-sm text-gray-500">Estimated Revenue</p>
+                              <p className="font-medium text-red-600">
+                                {formatCurrency(load.estimatedRevenue, load.currency)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-gray-400" />
+                            <div>
+                              <p className="text-sm text-gray-500">Recorded By</p>
+                              <p className="font-medium text-sm">{load.recordedBy}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-500">Reason</p>
+                          <p className="font-medium">
+                            {MISSED_LOAD_REASONS.find(r => r.value === load.reason)?.label || load.reason}
+                          </p>
+                          {load.reasonDescription && (
+                            <p className="text-sm text-gray-600 mt-1">{load.reasonDescription}</p>
+                          )}
+                        </div>
+
+                        {load.resolutionStatus === 'resolved' && safeResolutionNotes && (
+                          <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded">
+                            <p className="text-sm font-medium text-green-800">Resolution Notes:</p>
+                            <p className="text-sm text-green-700">{safeResolutionNotes}</p>
+                            {load.compensationOffered && (
+                              <p className="text-sm text-green-700 mt-1">
+                                <strong>Compensation Offered:</strong> {formatCurrency(load.compensationOffered, load.currency)}
+                              </p>
+                            )}
+                            <p className="text-xs text-green-600 mt-1">
+                              Resolved by {load.resolvedBy} on {load.resolvedAt ? formatDate(load.resolvedAt) : 'Unknown'}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="text-xs text-gray-500">
+                          Recorded on {formatDate(load.recordedAt)} • 
+                          {load.followUpRequired && <span className="text-amber-600 font-medium ml-1">Follow-up required</span>}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex space-x-2 ml-4">
-                      {load.resolutionStatus !== 'resolved' && (
+                      <div className="flex space-x-2 ml-4">
+                        {load.resolutionStatus !== 'resolved' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleResolve(load)}
+                            icon={<FileText className="w-3 h-3" />}
+                          >
+                            Resolve
+                          </Button>
+                        )}
                         <Button
                           size="sm"
-                          onClick={() => handleResolve(load)}
-                          icon={<FileText className="w-3 h-3" />}
+                          variant="outline"
+                          onClick={() => handleEdit(load)}
+                          icon={<Edit className="w-3 h-3" />}
                         >
-                          Resolve
+                          Edit
                         </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(load)}
-                        icon={<Edit className="w-3 h-3" />}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(load.id)}
-                        icon={<Trash2 className="w-3 h-3" />}
-                      >
-                        Delete
-                      </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleDelete(load.id)}
+                          icon={<Trash2 className="w-3 h-3" />}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
