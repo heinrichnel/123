@@ -2,4 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Jy kan ook jou eie styles hieronder sit as jy wil */
+body {
+  background-image: url('/Screenshot 2025-04-29 061405.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Make sure content is readable with the background */
+#root {
+  min-height: 100vh;
+}
+
+/* Ensure cards and UI elements have proper contrast against the background */
+.bg-white {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Sidebar with slightly transparent background */
+aside.bg-white {
+  background-color: rgba(255, 255, 255, 0.97);
+}
+
+/* Ensure modals have proper contrast */
+.modal-content {
+  background-color: rgba(255, 255, 255, 0.98);
+}
