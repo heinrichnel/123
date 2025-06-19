@@ -47,31 +47,27 @@ serve(async (req) => {
     console.log("Received webhook payload:", JSON.stringify(payload));
 
     // Validate the payload
-    if (!payload || !payload.action) {
+    if (!payload || !payload.sheetName) {
       return new Response(JSON.stringify({ error: "Invalid payload structure" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Process based on action type
+    // Process based on sheet name
     let result;
-    switch (payload.action) {
-      case "shipped":
-        result = await processShippedEvent(payload);
-        break;
-      case "delivered":
-        result = await processDeliveredEvent(payload);
-        break;
-      case "ping":
-        // Simple ping to test the webhook is working
-        result = { success: true, message: "Webhook received ping successfully" };
-        break;
-      default:
-        return new Response(JSON.stringify({ error: `Unknown action: ${payload.action}` }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    if (payload.sheetName === "Order.Shipped") {
+      result = await processShippedEvent(payload);
+    } else if (payload.sheetName === "Order.Delivered") {
+      result = await processDeliveredEvent(payload);
+    } else if (payload.action === "ping") {
+      // Simple ping to test the webhook is working
+      result = { success: true, message: "Webhook received ping successfully" };
+    } else {
+      return new Response(JSON.stringify({ error: `Unknown sheet: ${payload.sheetName}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Log the webhook event
@@ -98,7 +94,12 @@ serve(async (req) => {
 async function processShippedEvent(payload: any) {
   try {
     // Extract data from payload
-    const { fleetNumber, route, driverName, timestamp } = payload;
+    const route = payload.route || payload.E;
+    const driverName = payload.driverName || payload.G;
+    const fleetNumber = payload.fleetNumber || payload.H;
+    const clientName = payload.clientName || payload.I;
+    const startDate = payload.startDate || payload.J || new Date().toISOString().split('T')[0];
+    const timestamp = payload.timestamp || new Date().toISOString();
     
     if (!fleetNumber || !route) {
       return { success: false, error: "Missing required fields: fleetNumber and route" };
@@ -121,7 +122,14 @@ async function processShippedEvent(payload: any) {
     
     if (!trips || trips.length === 0) {
       // No matching trip found, create a new one
-      return await createNewTripFromShippedEvent(payload);
+      return await createNewTripFromShippedEvent({
+        route,
+        driverName,
+        fleetNumber,
+        clientName,
+        startDate,
+        timestamp
+      });
     }
     
     const trip = trips[0];
@@ -130,7 +138,7 @@ async function processShippedEvent(payload: any) {
     const { error: updateError } = await supabase
       .from("trips")
       .update({
-        shippedAt: timestamp || new Date().toISOString(),
+        shippedAt: timestamp,
         shippingNotes: "Updated via Google Sheets webhook"
       })
       .eq("id", trip.id);
@@ -154,14 +162,13 @@ async function processShippedEvent(payload: any) {
 // Create a new trip from shipped event data
 async function createNewTripFromShippedEvent(payload: any) {
   try {
-    const { fleetNumber, route, driverName, timestamp } = payload;
+    const { route, driverName, fleetNumber, clientName, startDate, timestamp } = payload;
     
     // Generate a unique ID for the trip
     const tripId = `TRIP-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     // Set default dates
-    const startDate = new Date();
-    const endDate = new Date();
+    const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + 7); // Default to 7 days duration
     
     // Create basic trip data
@@ -170,16 +177,16 @@ async function createNewTripFromShippedEvent(payload: any) {
       driverName: driverName || "Unknown Driver",
       fleetNumber,
       route,
-      startDate: startDate.toISOString().split('T')[0],
+      startDate: startDate,
       endDate: endDate.toISOString().split('T')[0],
-      clientName: "Auto-generated from Google Sheets",
+      clientName: clientName || "Auto-generated from Google Sheets",
       clientType: "external",
       status: "active",
       costs: [],
       baseRevenue: 0, // No financial data included
       revenueCurrency: "ZAR", // Default currency
       distanceKm: 0, // No distance data included
-      shippedAt: timestamp || new Date().toISOString(),
+      shippedAt: timestamp,
       shippingNotes: "Auto-created from Google Sheets webhook",
       createdAt: new Date().toISOString(),
       createdBy: "Google Sheets Integration"
@@ -210,13 +217,16 @@ async function createNewTripFromShippedEvent(payload: any) {
 async function processDeliveredEvent(payload: any) {
   try {
     // Extract data from payload
-    const { fleetNumber, route, timestamp } = payload;
+    const route = payload.route || payload.E;
+    const fleetNumber = payload.fleetNumber || payload.H;
+    const timestamp = payload.timestamp || new Date().toISOString();
     
     if (!fleetNumber || !route) {
       return { success: false, error: "Missing required fields: fleetNumber and route" };
     }
     
     // Find matching active trip that has been shipped but not delivered
+    // Use the route as the reference number to match with the shipped load
     const { data: trips, error: findError } = await supabase
       .from("trips")
       .select("*")
@@ -245,7 +255,7 @@ async function processDeliveredEvent(payload: any) {
     let timeSpent = "";
     if (trip.shippedAt) {
       const shippedDate = new Date(trip.shippedAt);
-      const deliveredDate = timestamp ? new Date(timestamp) : new Date();
+      const deliveredDate = new Date(timestamp);
       
       const diffMs = deliveredDate.getTime() - shippedDate.getTime();
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -258,7 +268,7 @@ async function processDeliveredEvent(payload: any) {
     const { error: updateError } = await supabase
       .from("trips")
       .update({
-        deliveredAt: timestamp || new Date().toISOString(),
+        deliveredAt: timestamp,
         deliveryNotes: `Updated via Google Sheets webhook. Time spent: ${timeSpent}`,
         timeSpent: timeSpent
       })
@@ -284,7 +294,7 @@ async function processDeliveredEvent(payload: any) {
 async function logWebhookEvent(payload: any, result: any) {
   try {
     const logEntry = {
-      event_type: payload.action,
+      event_type: payload.sheetName || payload.action || "unknown",
       payload: JSON.stringify(payload),
       result: JSON.stringify(result),
       created_at: new Date().toISOString()

@@ -7,9 +7,9 @@ This Supabase Edge Function provides a webhook endpoint for Google Sheets to not
 This function:
 
 1. Receives webhook notifications from Google Apps Script running in your Google Sheets
-2. Processes two types of events:
-   - **Shipped**: Updates existing trips or creates new ones when items are shipped
-   - **Delivered**: Updates trips when items are delivered
+2. Processes two types of events from specific sheets:
+   - **Order.Shipped**: Updates existing trips or creates new ones when items are shipped
+   - **Order.Delivered**: Updates trips when items are delivered
 
 3. Maintains an audit log of all webhook events
 
@@ -43,23 +43,29 @@ function onEdit(e) {
   }
   
   // Get the data from the row
-  const timestamp = sheet.getRange(row, 1).getValue(); // Column A
-  const route = sheet.getRange(row, 5).getValue();     // Column E
-  const driverName = sheet.getRange(row, 7).getValue(); // Column G
-  const fleetNumber = sheet.getRange(row, 8).getValue(); // Column H
-  
-  // Determine the action based on the sheet
-  const action = sheetName === "Order.Shipped" ? "shipped" : "delivered";
+  const timestamp = new Date().toISOString();
+  const route = sheet.getRange(row, 5).getValue();     // Column E - Route/Load ref number
+  const driverName = sheet.getRange(row, 7).getValue(); // Column G - Driver name
+  const fleetNumber = sheet.getRange(row, 8).getValue(); // Column H - Fleet Number
+  const clientName = sheet.getRange(row, 9).getValue(); // Column I - Client name
+  const startDate = sheet.getRange(row, 10).getValue(); // Column J - Date started
   
   // Prepare the payload
   const payload = {
-    action: action,
-    timestamp: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
+    sheetName: sheetName,
+    timestamp: timestamp,
     route: route,
     driverName: driverName,
     fleetNumber: fleetNumber,
-    sheetName: sheetName,
-    rowNumber: row
+    clientName: clientName,
+    startDate: startDate ? new Date(startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    rowNumber: row,
+    // Include the raw column data for debugging
+    E: route,
+    G: driverName,
+    H: fleetNumber,
+    I: clientName,
+    J: startDate
   };
   
   // Send the webhook
@@ -100,41 +106,28 @@ function testWebhook() {
 4. Save the script
 5. Run the `testWebhook` function to test the connection
 
-### 3. Create Webhook Log Table
-
-Create a table in your Supabase database to log webhook events:
-
-```sql
-CREATE TABLE webhook_logs (
-  id SERIAL PRIMARY KEY,
-  event_type TEXT NOT NULL,
-  payload JSONB NOT NULL,
-  result JSONB,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);
-
--- Create index for faster lookups
-CREATE INDEX idx_webhook_logs_event_type ON webhook_logs(event_type);
-CREATE INDEX idx_webhook_logs_created_at ON webhook_logs(created_at);
-```
-
 ## How It Works
 
-### Shipped Events
+### Shipped Events (Order.Shipped sheet)
 
 When a row is added to the "Order.Shipped" sheet:
 
 1. The Google Apps Script triggers and sends a webhook to this function
 2. The function looks for an existing active trip with matching fleet number and route
 3. If found, it updates the trip with shipping information
-4. If not found, it creates a new trip with basic information
+4. If not found, it creates a new trip with basic information from:
+   - Column E: Route/Load reference number
+   - Column G: Driver name
+   - Column H: Fleet number
+   - Column I: Client name
+   - Column J: Date started
 
-### Delivered Events
+### Delivered Events (Order.Delivered sheet)
 
 When a row is added to the "Order.Delivered" sheet:
 
 1. The Google Apps Script triggers and sends a webhook to this function
-2. The function finds the matching trip that has been shipped but not delivered
+2. The function finds the matching trip using the route/reference number and fleet number
 3. It updates the trip with delivery information and calculates the time spent
 
 ## Testing
