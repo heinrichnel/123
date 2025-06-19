@@ -6,10 +6,11 @@ import { Input } from '../ui/FormElements';
 import Modal from '../ui/Modal';
 import { Settings, Save, X, AlertTriangle, DollarSign, Clock, Navigation, History, Shield, Bell, Calendar } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
+import { useAppContext } from '../../context/AppContext';
 
 interface SystemCostConfigurationProps {
   currentRates?: Record<'USD' | 'ZAR', SystemCostRates>;
-  onUpdateRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
+  onUpdateRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => Promise<void>;
   userRole: 'admin' | 'manager' | 'operator';
 }
 
@@ -18,11 +19,13 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
   onUpdateRates,
   userRole
 }) => {
+  const { connectionStatus } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
   const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ZAR' | null>(null);
   const [formData, setFormData] = useState<SystemCostRates | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [changeReason, setChangeReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // NEW: Monthly reminder system state
   const [reminder, setReminder] = useState<SystemCostReminder>(DEFAULT_SYSTEM_COST_REMINDER);
@@ -115,9 +118,8 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
   };
 
   const validateForm = () => {
-    if (!formData) return false;
-    
     const newErrors: Record<string, string> = {};
+    if (!formData) return false;
     
     // Validate change reason
     if (!changeReason.trim()) {
@@ -164,7 +166,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
     return false;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData || !editingCurrency || !validateForm()) return;
     
     if (!hasChanges()) {
@@ -172,21 +174,30 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
       return;
     }
     
-    const updatedRates: SystemCostRates = {
-      ...formData,
-      lastUpdated: new Date().toISOString(),
-      updatedBy: 'Current User', // In real app, use actual user
-      effectiveDate: new Date().toISOString()
-    };
-    
-    onUpdateRates(editingCurrency, updatedRates);
-    setIsOpen(false);
-    setEditingCurrency(null);
-    setFormData(null);
-    setChangeReason('');
-    setErrors({});
-    
-    alert(`${editingCurrency} indirect cost rates updated successfully!\n\nReason: ${changeReason}\n\nNew rates will apply to all trips created from now onwards. Historical trips retain their original rates.`);
+    try {
+      setIsSubmitting(true);
+      
+      const updatedRates: SystemCostRates = {
+        ...formData,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: 'Current User', // In real app, use actual user
+        effectiveDate: new Date().toISOString()
+      };
+      
+      await onUpdateRates(editingCurrency, updatedRates);
+      setIsOpen(false);
+      setEditingCurrency(null);
+      setFormData(null);
+      setChangeReason('');
+      setErrors({});
+      
+      alert(`${editingCurrency} indirect cost rates updated successfully!\n\nReason: ${changeReason}\n\nNew rates will apply to all trips created from now onwards. Historical trips retain their original rates.`);
+    } catch (error) {
+      console.error("Error saving system cost rates:", error);
+      alert(`Error saving rates: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -327,6 +338,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                       size="sm"
                       onClick={() => handleEditRates('USD')}
                       icon={<Settings className="w-4 h-4" />}
+                      disabled={connectionStatus !== 'connected'}
                     >
                       Edit USD Rates
                     </Button>
@@ -403,6 +415,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                       size="sm"
                       onClick={() => handleEditRates('ZAR')}
                       icon={<Settings className="w-4 h-4" />}
+                      disabled={connectionStatus !== 'connected'}
                     >
                       Edit ZAR Rates
                     </Button>
@@ -585,13 +598,15 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                 variant="outline"
                 onClick={handleClose}
                 icon={<X className="w-4 h-4" />}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!hasChanges() || !changeReason.trim()}
+                disabled={!hasChanges() || !changeReason.trim() || isSubmitting}
                 icon={<Save className="w-4 h-4" />}
+                isLoading={isSubmitting}
               >
                 Save {editingCurrency} Rates
               </Button>
