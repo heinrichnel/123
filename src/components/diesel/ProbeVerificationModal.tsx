@@ -6,6 +6,9 @@ import { useAppContext } from '../../context/AppContext';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { CheckCircle, X, Save, AlertTriangle } from 'lucide-react';
 
+// Define which fleets have probes
+const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
+
 interface ProbeVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,6 +39,36 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
   }, [record, isOpen]);
 
   if (!record) return null;
+
+  // Check if this fleet has a probe
+  const hasProbe = FLEETS_WITH_PROBES.includes(record.fleetNumber);
+  if (!hasProbe) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Probe Verification"
+        maxWidth="md"
+      >
+        <div className="space-y-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-amber-800">No Probe Available</h4>
+                <p className="text-sm text-amber-700 mt-1">
+                  Fleet {record.fleetNumber} does not have a probe installed. Probe verification is not available for this vehicle.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={onClose}>Close</Button>
+          </div>
+        </div>
+      </Modal>
+    );
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

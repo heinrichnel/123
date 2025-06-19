@@ -190,6 +190,7 @@ export interface DieselConsumptionRecord {
   updatedAt?: string;
   isReeferUnit?: boolean;
   linkedHorseId?: string; // ID of the horse diesel record this reefer is linked to
+  hoursOperated?: number; // Hours the reefer unit operated
 }
 
 // System Cost Configuration Types
@@ -555,8 +556,6 @@ export const RESPONSIBLE_PERSONS = [
   "Wellington Musumbu",
   "Decide Murahwa"
 ];
-
-export const TRUCKS_WITH_PROBES = [...FLEET_NUMBERS];
 
 export const CLIENT_TYPES = [
   { value: "internal", label: "Internal Client" },

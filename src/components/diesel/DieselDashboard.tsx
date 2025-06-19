@@ -27,9 +27,13 @@ import {
   Plus,
   Link,
   FileText,
-  Printer
+  Printer,
+  Clock
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
+// Define which fleets have probes
+const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
 
 interface DieselNorms {
   fleetNumber: string;
@@ -38,6 +42,7 @@ interface DieselNorms {
   lastUpdated: string;
   updatedBy: string;
   isReeferUnit?: boolean;
+  litresPerHour?: number; // For reefer units
 }
 
 const DEFAULT_NORMS: DieselNorms[] = [
@@ -55,12 +60,12 @@ const DEFAULT_NORMS: DieselNorms[] = [
   { fleetNumber: '32H', expectedKmPerLitre: 3.2, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: '33H', expectedKmPerLitre: 3.1, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: 'UD', expectedKmPerLitre: 2.8, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
-  // Add reefer units with 0 km/l (they use litres per hour instead)
-  { fleetNumber: '4F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
-  { fleetNumber: '5F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
-  { fleetNumber: '6F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
-  { fleetNumber: '7F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
-  { fleetNumber: '8F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true }
+  // Add reefer units with litres per hour instead of km/l
+  { fleetNumber: '4F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true, litresPerHour: 3.5 },
+  { fleetNumber: '5F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true, litresPerHour: 3.5 },
+  { fleetNumber: '6F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true, litresPerHour: 3.5 },
+  { fleetNumber: '7F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true, litresPerHour: 3.5 },
+  { fleetNumber: '8F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true, litresPerHour: 3.5 }
 ];
 
 const DieselDashboard: React.FC = () => {
@@ -87,7 +92,8 @@ const DieselDashboard: React.FC = () => {
     previousKmReading: '',
     tripId: '',
     currency: 'ZAR',
-    probeReading: ''
+    probeReading: '',
+    hoursOperated: ''
   });
   const [dieselNorms, setDieselNorms] = useState<DieselNorms[]>(DEFAULT_NORMS);
   const [filterFleet, setFilterFleet] = useState<string>('');
@@ -97,11 +103,25 @@ const DieselDashboard: React.FC = () => {
   const [filterProbeStatus, setFilterProbeStatus] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Load diesel norms from localStorage on component mount
+  useEffect(() => {
+    const savedNorms = localStorage.getItem('dieselNorms');
+    if (savedNorms) {
+      try {
+        const parsedNorms = JSON.parse(savedNorms);
+        setDieselNorms(parsedNorms);
+      } catch (error) {
+        console.error("Error parsing saved diesel norms:", error);
+      }
+    }
+  }, []);
+
   // Calculate enhanced metrics for each record
   const enhancedRecords = dieselRecords.map(record => {
     const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
     const norm = dieselNorms.find(n => n.fleetNumber === record.fleetNumber);
     const expectedKmPerLitre = norm?.expectedKmPerLitre || 3.0;
+    const expectedLitresPerHour = norm?.litresPerHour || 3.5; // For reefer units
     const tolerance = norm?.tolerancePercentage || 10;
     
     // Calculate distance travelled if not provided (skip for reefer units)
@@ -116,28 +136,46 @@ const DieselDashboard: React.FC = () => {
       kmPerLitre = distanceTravelled / record.litresFilled;
     }
     
+    // Calculate litres per hour for reefer units
+    let litresPerHour = 0;
+    if (isReeferUnit && record.hoursOperated && record.hoursOperated > 0) {
+      litresPerHour = record.litresFilled / record.hoursOperated;
+    }
+    
     // Calculate cost per KM (skip for reefer units)
     const costPerKm = !isReeferUnit && distanceTravelled > 0 ? record.totalCost / distanceTravelled : 0;
+    
+    // Calculate cost per hour (for reefer units)
+    const costPerHour = isReeferUnit && record.hoursOperated ? record.totalCost / record.hoursOperated : 0;
     
     // Calculate cost per litre if not provided
     const costPerLitre = record.costPerLitre || (record.litresFilled > 0 ? record.totalCost / record.litresFilled : 0);
     
-    // Performance analysis (skip for reefer units)
-    const efficiencyVariance = !isReeferUnit && kmPerLitre > 0 ? ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100 : 0;
+    // Performance analysis
+    let efficiencyVariance = 0;
+    if (!isReeferUnit && kmPerLitre > 0) {
+      // For regular units - compare km/l
+      efficiencyVariance = ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100;
+    } else if (isReeferUnit && litresPerHour > 0) {
+      // For reefer units - compare litres/hour
+      efficiencyVariance = ((litresPerHour - expectedLitresPerHour) / expectedLitresPerHour) * 100;
+      // Invert the variance for reefer units since lower L/hr is better
+      efficiencyVariance = -efficiencyVariance;
+    }
+    
     const toleranceRange = tolerance;
     const isWithinTolerance = Math.abs(efficiencyVariance) <= toleranceRange;
-    const performanceStatus = isReeferUnit ? 'normal' : 
-                             isWithinTolerance ? 'normal' : 
+    const performanceStatus = isWithinTolerance ? 'normal' : 
                              efficiencyVariance < -toleranceRange ? 'poor' : 'excellent';
     
-    // Flag for debrief if outside tolerance and not a reefer unit
-    const requiresDebrief = !isReeferUnit && !isWithinTolerance;
+    // Flag for debrief if outside tolerance
+    const requiresDebrief = !isWithinTolerance;
     
     // Get linked trip info if available
     const linkedTrip = record.tripId ? trips.find(t => t.id === record.tripId) : undefined;
     
     // Check if truck has probe
-    const hasProbe = ['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(record.fleetNumber);
+    const hasProbe = FLEETS_WITH_PROBES.includes(record.fleetNumber);
     
     // Calculate probe discrepancy
     const probeDiscrepancy = record.probeDiscrepancy !== undefined ? record.probeDiscrepancy : 
@@ -163,6 +201,9 @@ const DieselDashboard: React.FC = () => {
       costPerKm,
       costPerLitre,
       expectedKmPerLitre,
+      expectedLitresPerHour,
+      litresPerHour,
+      costPerHour,
       efficiencyVariance,
       performanceStatus,
       requiresDebrief,
@@ -216,7 +257,8 @@ const DieselDashboard: React.FC = () => {
         previousKmReading: record.previousKmReading !== undefined ? String(record.previousKmReading) : '',
         tripId: record.tripId || '',
         currency: record.currency || 'ZAR',
-        probeReading: record.probeReading !== undefined ? String(record.probeReading) : ''
+        probeReading: record.probeReading !== undefined ? String(record.probeReading) : '',
+        hoursOperated: record.hoursOperated !== undefined ? String(record.hoursOperated) : ''
       });
     }
   };
@@ -230,18 +272,34 @@ const DieselDashboard: React.FC = () => {
       const kmReading = parseFloat(editData.kmReading);
       const previousKmReading = editData.previousKmReading ? parseFloat(editData.previousKmReading) : undefined;
       const probeReading = editData.probeReading ? parseFloat(editData.probeReading) : undefined;
+      const hoursOperated = editData.hoursOperated ? parseFloat(editData.hoursOperated) : undefined;
+      
       // Validate number fields
-      if (isNaN(litresFilled) || isNaN(totalCost) || (isNaN(kmReading) && !['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber))) {
-        alert('Please enter valid numbers for litres filled, total cost, and km reading.');
+      const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
+      
+      if (isNaN(litresFilled) || isNaN(totalCost)) {
+        alert('Please enter valid numbers for litres filled and total cost.');
         return;
       }
+      
+      if (!isReeferUnit && isNaN(kmReading)) {
+        alert('Please enter a valid number for km reading.');
+        return;
+      }
+      
+      if (isReeferUnit && (isNaN(hoursOperated!) || hoursOperated! <= 0)) {
+        alert('Please enter a valid number for hours operated.');
+        return;
+      }
+      
       // Calculate derived values
-      const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
       const distanceTravelled = !isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : record.distanceTravelled;
       const kmPerLitre = !isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
       const costPerLitre = litresFilled > 0 ? totalCost / litresFilled : 0;
+      
       // Calculate probe discrepancy if applicable
       const probeDiscrepancy = probeReading !== undefined ? litresFilled - probeReading : undefined;
+      
       updateDieselRecord({
         ...record,
         litresFilled,
@@ -255,7 +313,8 @@ const DieselDashboard: React.FC = () => {
         currency: editData.currency as 'USD' | 'ZAR',
         probeReading,
         probeDiscrepancy,
-        probeVerified: probeReading !== undefined
+        probeVerified: probeReading !== undefined,
+        hoursOperated
       });
     }
     setEditingId(null);
@@ -270,7 +329,8 @@ const DieselDashboard: React.FC = () => {
       previousKmReading: '',
       tripId: '',
       currency: 'ZAR',
-      probeReading: ''
+      probeReading: '',
+      hoursOperated: ''
     });
   };
 
@@ -302,14 +362,16 @@ const DieselDashboard: React.FC = () => {
 
   const updateNorms = (updatedNorms: DieselNorms[]) => {
     setDieselNorms(updatedNorms);
+    // Save to localStorage for persistence
+    localStorage.setItem('dieselNorms', JSON.stringify(updatedNorms));
   };
 
   const exportCSVTemplate = () => {
-    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit
-6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false
-26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false
-22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false
-6F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true`;
+    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit,hoursOperated
+6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false,
+26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false,
+22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false,
+6F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true,5.5`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -335,7 +397,12 @@ const DieselDashboard: React.FC = () => {
     if (record.hasProbe) acc.recordsWithProbe++;
     if (record.needsProbeVerification) acc.recordsNeedingProbeVerification++;
     if (record.probeVerified) acc.recordsWithVerifiedProbe++;
-    if (record.isReeferUnit) acc.reeferUnits++;
+    if (record.isReeferUnit) {
+      acc.reeferUnits++;
+      if (record.hoursOperated) {
+        acc.totalReeferHours += record.hoursOperated;
+      }
+    }
     
     // Track by currency
     if (record.currency === 'USD') {
@@ -363,13 +430,16 @@ const DieselDashboard: React.FC = () => {
     zarRecords: 0,
     usdTotalCost: 0,
     zarTotalCost: 0,
-    reeferUnits: 0
+    reeferUnits: 0,
+    totalReeferHours: 0
   });
 
   const averageKmPerLitre = fleetSummary.totalLitres > 0 && fleetSummary.totalDistance > 0 ? 
     fleetSummary.totalDistance / fleetSummary.totalLitres : 0;
   const averageCostPerKm = fleetSummary.totalDistance > 0 ? 
     fleetSummary.totalCost / fleetSummary.totalDistance : 0;
+  const averageLitresPerHour = fleetSummary.totalReeferHours > 0 ?
+    fleetSummary.totalLitres / fleetSummary.totalReeferHours : 0;
 
   // Get unique drivers and fleets for filters
   const uniqueFleets = [...new Set(enhancedRecords.map(r => r.fleetNumber))].sort();
@@ -516,9 +586,13 @@ const DieselDashboard: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-500">Reefer Units</p>
                 <p className="text-2xl font-bold text-purple-600">{fleetSummary.reeferUnits}</p>
-                <p className="text-xs text-gray-400">refrigeration trailers</p>
+                <p className="text-xs text-gray-400">
+                  {fleetSummary.totalReeferHours > 0 ? 
+                    `${fleetSummary.totalReeferHours.toFixed(1)} hours • ${averageLitresPerHour.toFixed(2)} L/hr` : 
+                    'refrigeration trailers'}
+                </p>
               </div>
-              <Fuel className="w-8 h-8 text-purple-500" />
+              <Clock className="w-8 h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -536,7 +610,7 @@ const DieselDashboard: React.FC = () => {
               options={[
                 { label: 'All Fleets', value: '' },
                 ...uniqueFleets.map(fleet => ({ 
-                  label: `${fleet}${['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(fleet) ? ' (Probe)' : ['4F', '5F', '6F', '7F', '8F'].includes(fleet) ? ' (Reefer)' : ''}`, 
+                  label: `${fleet}${FLEETS_WITH_PROBES.includes(fleet) ? ' (Probe)' : ['4F', '5F', '6F', '7F', '8F'].includes(fleet) ? ' (Reefer)' : ''}`, 
                   value: fleet 
                 }))
               ]}
@@ -732,7 +806,7 @@ const DieselDashboard: React.FC = () => {
                       <p className="font-medium">{record.driverName}</p>
                     </div>
 
-                    {!isReeferUnit && (
+                    {!isReeferUnit ? (
                       <>
                         <div>
                           <p className="text-sm text-gray-500">KM Reading</p>
@@ -767,6 +841,21 @@ const DieselDashboard: React.FC = () => {
                           <p className="font-medium">{record.distanceTravelled?.toLocaleString() || 'N/A'} km</p>
                         </div>
                       </>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-gray-500">Hours Operated</p>
+                        {editingId === record.id ? (
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            value={editData.hoursOperated}
+                            onChange={e => setEditData(prev => ({ ...prev, hoursOperated: e.target.value }))}
+                          />
+                        ) : (
+                          <p className="font-medium">{record.hoursOperated?.toFixed(1) || 'N/A'} hrs</p>
+                        )}
+                      </div>
                     )}
 
                     <div>
@@ -811,7 +900,7 @@ const DieselDashboard: React.FC = () => {
                       )}
                     </div>
 
-                    {!isReeferUnit && (
+                    {!isReeferUnit ? (
                       <div>
                         <p className="text-sm text-gray-500">KM/L</p>
                         <div className="flex items-center space-x-2">
@@ -832,6 +921,29 @@ const DieselDashboard: React.FC = () => {
                         </div>
                         <p className="text-xs text-gray-500">
                           Expected: {record.expectedKmPerLitre}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-gray-500">Litres/Hour</p>
+                        <div className="flex items-center space-x-2">
+                          <p className={`font-medium ${
+                            record.performanceStatus === 'excellent' ? 'text-green-600' :
+                            record.performanceStatus === 'poor' ? 'text-red-600' :
+                            'text-gray-900'
+                          }`}>
+                            {record.litresPerHour?.toFixed(2) || 'N/A'}
+                          </p>
+                          {record.efficiencyVariance !== 0 && (
+                            <span className={`text-xs px-1 py-0.5 rounded ${
+                              record.efficiencyVariance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {record.efficiencyVariance > 0 ? '+' : ''}{record.efficiencyVariance.toFixed(1)}%
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Expected: {record.expectedLitresPerHour}
                         </p>
                       </div>
                     )}

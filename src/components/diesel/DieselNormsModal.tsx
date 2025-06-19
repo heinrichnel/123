@@ -1,5 +1,5 @@
 // ─── React ───────────────────────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
@@ -18,12 +18,15 @@ import {
   AlertTriangle,
   Plus,
   Trash2,
-  History
+  History,
+  Clock
 } from 'lucide-react';
 
 // ─── Constants / Types ───────────────────────────────────────────
 import { FLEET_NUMBERS } from '../../types';
 
+// Define which fleets have probes
+const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
 
 interface DieselNorms {
   fleetNumber: string;
@@ -32,6 +35,7 @@ interface DieselNorms {
   lastUpdated: string;
   updatedBy: string;
   isReeferUnit?: boolean;
+  litresPerHour?: number; // For reefer units
 }
 
 interface DieselNormsModalProps {
@@ -50,9 +54,25 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
   const [editedNorms, setEditedNorms] = useState<DieselNorms[]>(norms);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleNormChange = (fleetNumber: string, field: 'expectedKmPerLitre' | 'tolerancePercentage', value: string) => {
+  // Load norms from localStorage when modal opens
+  useEffect(() => {
+    const savedNorms = localStorage.getItem('dieselNorms');
+    if (savedNorms) {
+      try {
+        const parsedNorms = JSON.parse(savedNorms);
+        setEditedNorms(parsedNorms);
+      } catch (error) {
+        console.error("Error parsing saved diesel norms:", error);
+        setEditedNorms(norms);
+      }
+    } else {
+      setEditedNorms(norms);
+    }
+  }, [norms, isOpen]);
+
+  const handleNormChange = (fleetNumber: string, field: 'expectedKmPerLitre' | 'tolerancePercentage' | 'litresPerHour', value: string) => {
     const numValue = parseFloat(value);
-    if (isNaN(numValue) || numValue <= 0) {
+    if (isNaN(numValue) || numValue < 0) {
       setErrors(prev => {
         const key = `${fleetNumber}-${field}`;
         return { ...prev, [key]: 'Must be a positive number' };
@@ -88,7 +108,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
   };
 
   const addNewFleetNorm = () => {
-    const availableFleets = [...FLEET_NUMBERS, '4F', '5F', '7F', '8F'].filter(fleet =>
+    const availableFleets = [...FLEET_NUMBERS, '4F', '5F', '6F', '7F', '8F'].filter(fleet =>
       !editedNorms.some(norm => norm.fleetNumber === fleet)
     );
 
@@ -98,7 +118,8 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
     }
 
     const selectedFleet = availableFleets[0];
-    const isReeferUnit = ['4F', '5F', '7F', '8F'].includes(selectedFleet);
+    const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(selectedFleet);
+    const hasProbe = FLEETS_WITH_PROBES.includes(selectedFleet);
 
     const newNorm: DieselNorms = {
       fleetNumber: selectedFleet,
@@ -106,7 +127,8 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       tolerancePercentage: isReeferUnit ? 15 : 10, // Higher tolerance for reefers
       lastUpdated: new Date().toISOString(),
       updatedBy: 'Current User',
-      isReeferUnit
+      isReeferUnit,
+      litresPerHour: isReeferUnit ? 3.5 : undefined // Default litres per hour for reefers
     };
 
     setEditedNorms(prev => [...prev, newNorm]);
@@ -125,6 +147,9 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       return;
     }
 
+    // Save to localStorage for persistence
+    localStorage.setItem('dieselNorms', JSON.stringify(editedNorms));
+    
     onUpdateNorms(editedNorms);
     alert('Fleet efficiency norms updated successfully!\n\nNew tolerance ranges will be applied to all future diesel records.');
     onClose();
@@ -143,16 +168,20 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
           isReeferUnit: false
         })),
         // Reefer norms
-        ...['4F', '5F', '7F', '8F'].map(fleet => ({
+        ...['4F', '5F', '6F', '7F', '8F'].map(fleet => ({
           fleetNumber: fleet,
           expectedKmPerLitre: 0, // Reefers don't use km/l
           tolerancePercentage: 15,
           lastUpdated: new Date().toISOString(),
           updatedBy: 'System Default',
-          isReeferUnit: true
+          isReeferUnit: true,
+          litresPerHour: 3.5 // Default litres per hour
         }))
       ];
       setEditedNorms(defaultNorms);
+      
+      // Clear localStorage
+      localStorage.removeItem('dieselNorms');
     }
   };
 
@@ -205,7 +234,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
           {editedNorms.map(norm => (
             <Card key={norm.fleetNumber} className="relative">
               <CardHeader
-                title={`Fleet ${norm.fleetNumber} ${norm.isReeferUnit ? '(Reefer)' : ''}`}
+                title={`Fleet ${norm.fleetNumber} ${norm.isReeferUnit ? '(Reefer)' : FLEETS_WITH_PROBES.includes(norm.fleetNumber) ? '(Probe)' : ''}`}
                 action={
                   <Button
                     size="sm"
@@ -226,7 +255,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                     max="10"
                     value={norm.expectedKmPerLitre.toString()}
                     onChange={e => {
-                      // Patch: Robustly handle both event and value
+                      // Robustly handle both event and value
                       let value = '';
                       if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
                         value = e.target.value;
@@ -238,11 +267,32 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                     error={errors[`${norm.fleetNumber}-expectedKmPerLitre`]}
                   />
                 ) : (
-                  <div className="bg-purple-50 rounded-md p-3">
-                    <p className="text-xs font-medium text-purple-700 mb-1">Reefer Unit:</p>
-                    <p className="text-sm font-mono text-purple-900">
-                      Measured in litres per hour instead of KM/L
-                    </p>
+                  <div className="space-y-4">
+                    <div className="bg-purple-50 rounded-md p-3">
+                      <p className="text-xs font-medium text-purple-700 mb-1">Reefer Unit:</p>
+                      <p className="text-sm font-mono text-purple-900">
+                        Measured in litres per hour instead of KM/L
+                      </p>
+                    </div>
+                    <Input
+                      label="Expected Litres/Hour"
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      max="10"
+                      value={(norm.litresPerHour || 3.5).toString()}
+                      onChange={e => {
+                        // Robustly handle both event and value
+                        let value = '';
+                        if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
+                          value = e.target.value;
+                        } else if (typeof e === 'string') {
+                          value = e;
+                        }
+                        handleNormChange(norm.fleetNumber, 'litresPerHour', value);
+                      }}
+                      error={errors[`${norm.fleetNumber}-litresPerHour`]}
+                    />
                   </div>
                 )}
                 <Input
@@ -253,7 +303,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                   max="50"
                   value={norm.tolerancePercentage.toString()}
                   onChange={e => {
-                    // Patch: Robustly handle both event and value
+                    // Robustly handle both event and value
                     let value = '';
                     if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
                       value = e.target.value;
@@ -269,6 +319,14 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                     <p className="text-xs font-medium text-gray-700 mb-1">Acceptable Range:</p>
                     <p className="text-sm font-mono text-gray-900">
                       {(norm.expectedKmPerLitre * (1 - norm.tolerancePercentage / 100)).toFixed(2)} - {(norm.expectedKmPerLitre * (1 + norm.tolerancePercentage / 100)).toFixed(2)} KM/L
+                    </p>
+                  </div>
+                )}
+                {norm.isReeferUnit && norm.litresPerHour && (
+                  <div className="bg-purple-50 rounded-md p-3">
+                    <p className="text-xs font-medium text-purple-700 mb-1">Acceptable Range:</p>
+                    <p className="text-sm font-mono text-purple-900">
+                      {(norm.litresPerHour * (1 - norm.tolerancePercentage / 100)).toFixed(2)} - {(norm.litresPerHour * (1 + norm.tolerancePercentage / 100)).toFixed(2)} L/hr
                     </p>
                   </div>
                 )}
@@ -291,6 +349,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                 <p>• Existing records will be re-evaluated with new tolerance ranges</p>
                 <p>• Debrief requirements will be updated automatically</p>
                 <p>• Performance classifications may change for existing records</p>
+                <p>• Settings will be saved and persist between sessions</p>
               </div>
             </div>
           </div>

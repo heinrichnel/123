@@ -51,6 +51,9 @@ import {
   deleteCARReportFromFirebase
 } from '../firebase';
 
+// Define which fleets have probes
+const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
+
 interface AppContextType {
   trips: Trip[];
   addTrip: (tripData: Omit<Trip, "id" | "costs" | "status">) => Promise<string>;
@@ -139,7 +142,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // System Cost Rates (following centralized context pattern)
   const [systemCostRates, setSystemCostRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
 
-  // Load system cost rates from localStorage on initialization
+  // Load system cost rates from localStorage on component mount
   useEffect(() => {
     const savedRates = localStorage.getItem('systemCostRates');
     if (savedRates) {
@@ -959,14 +962,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Diesel CRUD
   const addDieselRecord = async (record: DieselConsumptionRecord) => {
     try {
+      // Check if this is a reefer unit
+      const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
+      
+      // Check if this fleet has a probe
+      const hasProbe = FLEETS_WITH_PROBES.includes(record.fleetNumber);
+      
+      // If it's not a reefer unit and doesn't have a probe, remove probe-related fields
+      if (!isReeferUnit && !hasProbe) {
+        record.probeReading = undefined;
+        record.probeDiscrepancy = undefined;
+        record.probeVerified = undefined;
+        record.probeVerifiedAt = undefined;
+        record.probeVerifiedBy = undefined;
+        record.probeVerificationNotes = undefined;
+      }
+      
+      // Add the record to Firestore
       await addDieselToFirebase(removeUndefinedValues(record));
       
-      // Update local state immediately
+      // Update local state
       setDieselRecords(prev => [...prev, record]);
       
       // If this is a reefer unit linked to a horse, and the horse is linked to a trip,
       // automatically create a cost entry for the reefer diesel
-      if (record.isReeferUnit && record.linkedHorseId) {
+      if (isReeferUnit && record.linkedHorseId) {
         const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
         if (horseRecord?.tripId) {
           // Create a cost entry for the reefer diesel
@@ -996,13 +1016,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   
   const updateDieselRecord = async (record: DieselConsumptionRecord) => {
     try {
+      // Check if this is a reefer unit
+      const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
+      
+      // Check if this fleet has a probe
+      const hasProbe = FLEETS_WITH_PROBES.includes(record.fleetNumber);
+      
+      // If it's not a reefer unit and doesn't have a probe, remove probe-related fields
+      if (!isReeferUnit && !hasProbe) {
+        record.probeReading = undefined;
+        record.probeDiscrepancy = undefined;
+        record.probeVerified = undefined;
+        record.probeVerifiedAt = undefined;
+        record.probeVerifiedBy = undefined;
+        record.probeVerificationNotes = undefined;
+      }
+      
+      // Update the record in Firestore
       await updateDieselInFirebase(record.id, removeUndefinedValues(record));
       
-      // Update local state immediately
+      // Update local state
       setDieselRecords(prev => prev.map(r => r.id === record.id ? record : r));
       
       // If this is a reefer unit and the linked horse has changed
-      if (record.isReeferUnit && record.linkedHorseId) {
+      if (isReeferUnit && record.linkedHorseId) {
         // Find the previous version of this record
         const oldRecord = dieselRecords.find(r => r.id === record.id);
         
@@ -1066,31 +1103,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                 };
                 
                 await updateCostEntry(updatedCostEntry);
-              } else {
-                // If no cost entry exists yet, create one
-                const costData: Omit<CostEntry, "id" | "attachments"> = {
-                  tripId: horseRecord.tripId,
-                  category: "Fuel",
-                  subCategory: "Reefer Diesel",
-                  amount: record.totalCost,
-                  currency: record.currency || "ZAR",
-                  referenceNumber: `REEFER-DIESEL-${record.id}`,
-                  date: record.date,
-                  notes: `Reefer diesel for ${record.fleetNumber} - ${record.litresFilled}L at ${record.fuelStation}`,
-                  isFlagged: false,
-                  isSystemGenerated: false,
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
-                };
-                
-                await addCostEntry(horseRecord.tripId, costData);
               }
             }
           }
         }
       }
       // If this is a regular diesel record linked to a trip
-      else if (!record.isReeferUnit && record.tripId) {
+      else if (!isReeferUnit && record.tripId) {
         // Find the previous version of this record
         const oldRecord = dieselRecords.find(r => r.id === record.id);
         
@@ -1112,24 +1131,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               };
               
               await updateCostEntry(updatedCostEntry);
-            } else {
-              // If no cost entry exists yet, create one
-              const costData: Omit<CostEntry, "id" | "attachments"> = {
-                tripId: record.tripId,
-                category: "Fuel",
-                subCategory: "Diesel",
-                amount: record.totalCost,
-                currency: record.currency || "ZAR",
-                referenceNumber: `DIESEL-${record.id}`,
-                date: record.date,
-                notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled}L`,
-                isFlagged: false,
-                isSystemGenerated: false,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              };
-              
-              await addCostEntry(record.tripId, costData);
             }
           }
         }
@@ -1192,15 +1193,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const recordsJson = formData.get('records');
       if (!recordsJson || typeof recordsJson !== 'string') {
-        throw new Error('No valid records data found in form');
+        throw new Error('Invalid records data');
       }
       
-      const records = JSON.parse(recordsJson) as DieselConsumptionRecord[];
+      const records: DieselConsumptionRecord[] = JSON.parse(recordsJson);
       
       // Process each record
       for (const record of records) {
-        await addDieselRecord(record);
+        // Check if this is a reefer unit
+        const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
+        
+        // Check if this fleet has a probe
+        const hasProbe = FLEETS_WITH_PROBES.includes(record.fleetNumber);
+        
+        // If it's not a reefer unit and doesn't have a probe, remove probe-related fields
+        if (!isReeferUnit && !hasProbe) {
+          record.probeReading = undefined;
+          record.probeDiscrepancy = undefined;
+          record.probeVerified = undefined;
+          record.probeVerifiedAt = undefined;
+          record.probeVerifiedBy = undefined;
+          record.probeVerificationNotes = undefined;
+        }
+        
+        // Add the record to Firestore
+        await addDieselToFirebase(removeUndefinedValues(record));
       }
+      
+      // Update local state
+      setDieselRecords(prev => [...prev, ...records]);
       
       return { success: true, count: records.length };
     } catch (error) {

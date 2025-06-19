@@ -19,6 +19,8 @@ import {
 // ─── Types ───────────────────────────────────────────────────────
 import { FUEL_STATIONS } from '../../types';
 
+// Define which fleets have probes
+const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
 
 interface DieselImportModalProps {
   isOpen: boolean;
@@ -95,22 +97,28 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
       const data = parseCSV(text);
       
       // Convert to diesel records
-      const dieselRecords = data.map((row: any) => ({
-        id: `diesel-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        fleetNumber: row.fleetNumber || '',
-        date: row.date || new Date().toISOString().split('T')[0],
-        kmReading: parseFloat(row.kmReading || '0'),
-        previousKmReading: row.previousKmReading ? parseFloat(row.previousKmReading) : undefined,
-        litresFilled: parseFloat(row.litresFilled || '0'),
-        costPerLitre: row.costPerLitre ? parseFloat(row.costPerLitre) : undefined,
-        totalCost: parseFloat(row.totalCost || '0'),
-        fuelStation: row.fuelStation || '',
-        driverName: row.driverName || '',
-        notes: row.notes || '',
-        currency: row.currency || 'ZAR',
-        probeReading: row.probeReading ? parseFloat(row.probeReading) : undefined,
-        isReeferUnit: row.isReeferUnit === 'true' || row.isReeferUnit === true || ['4F', '5F', '7F', '8F'].includes(row.fleetNumber)
-      }));
+      const dieselRecords = data.map((row: any) => {
+        const isReeferUnit = row.isReeferUnit === 'true' || row.isReeferUnit === true || ['4F', '5F', '6F', '7F', '8F'].includes(row.fleetNumber);
+        const hasProbe = FLEETS_WITH_PROBES.includes(row.fleetNumber);
+        
+        return {
+          id: `diesel-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          fleetNumber: row.fleetNumber || '',
+          date: row.date || new Date().toISOString().split('T')[0],
+          kmReading: isReeferUnit ? 0 : parseFloat(row.kmReading || '0'),
+          previousKmReading: isReeferUnit ? undefined : (row.previousKmReading ? parseFloat(row.previousKmReading) : undefined),
+          litresFilled: parseFloat(row.litresFilled || '0'),
+          costPerLitre: row.costPerLitre ? parseFloat(row.costPerLitre) : undefined,
+          totalCost: parseFloat(row.totalCost || '0'),
+          fuelStation: row.fuelStation || '',
+          driverName: row.driverName || '',
+          notes: row.notes || '',
+          currency: row.currency || 'ZAR',
+          probeReading: hasProbe && row.probeReading ? parseFloat(row.probeReading) : undefined,
+          isReeferUnit,
+          hoursOperated: isReeferUnit && row.hoursOperated ? parseFloat(row.hoursOperated) : undefined
+        };
+      });
 
       // Calculate derived values
       dieselRecords.forEach(record => {
@@ -156,11 +164,11 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
   };
 
   const downloadTemplate = () => {
-    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit
-6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false
-26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false
-22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false
-4F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true`;
+    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit,hoursOperated
+6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false,
+26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false,
+22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false,
+6F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true,5.5`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -188,7 +196,7 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
                 Import your diesel records using a CSV file with the following columns:
               </p>
               <ul className="text-sm text-blue-700 mt-2 list-disc list-inside">
-                <li>fleetNumber - Vehicle fleet number (e.g., "6H", "26H", "4F" for reefer)</li>
+                <li>fleetNumber - Vehicle fleet number (e.g., "6H", "26H", "6F" for reefer)</li>
                 <li>date - Date of refueling (YYYY-MM-DD)</li>
                 <li>kmReading - Current odometer reading (not needed for reefer units)</li>
                 <li>previousKmReading - Previous odometer reading (optional)</li>
@@ -199,8 +207,9 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
                 <li>driverName - Name of the driver</li>
                 <li>notes - Additional notes (optional)</li>
                 <li>currency - ZAR or USD (optional, defaults to ZAR)</li>
-                <li>probeReading - Probe reading in litres (optional)</li>
+                <li>probeReading - Probe reading in litres (only for fleets with probes)</li>
                 <li>isReeferUnit - true/false (optional, defaults to false)</li>
+                <li>hoursOperated - Hours the reefer unit operated (for reefer units only)</li>
               </ul>
               <div className="mt-3">
                 <Button

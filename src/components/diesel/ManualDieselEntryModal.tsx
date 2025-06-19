@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { Trip, DRIVERS, FUEL_STATIONS, FLEET_NUMBERS } from '../../types';
+import { Trip, DRIVERS, FUEL_STATIONS, FLEET_NUMBERS, DieselConsumptionRecord } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
@@ -19,19 +19,17 @@ import {
   AlertTriangle,
   Fuel,
   Link,
-  Building
+  Building,
+  Clock
 } from 'lucide-react';
 
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatDate } from '../../utils/helpers';
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-// ─── Helper function ─────────────────────────────────────────────
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString();
-};
 
 const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   isOpen,
@@ -53,7 +51,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     tripId: '', // Link to trip
     currency: 'ZAR' as 'USD' | 'ZAR', // Add currency field with default value
     isReeferUnit: false, // Add flag for reefer units
-    linkedHorseId: '' // For reefer units
+    linkedHorseId: '', // For reefer units
+    hoursOperated: '' // For reefer units - hours of operation
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -81,7 +80,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     }
 
     // Auto-calculate when relevant fields change
-    if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost'].includes(field) && typeof value === 'string') {
+    if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost', 'hoursOperated'].includes(field) && typeof value === 'string') {
       autoCalculateFields(field, value);
     }
   };
@@ -127,31 +126,28 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     if (formData.totalCost && (isNaN(Number(formData.totalCost)) || Number(formData.totalCost) <= 0)) {
       newErrors.totalCost = 'Must be a valid positive number';
     }
-    if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) {
-      newErrors.kmReading = 'Must be a valid positive number';
-    }
-    if (formData.previousKmReading && isNaN(Number(formData.previousKmReading))) {
-      newErrors.previousKmReading = 'Must be a valid number';
-    }
-
-    // Validate KM readings
-    if (formData.kmReading && formData.previousKmReading) {
-      const current = Number(formData.kmReading);
-      const previous = Number(formData.previousKmReading);
-      if (current <= previous) {
-        newErrors.kmReading = 'Current KM must be greater than previous KM';
-      }
-    }
-
-    // Skip KM validation for reefer units
+    
+    // For reefer units, validate hours operated
     if (formData.isReeferUnit) {
-      delete newErrors.kmReading;
-      delete newErrors.previousKmReading;
-    }
-
-    // For reefer units, validate horse linkage
-    if (formData.isReeferUnit && formData.linkedHorseId) {
-      // Validation is optional - they can link later
+      if (!formData.hoursOperated) {
+        newErrors.hoursOperated = 'Hours operated is required for reefer units';
+      } else if (isNaN(Number(formData.hoursOperated)) || Number(formData.hoursOperated) <= 0) {
+        newErrors.hoursOperated = 'Hours operated must be a positive number';
+      }
+    } else {
+      // For regular units, validate KM reading
+      if (!formData.kmReading || isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0) {
+        newErrors.kmReading = 'KM reading must be a valid positive number';
+      }
+      
+      // Validate KM readings
+      if (formData.kmReading && formData.previousKmReading) {
+        const current = Number(formData.kmReading);
+        const previous = Number(formData.previousKmReading);
+        if (current <= previous) {
+          newErrors.kmReading = 'Current KM must be greater than previous KM';
+        }
+      }
     }
 
     setErrors(newErrors);
@@ -166,6 +162,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const litresFilled = Number(formData.litresFilled);
     const totalCost = Number(formData.totalCost);
     const costPerLitre = formData.costPerLitre ? Number(formData.costPerLitre) : totalCost / litresFilled;
+    const hoursOperated = formData.hoursOperated ? Number(formData.hoursOperated) : undefined;
 
     // Calculate derived values
     const distanceTravelled = !formData.isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : undefined;
@@ -190,7 +187,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       distanceTravelled,
       kmPerLitre,
       currency: formData.currency,
-      isReeferUnit: formData.isReeferUnit
+      isReeferUnit: formData.isReeferUnit,
+      hoursOperated
     };
     
     // Add trip ID for regular diesel or linked horse ID for reefer units
@@ -208,6 +206,9 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       
       if (formData.isReeferUnit) {
         successMessage += `Reefer Unit\n`;
+        successMessage += `Hours Operated: ${hoursOperated} hours\n`;
+        successMessage += `Consumption Rate: ${(litresFilled / (hoursOperated || 1)).toFixed(2)} L/hr\n`;
+        
         if (formData.linkedHorseId) {
           const horseRecord = dieselRecords.find(r => r.id === formData.linkedHorseId);
           successMessage += `Linked to Horse: ${horseRecord?.fleetNumber || formData.linkedHorseId}\n`;
@@ -246,7 +247,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
         tripId: '',
         currency: 'ZAR',
         isReeferUnit: false,
-        linkedHorseId: ''
+        linkedHorseId: '',
+        hoursOperated: ''
       });
       setErrors({});
       onClose();
@@ -267,6 +269,12 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const distance = calculateDistance();
     const litres = Number(formData.litresFilled) || 0;
     return distance > 0 && litres > 0 ? distance / litres : 0;
+  };
+
+  const calculateLitresPerHour = () => {
+    const litres = Number(formData.litresFilled) || 0;
+    const hours = Number(formData.hoursOperated) || 0;
+    return hours > 0 ? litres / hours : 0;
   };
 
   // Check if the selected fleet is a reefer unit
@@ -359,7 +367,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.date}
           />
 
-          {!formData.isReeferUnit && (
+          {!formData.isReeferUnit ? (
             <>
               <Input
                 label="Current KM Reading *"
@@ -383,6 +391,17 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
                 error={errors.previousKmReading}
               />
             </>
+          ) : (
+            <Input
+              label="Hours Operated *"
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={formData.hoursOperated}
+              onChange={val => handleChange('hoursOperated', val)}
+              placeholder="5.5"
+              error={errors.hoursOperated}
+            />
           )}
 
           <Input
@@ -520,14 +539,42 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
+        {/* Reefer Unit Calculation Preview */}
+        {formData.isReeferUnit && formData.litresFilled && formData.hoursOperated && (
+          <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
+            <h4 className="text-sm font-medium text-purple-800 mb-2">Reefer Unit Metrics</h4>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-purple-600">Hours Operated</p>
+                <p className="font-bold text-purple-800">{Number(formData.hoursOperated).toFixed(1)} hours</p>
+              </div>
+              <div>
+                <p className="text-purple-600">Consumption Rate</p>
+                <p className="font-bold text-purple-800">{calculateLitresPerHour().toFixed(2)} L/hr</p>
+              </div>
+              <div>
+                <p className="text-purple-600">Cost per Hour</p>
+                <p className="font-bold text-purple-800">
+                  {formData.currency === 'USD' ? '$' : 'R'}{Number(formData.hoursOperated) > 0 ? (Number(formData.totalCost) / Number(formData.hoursOperated)).toFixed(2) : '0.00'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Reefer Unit Info */}
         {formData.isReeferUnit && (
           <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
-            <h4 className="text-sm font-medium text-purple-800 mb-2">Refrigeration Trailer Information</h4>
-            <p className="text-sm text-purple-700">
-              Refrigeration trailers are measured in litres per hour instead of kilometers per litre.
-              KM readings are not required for reefer units.
-            </p>
+            <div className="flex items-start space-x-3">
+              <Clock className="w-5 h-5 text-purple-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-purple-800">Refrigeration Trailer Information</h4>
+                <p className="text-sm text-purple-700 mt-1">
+                  Refrigeration trailers are measured in litres per hour instead of kilometers per litre.
+                  Please enter the number of hours the reefer unit was operated.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
