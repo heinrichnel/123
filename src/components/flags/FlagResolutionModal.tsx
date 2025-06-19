@@ -44,6 +44,7 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
   });
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (cost) {
@@ -80,6 +81,11 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
     // IMPORTANT: We're removing this restriction to allow resolving flags without changes
     // This addresses the issue where flags couldn't be resolved
     /*
+    // Check for any change to allow resolving
+    const hasAmountChange = cost && Number(formData.amount) !== cost.amount;
+    const hasNotesChange = cost && formData.notes !== (cost.notes || '');
+    const hasFileUpload = selectedFiles && selectedFiles.length > 0;
+
     if (!hasAmountChange && !hasNotesChange && !hasFileUpload) {
       newErrors.general = 'Please make at least one change (amount, notes, or upload document) to resolve this flag.';
     }
@@ -89,36 +95,44 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleResolve = () => {
+  const handleResolve = async () => {
     if (!cost || !validateForm()) return;
+    
+    try {
+      setIsSubmitting(true);
 
-    const newAttachments = selectedFiles
-      ? Array.from(selectedFiles).map((file, index) => ({
-          id: `A${Date.now()}-${index}`,
-          costEntryId: cost.id,
-          filename: file.name,
-          fileUrl: URL.createObjectURL(file), // TODO: Replace with actual upload URL
-          fileType: file.type,
-          fileSize: file.size,
-          uploadedAt: new Date().toISOString()
-        }))
-      : [];
+      const newAttachments = selectedFiles
+        ? Array.from(selectedFiles).map((file, index) => ({
+            id: `A${Date.now()}-${index}`,
+            costEntryId: cost.id,
+            filename: file.name,
+            fileUrl: URL.createObjectURL(file), // TODO: Replace with actual upload URL
+            fileType: file.type,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString()
+          }))
+        : [];
 
-    const updatedCost: CostEntry = {
-      ...cost,
-      amount: Number(formData.amount),
-      notes: formData.notes,
-      attachments: [...cost.attachments, ...newAttachments],
-      investigationStatus: 'resolved',
-      investigationNotes: cost.investigationNotes
-        ? `${cost.investigationNotes}\n\nResolution: ${formData.resolutionComment}`
-        : `Resolution: ${formData.resolutionComment}`,
-      resolvedAt: new Date().toISOString(),
-      resolvedBy: 'Current User' // Replace with actual user context
-    };
+      const updatedCost: CostEntry = {
+        ...cost,
+        amount: Number(formData.amount),
+        notes: formData.notes,
+        attachments: [...cost.attachments, ...newAttachments],
+        investigationStatus: 'resolved',
+        investigationNotes: cost.investigationNotes
+          ? `${cost.investigationNotes}\n\nResolution: ${formData.resolutionComment}`
+          : `Resolution: ${formData.resolutionComment}`,
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: 'Current User' // Replace with actual user context
+      };
 
-    onResolve(updatedCost, formData.resolutionComment);
-    onClose();
+      onResolve(updatedCost, formData.resolutionComment);
+    } catch (error) {
+      console.error('Error resolving flag:', error);
+      alert(`Error resolving flag: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -289,13 +303,19 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
 
         {/* Actions */}
         <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={handleClose} icon={<X className="w-4 h-4" />}>
+          <Button 
+            variant="outline" 
+            onClick={handleClose} 
+            icon={<X className="w-4 h-4" />}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
           <Button
             onClick={handleResolve}
-            disabled={!formData.resolutionComment.trim()}
+            disabled={!formData.resolutionComment.trim() || isSubmitting}
             icon={<CheckCircle className="w-4 h-4" />}
+            isLoading={isSubmitting}
           >
             Resolve Flag
           </Button>
