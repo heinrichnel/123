@@ -35,7 +35,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
   onClose,
   dieselRecordId
 }) => {
-  const { trips, dieselRecords, allocateDieselToTrip, removeDieselFromTrip } = useAppContext();
+  const { trips, dieselRecords, allocateDieselToTrip, removeDieselFromTrip, updateDieselRecord } = useAppContext();
   const [selectedTripId, setSelectedTripId] = useState<string>('');
   const [selectedHorseId, setSelectedHorseId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -122,24 +122,6 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
         const horseRecord = dieselRecords.find(r => r.id === selectedHorseId);
         if (horseRecord?.tripId) {
           const trip = trips.find(t => t.id === horseRecord.tripId);
-          
-          // Create a cost entry for the reefer diesel
-          const costData: Omit<CostEntry, "id" | "attachments"> = {
-            tripId: horseRecord.tripId,
-            category: "Fuel",
-            subCategory: "Reefer Diesel",
-            amount: dieselRecord.totalCost,
-            currency: dieselRecord.currency || "ZAR",
-            referenceNumber: `REEFER-DIESEL-${dieselRecord.id}`,
-            date: dieselRecord.date,
-            notes: `Reefer diesel for ${dieselRecord.fleetNumber} - ${dieselRecord.litresFilled}L at ${dieselRecord.fuelStation}`,
-            isFlagged: false,
-            isSystemGenerated: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          
-          await addCostEntry(horseRecord.tripId, costData);
           
           alert(`Reefer diesel record successfully linked to horse ${horseRecord.fleetNumber}!\n\n${trip ? `Trip: ${trip.route}\nDates: ${trip.startDate} to ${trip.endDate}\n\nA cost entry has been automatically created in the trip's expenses.` : 'No active trip found for this horse.'}`);
         } else {

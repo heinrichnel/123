@@ -1,9 +1,9 @@
 // ─── React & Context ─────────────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { FLEET_NUMBERS, DRIVERS, FUEL_STATIONS } from '../../types';
+import { Trip, DRIVERS, FUEL_STATIONS, FLEET_NUMBERS } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
@@ -18,7 +18,8 @@ import {
   Calculator,
   AlertTriangle,
   Fuel,
-  Link
+  Link,
+  Building
 } from 'lucide-react';
 
 
@@ -46,7 +47,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     notes: '',
     tripId: '', // Link to trip
     currency: 'ZAR' as 'USD' | 'ZAR', // Add currency field with default value
-    isReeferUnit: false // Add flag for reefer units
+    isReeferUnit: false, // Add flag for reefer units
+    linkedHorseId: '' // For reefer units
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -57,6 +59,13 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     trip.fleetNumber === formData.fleetNumber && 
     trip.status === 'active'
   );
+
+  // Get available horses for reefer units
+  const availableHorses = formData.isReeferUnit ? 
+    dieselRecords.filter(record => 
+      !record.isReeferUnit && 
+      ['4H', '6H', '21H', '22H', '23H', '24H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(record.fleetNumber)
+    ) : [];
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -100,7 +109,6 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
     if (!formData.fleetNumber) newErrors.fleetNumber = 'Fleet number is required';
     if (!formData.date) newErrors.date = 'Date is required';
-    if (!formData.kmReading) newErrors.kmReading = 'KM reading is required';
     if (!formData.litresFilled) newErrors.litresFilled = 'Litres filled is required';
     if (!formData.totalCost) newErrors.totalCost = 'Total cost is required';
     if (!formData.fuelStation) newErrors.fuelStation = 'Fuel station is required';
@@ -108,17 +116,17 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     if (!formData.currency) newErrors.currency = 'Currency is required';
 
     // Validate numbers
-    if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) {
-      newErrors.kmReading = 'Must be a valid positive number';
-    }
-    if (formData.previousKmReading && (isNaN(Number(formData.previousKmReading)) || Number(formData.previousKmReading) < 0)) {
-      newErrors.previousKmReading = 'Must be a valid number';
-    }
     if (formData.litresFilled && (isNaN(Number(formData.litresFilled)) || Number(formData.litresFilled) <= 0)) {
       newErrors.litresFilled = 'Must be a valid positive number';
     }
     if (formData.totalCost && (isNaN(Number(formData.totalCost)) || Number(formData.totalCost) <= 0)) {
       newErrors.totalCost = 'Must be a valid positive number';
+    }
+    if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) {
+      newErrors.kmReading = 'Must be a valid positive number';
+    }
+    if (formData.previousKmReading && isNaN(Number(formData.previousKmReading))) {
+      newErrors.previousKmReading = 'Must be a valid number';
     }
 
     // Validate KM readings
@@ -134,6 +142,11 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     if (formData.isReeferUnit) {
       delete newErrors.kmReading;
       delete newErrors.previousKmReading;
+    }
+
+    // For reefer units, validate horse linkage
+    if (formData.isReeferUnit && formData.linkedHorseId) {
+      // Validation is optional - they can link later
     }
 
     setErrors(newErrors);
@@ -171,13 +184,38 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       currency: formData.currency,
       isReeferUnit: formData.isReeferUnit
     };
-    if (formData.tripId && typeof formData.tripId === 'string' && formData.tripId.trim() !== '') {
+    
+    // Add trip ID for regular diesel or linked horse ID for reefer units
+    if (!formData.isReeferUnit && formData.tripId && typeof formData.tripId === 'string' && formData.tripId.trim() !== '') {
       recordData.tripId = formData.tripId;
+    } else if (formData.isReeferUnit && formData.linkedHorseId && typeof formData.linkedHorseId === 'string' && formData.linkedHorseId.trim() !== '') {
+      recordData.linkedHorseId = formData.linkedHorseId;
     }
 
     try {
       addDieselRecord(recordData);
-      alert(`Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\n${!formData.isReeferUnit ? `KM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}` : 'Reefer Unit'}\nCost: ${formData.currency === 'USD' ? '$' : 'R'}${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`);
+      
+      // Prepare success message
+      let successMessage = `Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\n`;
+      
+      if (formData.isReeferUnit) {
+        successMessage += `Reefer Unit\n`;
+        if (formData.linkedHorseId) {
+          const horseRecord = dieselRecords.find(r => r.id === formData.linkedHorseId);
+          successMessage += `Linked to Horse: ${horseRecord?.fleetNumber || formData.linkedHorseId}\n`;
+        }
+      } else {
+        successMessage += `KM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\n`;
+        if (formData.tripId) {
+          const trip = trips.find(t => t.id === formData.tripId);
+          successMessage += `Linked to Trip: ${trip?.route || formData.tripId}\n`;
+        }
+      }
+      
+      successMessage += `Cost: ${formData.currency === 'USD' ? '$' : 'R'}${totalCost.toFixed(2)}\n`;
+      
+      alert(successMessage);
+      
       // Reset form
       setFormData({
         fleetNumber: '',
@@ -192,7 +230,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
         notes: '',
         tripId: '',
         currency: 'ZAR',
-        isReeferUnit: false
+        isReeferUnit: false,
+        linkedHorseId: ''
       });
       setErrors({});
       onClose();
@@ -219,7 +258,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   const isReeferUnit = ['4F', '5F', '7F', '8F'].includes(formData.fleetNumber);
 
   // Update isReeferUnit when fleet number changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (['4F', '5F', '7F', '8F'].includes(formData.fleetNumber)) {
       setFormData(prev => ({ ...prev, isReeferUnit: true }));
     } else {
@@ -274,6 +313,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <label htmlFor="isReeferUnit" className="flex items-center text-sm font-medium text-gray-700">
+            <Building className="w-4 h-4 mr-2" />
             This is a refrigeration trailer (4F, 5F, 7F, 8F)
           </label>
         </div>
@@ -397,19 +437,40 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.driverName}
           />
 
-          <Select
-            label="Link to Trip (Optional)"
-            value={formData.tripId}
-            onChange={value => handleChange('tripId', value)}
-            options={[
-              { label: 'No trip linkage', value: '' },
-              ...availableTrips.map(trip => ({ 
-                label: `${trip.route} (${trip.startDate} - ${trip.endDate})`, 
-                value: trip.id 
-              }))
-            ]}
-            disabled={!formData.fleetNumber}
-          />
+          {!formData.isReeferUnit ? (
+            <Select
+              label="Link to Trip (Optional)"
+              value={formData.tripId}
+              onChange={value => handleChange('tripId', value)}
+              options={[
+                { label: 'No trip linkage', value: '' },
+                ...availableTrips.map(trip => ({ 
+                  label: `${trip.route} (${formatDate(trip.startDate)} - ${formatDate(trip.endDate)})`, 
+                  value: trip.id 
+                }))
+              ]}
+              disabled={!formData.fleetNumber}
+            />
+          ) : (
+            <Select
+              label="Link to Horse (Optional)"
+              value={formData.linkedHorseId}
+              onChange={value => handleChange('linkedHorseId', value)}
+              options={[
+                { label: 'No horse linkage', value: '' },
+                ...availableHorses.map(horse => {
+                  const tripInfo = horse.tripId ? 
+                    ` - ${trips.find(t => t.id === horse.tripId)?.route || 'Unknown Trip'}` : 
+                    ' - No active trip';
+                  return { 
+                    label: `${horse.fleetNumber} (${horse.driverName})${tripInfo}`, 
+                    value: horse.id 
+                  };
+                })
+              ]}
+              disabled={!formData.fleetNumber}
+            />
+          )}
         </div>
 
         <TextArea
@@ -456,14 +517,30 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
         {/* Trip Linkage Info */}
         {formData.tripId && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="flex items-start space-x-3">
+              <Link className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-blue-800">Trip Cost Allocation</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  This diesel cost will be automatically allocated to the selected trip for accurate profitability tracking.
+                  The cost will appear in the trip's expense breakdown.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Horse Linkage Info */}
+        {formData.isReeferUnit && formData.linkedHorseId && (
           <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
               <Link className="w-5 h-5 text-purple-600 mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-purple-800">Trip Cost Allocation</h4>
+                <h4 className="text-sm font-medium text-purple-800">Horse Linkage</h4>
                 <p className="text-sm text-purple-700 mt-1">
-                  This diesel cost will be automatically allocated to the selected trip for accurate profitability tracking.
-                  The cost will appear in the trip's expense breakdown.
+                  This reefer diesel cost will be linked to the selected horse. If the horse is linked to a trip,
+                  the cost will be automatically allocated to that trip.
                 </p>
               </div>
             </div>
@@ -487,8 +564,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
+        {/* Actions */}
+        <div className="flex justify-end space-x-3 pt-6 border-t">
           <Button
             variant="outline"
             onClick={onClose}

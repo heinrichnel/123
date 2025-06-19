@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, TextArea } from '../ui/FormElements';
@@ -27,7 +27,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
   const record = dieselRecords.find(r => r.id === dieselRecordId);
 
   // Reset form when modal opens with new record
-  React.useEffect(() => {
+  useEffect(() => {
     if (record) {
       setProbeReading(record.probeReading?.toString() || '');
       setVerificationNotes('');
