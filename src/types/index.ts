@@ -182,7 +182,12 @@ export interface DieselConsumptionRecord {
   probeReading?: number;
   probeDiscrepancy?: number;
   probeVerified?: boolean;
+  probeVerifiedAt?: string;
+  probeVerifiedBy?: string;
+  probeVerificationNotes?: string;
   updatedAt?: string;
+  isReeferUnit?: boolean;
+  linkedHorseId?: string; // ID of the horse diesel record this reefer is linked to
 }
 
 // System Cost Configuration Types
@@ -702,7 +707,8 @@ export const COST_CATEGORIES: Record<string, string[]> = {
     "AdBlue",
     "Fuel Card Charges",
     "Fuel Discrepancy",
-    "Emergency Fuel"
+    "Emergency Fuel",
+    "Reefer Diesel"
   ],
   "Maintenance": [
     "Scheduled Service",
