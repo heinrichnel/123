@@ -41,7 +41,6 @@ export const eventTypeMap: Record<string, string> = {
   "de_acceleration": "de_acceleration",
   "acceleration": "acceleration",
   "button_pressed": "button_pressed",
-  "smoking": "smoking",
   "tamper": "tamper",
   "accident": "accident"
 };
@@ -64,26 +63,46 @@ export const eventRules: Record<string, { severity: string; points: number }> = 
   "de_acceleration": { severity: "medium", points: 3 },
   "acceleration": { severity: "medium", points: 3 },
   "button_pressed": { severity: "low", points: 1 },
-  "smoking": { severity: "medium", points: 4 },
   "tamper": { severity: "high", points: 8 },
   "accident": { severity: "critical", points: 50 }
 };
 
-export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off"];
+export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking"];
 
 // -------------------- Utility Functions --------------------
 export function splitDateTime(dateTimeStr: string): { date: string, time: string } {
   if (!dateTimeStr) return { date: "", time: "" };
   
   try {
+    // Handle different date formats
+    // Format: DD/MM/YY HH:mm:SS
+    if (dateTimeStr.includes('/')) {
+      const [datePart, timePart] = dateTimeStr.split(' ');
+      if (!datePart || !timePart) return { date: "", time: "" };
+      
+      const [day, month, year] = datePart.split('/');
+      // Convert to YYYY-MM-DD format
+      const formattedDate = `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const formattedTime = timePart.substring(0, 5); // Extract HH:mm
+      
+      return {
+        date: formattedDate,
+        time: formattedTime
+      };
+    }
+    
+    // Format: YYYY-MM-DD HH:mm:SS or other formats with dash
     const [date, time] = dateTimeStr.split(' ');
     return {
-      date: date ? date.replace(/-/g, '/') : "",
+      date: date || new Date().toISOString().split('T')[0],
       time: time ? time.substring(0, 5) : ""
     };
   } catch (error) {
     console.error("Error splitting date time:", error);
-    return { date: "", time: "" };
+    return { 
+      date: new Date().toISOString().split('T')[0], 
+      time: new Date().toTimeString().split(' ')[0].substring(0, 5) 
+    };
   }
 }
 
@@ -107,7 +126,7 @@ export async function fetchAndSaveDriverEventToFirestore() {
     const rawEventType = (data.eventType || data["Event Type"] || "").toString().trim().toLowerCase();
     if (IGNORED_EVENTS.includes(rawEventType)) {
       console.log("Ignored event type:", rawEventType);
-      return;
+      return null;
     }
 
     // --- Event Type Mapping ---
@@ -145,7 +164,7 @@ export async function fetchAndSaveDriverEventToFirestore() {
       severity: rules.severity as any,
       reportedBy: "Google Sheets Integration",
       reportedAt: new Date().toISOString(),
-      status: "pending",
+      status: "pending" as any,
       actionTaken: "",
       points: rules.points,
       serialNumber,
@@ -161,7 +180,7 @@ export async function fetchAndSaveDriverEventToFirestore() {
     return driverEvent;
   } catch (error) {
     console.error("Error fetching and saving driver event:", error);
-    throw error;
+    return null;
   }
 }
 

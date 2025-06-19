@@ -53,7 +53,6 @@ const eventTypeMap: Record<string, string> = {
   "de_acceleration": "de_acceleration",
   "acceleration": "acceleration",
   "button_pressed": "button_pressed",
-  "smoking": "smoking",
   "tamper": "tamper",
   "accident": "accident"
 };
@@ -76,7 +75,6 @@ const eventRules: Record<string, { severity: string; points: number }> = {
   "de_acceleration": { severity: "medium", points: 3 },
   "acceleration": { severity: "medium", points: 3 },
   "button_pressed": { severity: "low", points: 1 },
-  "smoking": { severity: "medium", points: 4 },
   "tamper": { severity: "high", points: 8 },
   "accident": { severity: "critical", points: 50 }
 };
@@ -88,14 +86,35 @@ function splitDateTime(dateTimeStr: string): { date: string, time: string } {
   if (!dateTimeStr) return { date: "", time: "" };
   
   try {
+    // Handle different date formats
+    // Format: DD/MM/YY HH:mm:SS
+    if (dateTimeStr.includes('/')) {
+      const [datePart, timePart] = dateTimeStr.split(' ');
+      if (!datePart || !timePart) return { date: "", time: "" };
+      
+      const [day, month, year] = datePart.split('/');
+      // Convert to YYYY-MM-DD format
+      const formattedDate = `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const formattedTime = timePart.substring(0, 5); // Extract HH:mm
+      
+      return {
+        date: formattedDate,
+        time: formattedTime
+      };
+    }
+    
+    // Format: YYYY-MM-DD HH:mm:SS or other formats with dash
     const [date, time] = dateTimeStr.split(' ');
     return {
-      date: date ? date.replace(/-/g, '/') : "",
+      date: date || new Date().toISOString().split('T')[0],
       time: time ? time.substring(0, 5) : ""
     };
   } catch (error) {
     console.error("Error splitting date time:", error);
-    return { date: "", time: "" };
+    return { 
+      date: new Date().toISOString().split('T')[0], 
+      time: new Date().toTimeString().split(' ')[0].substring(0, 5) 
+    };
   }
 }
 

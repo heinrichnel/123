@@ -72,7 +72,7 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
       setFormData({
         driverName: event.driverName,
         fleetNumber: event.fleetNumber,
-        eventDate: event.eventDate || event.date.split('T')[0],
+        eventDate: event.eventDate || event.date?.split('T')[0] || new Date().toISOString().split('T')[0],
         eventTime: event.eventTime || '00:00',
         eventType: event.eventType,
         description: event.description,
