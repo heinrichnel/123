@@ -50,7 +50,6 @@ const ActionLog: React.FC = () => {
     responsiblePerson: '',
     overdue: false
   });
-  const [isDeleting, setIsDeleting] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -155,7 +154,7 @@ const ActionLog: React.FC = () => {
   };
   
   // Handle form submission
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!validateForm()) return;
 
     const today = new Date().toISOString().split('T')[0];
@@ -170,19 +169,14 @@ const ActionLog: React.FC = () => {
       attachments: []
     };
     
-    try {
-      // Add action item
-      const newId = await addActionItem(actionItemData);
-      
-      // Reset form and close modal
-      resetForm();
-      setShowAddModal(false);
-      
-      alert(`Action item created successfully!\n\nTitle: ${actionItemData.title}\nResponsible: ${actionItemData.responsiblePerson}\nDue Date: ${formatDate(actionItemData.dueDate)}`);
-    } catch (error) {
-      console.error("Error adding action item:", error);
-      alert(`Error creating action item: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    // Add action item
+    const newId = addActionItem(actionItemData);
+    
+    // Reset form and close modal
+    resetForm();
+    setShowAddModal(false);
+    
+    alert(`Action item created successfully!\n\nTitle: ${actionItemData.title}\nResponsible: ${actionItemData.responsiblePerson}\nDue Date: ${formatDate(actionItemData.dueDate)}`);
   };
   
   // Reset form
@@ -199,27 +193,22 @@ const ActionLog: React.FC = () => {
   };
   
   // Handle adding overdue reason
-  const handleAddOverdueReason = async (item: ActionItem, reason: string) => {
+  const handleAddOverdueReason = (item: ActionItem, reason: string) => {
     if (!reason.trim()) {
       alert('Please provide a reason for the overdue action item');
       return;
     }
     
-    try {
-      await updateActionItem({
-        ...item,
-        overdueReason: reason
-      });
-      
-      alert('Overdue reason added successfully');
-    } catch (error) {
-      console.error("Error adding overdue reason:", error);
-      alert(`Error adding overdue reason: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    updateActionItem({
+      ...item,
+      overdueReason: reason
+    });
+    
+    alert('Overdue reason added successfully');
   };
   
   // Handle status change
-  const handleStatusChange = async (item: ActionItem, newStatus: 'initiated' | 'in_progress' | 'completed') => {
+  const handleStatusChange = (item: ActionItem, newStatus: 'initiated' | 'in_progress' | 'completed') => {
     const updates: Partial<ActionItem> = {
       status: newStatus
     };
@@ -230,30 +219,17 @@ const ActionLog: React.FC = () => {
       updates.completedBy = 'Current User'; // In a real app, use the logged-in user
     }
     
-    try {
-      await updateActionItem({
-        ...item,
-        ...updates
-      });
-    } catch (error) {
-      console.error("Error updating action item status:", error);
-      alert(`Error updating status: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+    updateActionItem({
+      ...item,
+      ...updates
+    });
   };
   
   // Handle delete action item
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this action item? This action cannot be undone.')) {
-      try {
-        setIsDeleting(true);
-        await deleteActionItem(id);
-        alert('Action item deleted successfully');
-      } catch (error) {
-        console.error("Error deleting action item:", error);
-        alert(`Error deleting action item: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      } finally {
-        setIsDeleting(false);
-      }
+      deleteActionItem(id);
+      alert('Action item deleted successfully');
     }
   };
   
@@ -599,8 +575,7 @@ const ActionLog: React.FC = () => {
                         variant="danger"
                         onClick={() => handleDelete(item.id)}
                         icon={<Trash2 className="w-3 h-3" />}
-                        disabled={isDeleting || connectionStatus !== 'connected'}
-                        isLoading={isDeleting}
+                        disabled={connectionStatus !== 'connected'}
                       >
                         Delete
                       </Button>

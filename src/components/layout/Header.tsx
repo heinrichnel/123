@@ -9,7 +9,6 @@ import {
   CheckCircle,
   ClipboardList,
   Clock,
-  Database,
   DollarSign,
   FileText,
   Flag,
@@ -57,8 +56,7 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) =
     { id: 'missed-loads', label: 'Missed Loads', icon: TrendingDown },
     { id: 'diesel-dashboard', label: 'Diesel Dashboard', icon: Fuel },
     { id: 'driver-behavior', label: 'Driver Behavior', icon: Shield },
-    { id: 'action-log', label: 'Action Log', icon: ClipboardList },
-    { id: 'admin', label: 'Admin', icon: Database }
+    { id: 'action-log', label: 'Action Log', icon: ClipboardList }
   ];
 
   return (

@@ -6,13 +6,13 @@ import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
 // ✅ Use environment variables from .env
 export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDYnxLmGgGEe1vCkQXdWZAKoDeGmG1KLvM",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "trip-profit-loss.firebaseapp.com",
   databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "trip-profit-loss",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "trip-profit-loss.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1045340587640",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1045340587640:web:a9e5c5b1c5c5c5b1c5c5c5",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
   databaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID,
 };

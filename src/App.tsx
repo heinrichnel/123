@@ -177,8 +177,6 @@ const AppContent: React.FC = () => {
         return <DriverBehaviorPage />;
       case "action-log":
         return <ActionLog />;
-      case "admin":
-        return <div className="p-8 text-center text-gray-500">Admin panel coming soon...</div>;
       default:
         return <YearToDateKPIs trips={trips} />;
     }

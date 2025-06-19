@@ -34,7 +34,6 @@ export const missedLoadsCollection = collection(db, "missedLoads");
 export const driverBehaviorCollection = collection(db, "driverBehavior");
 export const actionItemsCollection = collection(db, "actionItems");
 export const carReportsCollection = collection(db, "carReports");
-export const systemCostRatesCollection = collection(db, "systemCostRates");
 
 // 🌐 Network Controls
 export { enableNetwork, disableNetwork };
@@ -65,7 +64,6 @@ export const listenToMissedLoads = makeListener;
 export const listenToDriverBehaviorEvents = makeListener;
 export const listenToActionItems = makeListener;
 export const listenToCARReports = makeListener;
-export const listenToSystemCostRates = makeListener;
 
 // 📁 CRUD helpers
 function createDoc<T>(ref: ReturnType<typeof collection>, data: T) {
@@ -78,10 +76,6 @@ function updateDocById<T>(ref: ReturnType<typeof collection>, id: string, data: 
 
 function deleteDocById(ref: ReturnType<typeof collection>, id: string) {
   return deleteDoc(doc(ref, id));
-}
-
-function setDocById<T>(ref: ReturnType<typeof collection>, id: string, data: T) {
-  return setDoc(doc(ref, id), data);
 }
 
 // 🚛 Trips
@@ -127,12 +121,6 @@ export const updateActionItemInFirebase = (id: string, data: object) =>
 export const deleteActionItemFromFirebase = (id: string) =>
   deleteDocById(actionItemsCollection, id);
 
-// 💰 System Cost Rates
-export const addSystemCostRatesToFirebase = (id: string, data: object) => 
-  setDocById(systemCostRatesCollection, id, data);
-export const updateSystemCostRatesInFirebase = (id: string, data: object) =>
-  updateDocById(systemCostRatesCollection, id, data);
-
 // 🔌 Monitor connectivity
 export const monitorConnectionStatus = (
   onOnline: () => void,
@@ -141,4 +129,10 @@ export const monitorConnectionStatus = (
   enableNetwork(db)
     .then(onOnline)
     .catch(onOffline);
+};
+
+// Google Sheets Integration
+export const listenToGoogleSheetChanges = () => {
+  // This would be implemented in a Firebase Cloud Function
+  console.log("Setting up Google Sheets integration listener");
 };
