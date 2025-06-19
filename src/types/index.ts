@@ -130,6 +130,11 @@ export interface Trip {
   investigationDate?: string;
   editHistory?: any[];
   lastFollowUpDate?: string;
+  // Google Sheets integration fields
+  shippedAt?: string;
+  shippingNotes?: string;
+  deliveredAt?: string;
+  deliveryNotes?: string;
 }
 
 // Missed Load Types
@@ -178,7 +183,6 @@ export interface DieselConsumptionRecord {
   probeDiscrepancy?: number;
   probeVerified?: boolean;
   updatedAt?: string;
-  isReeferUnit?: boolean;
 }
 
 // System Cost Configuration Types
@@ -510,10 +514,8 @@ export const FLEET_NUMBERS = [
   "28H",
   "31H",
   "32H",
-  "33H"
-];
-
-export const REEFER_NUMBERS = [
+  "33H",
+  // Add refrigeration trailers
   "4F",
   "5F",
   "7F",

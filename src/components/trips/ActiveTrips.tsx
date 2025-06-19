@@ -8,9 +8,10 @@ import { Trip, CLIENTS, DRIVERS, FLEET_NUMBERS } from '../../types';
 import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Edit, Trash2, Eye, AlertTriangle, Upload, Filter, Calendar, CheckSquare, Square, CheckCheck } from 'lucide-react';
+import { Edit, Trash2, Eye, AlertTriangle, Upload, Filter, Calendar, CheckSquare, Square, CheckCheck, Truck, CheckCircle } from 'lucide-react';
 import { formatCurrency, calculateTotalCosts, getFlaggedCostsCount, formatDateForHeader, sortTripsByLoadingDate } from '../../utils/helpers';
 import LoadImportModal from './LoadImportModal';
+import TripStatusUpdateModal from './TripStatusUpdateModal';
 import { useAppContext } from '../../context/AppContext';
 
 
@@ -23,7 +24,7 @@ interface ActiveTripsProps {
 }
 
 const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onView, onCompleteTrip }) => {
-  const { bulkDeleteTrips } = useAppContext();
+  const { bulkDeleteTrips, updateTripStatus } = useAppContext();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [filterFleet, setFilterFleet] = useState<string>('');
   const [filterDriver, setFilterDriver] = useState<string>('');
@@ -31,7 +32,8 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
   const [selectMode, setSelectMode] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [statusUpdateTrip, setStatusUpdateTrip] = useState<Trip | null>(null);
+  const [statusUpdateType, setStatusUpdateType] = useState<'shipped' | 'delivered'>('shipped');
 
   const openImportModal = () => setIsImportModalOpen(true);
   const closeImportModal = () => setIsImportModalOpen(false);
@@ -48,25 +50,23 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
   };
 
   // Bulk delete handler
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedTripIds.length === 0) {
       alert('No trips selected for deletion');
       return;
     }
 
     if (confirm(`Delete ${selectedTripIds.length} selected trips? This cannot be undone.`)) {
-      try {
-        setIsDeleting(true);
-        await bulkDeleteTrips(selectedTripIds);
-        alert(`Successfully deleted ${selectedTripIds.length} trips`);
-        setSelectedTripIds([]);
-        setSelectMode(false);
-      } catch (error) {
-        console.error('Error deleting trips:', error);
-        alert(`Error deleting trips: ${error.message}`);
-      } finally {
-        setIsDeleting(false);
-      }
+      bulkDeleteTrips(selectedTripIds)
+        .then(() => {
+          alert(`Successfully deleted ${selectedTripIds.length} trips`);
+          setSelectedTripIds([]);
+          setSelectMode(false);
+        })
+        .catch(error => {
+          console.error('Error deleting trips:', error);
+          alert(`Error deleting trips: ${error.message}`);
+        });
     }
   };
 
@@ -85,6 +85,17 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
       setSelectedTripIds([]);
     } else {
       setSelectedTripIds(filteredTrips.map(trip => trip.id));
+    }
+  };
+
+  // Handle trip status update
+  const handleUpdateTripStatus = async (tripId: string, status: 'shipped' | 'delivered', notes: string) => {
+    try {
+      await updateTripStatus(tripId, status, notes);
+      setStatusUpdateTrip(null);
+    } catch (error) {
+      console.error(`Error updating trip status to ${status}:`, error);
+      throw error;
     }
   };
 
@@ -140,8 +151,6 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
               variant="danger" 
               onClick={handleBulkDelete}
               icon={<Trash2 className="w-4 h-4" />}
-              isLoading={isDeleting}
-              disabled={isDeleting}
             >
               Delete Selected ({selectedTripIds.length})
             </Button>
@@ -239,8 +248,6 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
               variant="danger" 
               onClick={handleBulkDelete}
               icon={<Trash2 className="w-4 h-4" />}
-              isLoading={isDeleting}
-              disabled={isDeleting}
             >
               Delete Selected
             </Button>
@@ -329,11 +336,47 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
                               <span className="text-sm font-medium">{flaggedCount} flagged</span>
                             </div>
                           )}
+                          {trip.shippedAt && (
+                            <div className="flex items-center space-x-1 text-blue-600">
+                              <Truck className="w-4 h-4" />
+                              <span className="text-sm font-medium">Shipped</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex space-x-2">
                           <Button size="sm" variant="outline" onClick={() => onView(trip)} icon={<Eye className="w-3 h-3" />}>View</Button>
                           <Button size="sm" variant="outline" onClick={() => handleEdit(trip)} icon={<Edit className="w-3 h-3" />}>Edit</Button>
                           <Button size="sm" variant="outline" onClick={() => handleDelete(trip.id)} icon={<Trash2 className="w-3 h-3" />}>Delete</Button>
+                          
+                          {/* Status update buttons */}
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setStatusUpdateTrip(trip);
+                                setStatusUpdateType('shipped');
+                              }}
+                              icon={<Truck className="w-3 h-3" />}
+                              disabled={!!trip.shippedAt}
+                            >
+                              Ship
+                            </Button>
+                            
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setStatusUpdateTrip(trip);
+                                setStatusUpdateType('delivered');
+                              }}
+                              icon={<CheckCircle className="w-3 h-3" />}
+                              disabled={!trip.shippedAt}
+                            >
+                              Deliver
+                            </Button>
+                          </div>
+                          
                           <Button
                             size="sm"
                             variant="success"
@@ -360,6 +403,17 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
       </div>
 
       <LoadImportModal isOpen={isImportModalOpen} onClose={closeImportModal} />
+      
+      {/* Status Update Modal */}
+      {statusUpdateTrip && (
+        <TripStatusUpdateModal
+          isOpen={!!statusUpdateTrip}
+          onClose={() => setStatusUpdateTrip(null)}
+          trip={statusUpdateTrip}
+          status={statusUpdateType}
+          onUpdateStatus={handleUpdateTripStatus}
+        />
+      )}
     </div>
   );
 };
