@@ -216,6 +216,13 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
       // Update local state with all new costs
       setCostEntries(prev => [...prev, ...newCosts]);
       
+      // Update the trip in the database to ensure system costs are saved
+      const updatedTrip = {
+        ...trip,
+        costs: [...trip.costs, ...newCosts]
+      };
+      await updateTrip(updatedTrip);
+      
       setShowSystemCostGenerator(false);
       
       // Show detailed success message
