@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, TextArea } from '../ui/FormElements';
+import { TextArea } from '../ui/FormElements';
 import { Trip } from '../../types';
 import { formatDate } from '../../utils/helpers';
 import { Truck, Calendar, MapPin, User, Send, X, Clock, CheckCircle } from 'lucide-react';
