@@ -60,6 +60,7 @@ interface WeeklyMetrics {
   cpk: number;
   tripCount: number;
   profitMargin: number;
+  currency: 'ZAR' | 'USD';
 }
 
 interface YearToDateKPIsProps {
@@ -129,7 +130,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
 
-      const weekKey = `${monday.getFullYear()}-W${getWeekNumber(monday)}`;
+      const weekKey = `${monday.getFullYear()}-W${getWeekNumber(monday)}-${trip.revenueCurrency}`;
 
       if (!weeklyData[weekKey]) {
         weeklyData[weekKey] = {
@@ -143,7 +144,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
           ipk: 0,
           cpk: 0,
           tripCount: 0,
-          profitMargin: 0
+          profitMargin: 0,
+          currency: trip.revenueCurrency
         };
       }
 
@@ -270,9 +272,9 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
     csvContent += `Generated on,${new Date().toLocaleDateString()}\n`;
     csvContent += "Based on completed trips using offloading dates\n\n";
 
-    csvContent += "Week Number,Week Start,Week End,Trip Count,Total Revenue,Total Costs,Gross Profit,Profit Margin %,Total KM,IPK,CPK\n";
+    csvContent += "Week Number,Week Start,Week End,Trip Count,Total Revenue,Currency,Total Costs,Gross Profit,Profit Margin %,Total KM,IPK,CPK\n";
     weeklyMetrics.forEach(week => {
-      csvContent += `${week.weekNumber},"${week.weekStart}","${week.weekEnd}",${week.tripCount},${week.totalRevenue.toFixed(2)},${week.totalCosts.toFixed(2)},${week.grossProfit.toFixed(2)},${week.profitMargin.toFixed(2)},${week.totalKilometers},${week.ipk.toFixed(3)},${week.cpk.toFixed(3)}\n`;
+      csvContent += `${week.weekNumber},"${week.weekStart}","${week.weekEnd}",${week.tripCount},${week.totalRevenue.toFixed(2)},${week.currency},${week.totalCosts.toFixed(2)},${week.grossProfit.toFixed(2)},${week.profitMargin.toFixed(2)},${week.totalKilometers},${week.ipk.toFixed(3)},${week.cpk.toFixed(3)}\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
@@ -555,6 +557,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                     <th className="text-left py-3 text-sm font-medium text-gray-500">Period</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Trips</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Revenue</th>
+                    <th className="text-center py-3 text-sm font-medium text-gray-500">Currency</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Costs</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Gross Profit</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Margin %</th>
@@ -564,18 +567,19 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {weeklyMetrics.slice(0, 12).map((week, index) => (
-                    <tr key={`${week.weekStart}-${week.weekNumber}`} className="border-b border-gray-100 hover:bg-gray-50">
+                  {weeklyMetrics.slice(0, 6).map((week, index) => (
+                    <tr key={`${week.weekStart}-${week.weekNumber}-${week.currency}`} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 text-sm font-medium text-gray-900">Week {week.weekNumber}</td>
                       <td className="py-3 text-sm text-gray-900">{new Date(week.weekStart).toLocaleDateString()} - {new Date(week.weekEnd).toLocaleDateString()}</td>
                       <td className="py-3 text-sm text-gray-900 text-right">{week.tripCount}</td>
-                      <td className="py-3 text-sm font-medium text-green-600 text-right">{formatCurrency(week.totalRevenue, 'ZAR')}</td>
-                      <td className="py-3 text-sm font-medium text-red-600 text-right">{formatCurrency(week.totalCosts, 'ZAR')}</td>
-                      <td className={`py-3 text-sm font-medium text-right ${week.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(week.grossProfit, 'ZAR')}</td>
+                      <td className="py-3 text-sm font-medium text-green-600 text-right">{formatCurrency(week.totalRevenue, week.currency)}</td>
+                      <td className="py-3 text-sm text-gray-900 text-center">{week.currency}</td>
+                      <td className="py-3 text-sm font-medium text-red-600 text-right">{formatCurrency(week.totalCosts, week.currency)}</td>
+                      <td className={`py-3 text-sm font-medium text-right ${week.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(week.grossProfit, week.currency)}</td>
                       <td className={`py-3 text-sm font-medium text-right ${week.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>{week.profitMargin.toFixed(1)}%</td>
                       <td className="py-3 text-sm text-gray-900 text-right">{week.totalKilometers.toLocaleString()}</td>
-                      <td className="py-3 text-sm text-gray-900 text-right">{formatCurrency(week.ipk, 'ZAR')}</td>
-                      <td className="py-3 text-sm text-gray-900 text-right">{formatCurrency(week.cpk, 'ZAR')}</td>
+                      <td className="py-3 text-sm text-gray-900 text-right">{formatCurrency(week.ipk, week.currency)}</td>
+                      <td className="py-3 text-sm text-gray-900 text-right">{formatCurrency(week.cpk, week.currency)}</td>
                     </tr>
                   ))}
                 </tbody>

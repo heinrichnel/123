@@ -21,12 +21,13 @@ import {
 } from 'lucide-react';
 import { MissedLoad, MISSED_LOAD_REASONS, CLIENTS } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/helpers';
+import { useAppContext } from '../../context/AppContext';
 
 interface MissedLoadsTrackerProps {
   missedLoads: MissedLoad[];
-  onAddMissedLoad: (missedLoad: Omit<MissedLoad, 'id'>) => void;
-  onUpdateMissedLoad: (missedLoad: MissedLoad) => void;
-  onDeleteMissedLoad?: (id: string) => void;
+  onAddMissedLoad: (missedLoad: Omit<MissedLoad, 'id'>) => Promise<string>;
+  onUpdateMissedLoad: (missedLoad: MissedLoad) => Promise<void>;
+  onDeleteMissedLoad?: (id: string) => Promise<void>;
 }
 
 const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
@@ -35,10 +36,12 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
   onUpdateMissedLoad,
   onDeleteMissedLoad
 }) => {
+  const { connectionStatus } = useAppContext();
   const [showModal, setShowModal] = useState(false);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   const [editingLoad, setEditingLoad] = useState<MissedLoad | null>(null);
   const [resolvingLoad, setResolvingLoad] = useState<MissedLoad | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
     loadRequestDate: new Date().toISOString().split('T')[0],
@@ -116,56 +119,68 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
-    const missedLoadData: Omit<MissedLoad, 'id'> = {
-      customerName: String(formData.customerName ?? '').trim(),
-      loadRequestDate: formData.loadRequestDate,
-      requestedPickupDate: formData.requestedPickupDate,
-      requestedDeliveryDate: formData.requestedDeliveryDate,
-      route: String(formData.route ?? '').trim(),
-      estimatedRevenue: Number(formData.estimatedRevenue),
-      currency: formData.currency,
-      reason: formData.reason as any,
-      reasonDescription: String(formData.reasonDescription ?? '').trim() || undefined,
-      resolutionStatus: formData.resolutionStatus,
-      followUpRequired: formData.followUpRequired,
-      competitorWon: formData.competitorWon,
-      recordedBy: 'Current User',
-      recordedAt: new Date().toISOString(),
-      impact: formData.impact
-    };
-    if (editingLoad) {
-      onUpdateMissedLoad({ ...missedLoadData, id: editingLoad.id });
-      alert('Missed load updated successfully!');
-    } else {
-      onAddMissedLoad(missedLoadData);
-      alert('Missed load recorded successfully!');
+    try {
+      const missedLoadData: Omit<MissedLoad, 'id'> = {
+        customerName: String(formData.customerName ?? '').trim(),
+        loadRequestDate: formData.loadRequestDate,
+        requestedPickupDate: formData.requestedPickupDate,
+        requestedDeliveryDate: formData.requestedDeliveryDate,
+        route: String(formData.route ?? '').trim(),
+        estimatedRevenue: Number(formData.estimatedRevenue),
+        currency: formData.currency,
+        reason: formData.reason as any,
+        reasonDescription: String(formData.reasonDescription ?? '').trim() || undefined,
+        resolutionStatus: formData.resolutionStatus,
+        followUpRequired: formData.followUpRequired,
+        competitorWon: formData.competitorWon,
+        recordedBy: 'Current User',
+        recordedAt: new Date().toISOString(),
+        impact: formData.impact
+      };
+      
+      if (editingLoad) {
+        await onUpdateMissedLoad({ ...missedLoadData, id: editingLoad.id });
+        alert('Missed load updated successfully!');
+      } else {
+        await onAddMissedLoad(missedLoadData);
+        alert('Missed load recorded successfully!');
+      }
+      handleClose();
+    } catch (error) {
+      console.error("Error saving missed load:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
     }
-    handleClose();
   };
 
-  const handleResolutionSubmit = () => {
+  const handleResolutionSubmit = async () => {
     if (!validateResolutionForm() || !resolvingLoad) return;
-    const updatedLoad: MissedLoad = {
-      ...resolvingLoad,
-      resolutionStatus: 'resolved',
-      resolutionNotes: String(resolutionData.resolutionNotes ?? '').trim(),
-      resolvedAt: new Date().toISOString(),
-      resolvedBy: 'Current User',
-      compensationOffered: resolutionData.compensationOffered ? Number(resolutionData.compensationOffered) : undefined,
-      compensationNotes: String(resolutionData.compensationNotes ?? '').trim() || undefined
-    };
-    onUpdateMissedLoad(updatedLoad);
-    alert(`Missed load resolved successfully!\n\nResolution: ${resolutionData.resolutionNotes}\n${resolutionData.compensationOffered ? `Compensation offered: ${formatCurrency(Number(resolutionData.compensationOffered), resolvingLoad.currency)}` : ''}`);
-    setShowResolutionModal(false);
-    setResolvingLoad(null);
-    setResolutionData({
-      resolutionNotes: '',
-      compensationOffered: '',
-      compensationNotes: ''
-    });
-    setErrors({});
+    try {
+      const updatedLoad: MissedLoad = {
+        ...resolvingLoad,
+        resolutionStatus: 'resolved',
+        resolutionNotes: String(resolutionData.resolutionNotes ?? '').trim(),
+        resolvedAt: new Date().toISOString(),
+        resolvedBy: 'Current User',
+        compensationOffered: resolutionData.compensationOffered ? Number(resolutionData.compensationOffered) : undefined,
+        compensationNotes: String(resolutionData.compensationNotes ?? '').trim() || undefined
+      };
+      
+      await onUpdateMissedLoad(updatedLoad);
+      alert(`Missed load resolved successfully!\n\nResolution: ${resolutionData.resolutionNotes}\n${resolutionData.compensationOffered ? `Compensation offered: ${formatCurrency(Number(resolutionData.compensationOffered), resolvingLoad.currency)}` : ''}`);
+      setShowResolutionModal(false);
+      setResolvingLoad(null);
+      setResolutionData({
+        resolutionNotes: '',
+        compensationOffered: '',
+        compensationNotes: ''
+      });
+      setErrors({});
+    } catch (error) {
+      console.error("Error resolving missed load:", error);
+      alert(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
+    }
   };
 
   const handleEdit = (load: MissedLoad) => {
@@ -198,7 +213,9 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
     setShowResolutionModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!onDeleteMissedLoad) return;
+    
     const load = missedLoads.find(l => l.id === id);
     if (!load) return;
 
@@ -209,7 +226,16 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
       `This action cannot be undone.`;
 
     if (confirm(confirmMessage)) {
-      onDeleteMissedLoad?.(id);
+      try {
+        setIsDeleting(true);
+        await onDeleteMissedLoad(id);
+        alert('Missed load deleted successfully');
+      } catch (error) {
+        console.error("Error deleting missed load:", error);
+        alert(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -284,6 +310,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
         <Button
           onClick={handleNewMissedLoad}
           icon={<Plus className="w-4 h-4" />}
+          disabled={connectionStatus !== 'connected'}
         >
           Record Missed Load
         </Button>
@@ -474,6 +501,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                             size="sm"
                             onClick={() => handleResolve(load)}
                             icon={<FileText className="w-3 h-3" />}
+                            disabled={connectionStatus !== 'connected'}
                           >
                             Resolve
                           </Button>
@@ -483,6 +511,7 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                           variant="outline"
                           onClick={() => handleEdit(load)}
                           icon={<Edit className="w-3 h-3" />}
+                          disabled={connectionStatus !== 'connected'}
                         >
                           Edit
                         </Button>
@@ -491,6 +520,8 @@ const MissedLoadsTracker: React.FC<MissedLoadsTrackerProps> = ({
                           variant="danger"
                           onClick={() => handleDelete(load.id)}
                           icon={<Trash2 className="w-3 h-3" />}
+                          disabled={isDeleting || connectionStatus !== 'connected'}
+                          isLoading={isDeleting}
                         >
                           Delete
                         </Button>

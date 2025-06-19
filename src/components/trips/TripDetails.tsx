@@ -1,5 +1,5 @@
 // ─── React & State ───────────────────────────────────────────────
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────
 import { Trip, CostEntry, AdditionalCost } from '../../types';
@@ -87,17 +87,43 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   const [showInvoiceSubmission, setShowInvoiceSubmission] = useState(false);
   const [showTripPlanning, setShowTripPlanning] = useState(false);
   const [editingCost, setEditingCost] = useState<CostEntry | undefined>();
+  const [costEntries, setCostEntries] = useState<CostEntry[]>([]);
 
   // Ensure trip has costs array
   if (!trip.costs) {
     trip.costs = [];
   }
 
+  // Update local cost entries when trip changes
+  useEffect(() => {
+    setCostEntries(trip.costs || []);
+  }, [trip]);
+
   // Enhanced handleAddCost with file support
   const handleAddCost = async (costData: Omit<CostEntry, "id" | "attachments">, files?: FileList) => {
     try {
       const costId = await addCostEntry(trip.id, costData, files);
       setShowCostForm(false);
+      
+      // Add the new cost to local state immediately
+      const newCost: CostEntry = {
+        ...costData,
+        id: costId,
+        attachments: files ? Array.from(files).map((file, index) => ({
+          id: `A${Date.now()}-${index}`,
+          costEntryId: costId,
+          filename: file.name,
+          fileUrl: URL.createObjectURL(file),
+          fileType: file.type,
+          fileSize: file.size,
+          uploadedAt: new Date().toISOString(),
+          fileData: ""
+        })) : [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      setCostEntries(prev => [...prev, newCost]);
       
       // Show success message with cost details
       alert(`Cost entry added successfully!\n\nCategory: ${costData.category}\nAmount: ${formatCurrency(costData.amount, costData.currency)}\nReference: ${costData.referenceNumber}`);
@@ -130,6 +156,12 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
         };
 
         await updateCostEntry(updatedCost);
+        
+        // Update local state immediately
+        setCostEntries(prev => prev.map(cost => 
+          cost.id === updatedCost.id ? updatedCost : cost
+        ));
+        
         setEditingCost(undefined);
         setShowCostForm(false);
         
@@ -150,6 +182,10 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
     if (confirm('Are you sure you want to delete this cost entry? This action cannot be undone.')) {
       try {
         await deleteCostEntry(id);
+        
+        // Update local state immediately
+        setCostEntries(prev => prev.filter(cost => cost.id !== id));
+        
         alert('Cost entry deleted successfully!');
       } catch (error) {
         console.error('Error deleting cost entry:', error);
@@ -160,10 +196,26 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
 
   const handleGenerateSystemCosts = async (systemCosts: Omit<CostEntry, 'id' | 'attachments'>[]) => {
     try {
+      const newCosts: CostEntry[] = [];
+      
       // Add each system cost entry individually
       for (const costData of systemCosts) {
-        await addCostEntry(trip.id, costData);
+        const costId = await addCostEntry(trip.id, costData);
+        
+        // Create a complete cost entry for local state
+        const newCost: CostEntry = {
+          ...costData,
+          id: costId,
+          attachments: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        newCosts.push(newCost);
       }
+      
+      // Update local state with all new costs
+      setCostEntries(prev => [...prev, ...newCosts]);
       
       setShowSystemCostGenerator(false);
       
@@ -176,7 +228,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   };
 
   const handleCompleteTrip = () => {
-    const unresolvedFlags = getUnresolvedFlagsCount(trip.costs);
+    const unresolvedFlags = getUnresolvedFlagsCount(costEntries);
     
     if (unresolvedFlags > 0) {
       alert(`Cannot complete trip: ${unresolvedFlags} unresolved flagged items must be resolved before completing the trip.\n\nPlease go to the Flags & Investigations section to resolve all outstanding issues.`);
@@ -192,12 +244,15 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
 
     if (confirm(confirmMessage)) {
       try {
-        updateTrip({
+        const updatedTrip = {
           ...trip,
-          status: 'completed',
+          costs: costEntries,
+          status: 'completed' as const,
           completedAt: new Date().toISOString(),
           completedBy: 'Current User' // In a real app, this would be the logged-in user
-        });
+        };
+        
+        updateTrip(updatedTrip);
         
         alert('Trip has been successfully completed and is now ready for invoicing.');
         onBack();
@@ -249,6 +304,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
 
       const updatedTrip: Trip = {
         ...trip,
+        costs: costEntries,
         status: 'invoiced',
         invoiceNumber: invoiceData.invoiceNumber,
         invoiceDate: invoiceData.invoiceDate,
@@ -303,14 +359,14 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   };
 
   const kpis = calculateKPIs(trip);
-  const flaggedCount = getFlaggedCostsCount(trip.costs);
-  const unresolvedFlags = getUnresolvedFlagsCount(trip.costs);
-  const canComplete = canCompleteTrip(trip);
+  const flaggedCount = getFlaggedCostsCount(costEntries);
+  const unresolvedFlags = getUnresolvedFlagsCount(costEntries);
+  const canComplete = canCompleteTrip({...trip, costs: costEntries});
   
   // Check if system costs have been generated
-  const hasSystemCosts = trip.costs.some(cost => cost.isSystemGenerated);
-  const systemCosts = trip.costs.filter(cost => cost.isSystemGenerated);
-  const manualCosts = trip.costs.filter(cost => !cost.isSystemGenerated);
+  const hasSystemCosts = costEntries.some(cost => cost.isSystemGenerated);
+  const systemCosts = costEntries.filter(cost => cost.isSystemGenerated);
+  const manualCosts = costEntries.filter(cost => !cost.isSystemGenerated);
 
   // Calculate timeline discrepancies for display
   const hasTimelineDiscrepancies = () => {
@@ -647,7 +703,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
                 )}
                 <div>
                   <p className="text-sm text-gray-500">Cost Entries</p>
-                  <p className="font-medium">{trip.costs.length} entries</p>
+                  <p className="font-medium">{costEntries.length} entries</p>
                   {hasSystemCosts && (
                     <div className="text-xs text-gray-500">
                       {manualCosts.length} manual • {systemCosts.length} system
@@ -676,13 +732,13 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
                     <div className="flex justify-between text-sm">
                       <span>With receipts:</span>
                       <span className="text-green-600 font-medium">
-                        {trip.costs.filter(c => c.attachments && c.attachments.length > 0).length}
+                        {costEntries.filter(c => c.attachments && c.attachments.length > 0).length}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span>Missing receipts:</span>
                       <span className="text-red-600 font-medium">
-                        {trip.costs.filter(c => !c.attachments || c.attachments.length === 0).length}
+                        {costEntries.filter(c => !c.attachments || c.attachments.length === 0).length}
                       </span>
                     </div>
                   </div>
@@ -709,7 +765,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
       {/* Cost Entries Section */}
       <Card>
         <CardHeader
-          title={`Cost Entries (${trip.costs.length})`}
+          title={`Cost Entries (${costEntries.length})`}
           action={
             trip.status === 'active' && (
               <Button size="sm" onClick={() => setShowCostForm(true)} icon={<Plus className="w-4 h-4" />}>
@@ -720,7 +776,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
         />
         <CardContent>
           <CostList 
-            costs={trip.costs} 
+            costs={costEntries} 
             onEdit={trip.status === 'active' ? handleEditCost : undefined}
             onDelete={trip.status === 'active' ? handleDeleteCost : undefined}
           />
@@ -788,7 +844,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
         title="Trip Report"
         maxWidth="2xl"
       >
-        <TripReport trip={trip} />
+        <TripReport trip={{...trip, costs: costEntries}} />
       </Modal>
     </div>
   );
