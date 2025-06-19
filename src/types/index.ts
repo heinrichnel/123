@@ -178,6 +178,7 @@ export interface DieselConsumptionRecord {
   probeDiscrepancy?: number;
   probeVerified?: boolean;
   updatedAt?: string;
+  isReeferUnit?: boolean;
 }
 
 // System Cost Configuration Types
@@ -510,6 +511,13 @@ export const FLEET_NUMBERS = [
   "31H",
   "32H",
   "33H"
+];
+
+export const REEFER_NUMBERS = [
+  "4F",
+  "5F",
+  "7F",
+  "8F"
 ];
 
 export const RESPONSIBLE_PERSONS = [

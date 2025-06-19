@@ -108,17 +108,21 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
         driverName: row.driverName || '',
         notes: row.notes || '',
         currency: row.currency || 'ZAR',
-        probeReading: row.probeReading ? parseFloat(row.probeReading) : undefined
+        probeReading: row.probeReading ? parseFloat(row.probeReading) : undefined,
+        isReeferUnit: row.isReeferUnit === 'true' || row.isReeferUnit === true || ['4F', '5F', '7F', '8F'].includes(row.fleetNumber)
       }));
 
       // Calculate derived values
       dieselRecords.forEach(record => {
-        if (record.previousKmReading !== undefined && record.kmReading) {
-          record.distanceTravelled = record.kmReading - record.previousKmReading;
-        }
-        
-        if (record.distanceTravelled && record.litresFilled) {
-          record.kmPerLitre = record.distanceTravelled / record.litresFilled;
+        // Skip distance calculations for reefer units
+        if (!record.isReeferUnit) {
+          if (record.previousKmReading !== undefined && record.kmReading) {
+            record.distanceTravelled = record.kmReading - record.previousKmReading;
+          }
+          
+          if (record.distanceTravelled && record.litresFilled) {
+            record.kmPerLitre = record.distanceTravelled / record.litresFilled;
+          }
         }
         
         if (!record.costPerLitre && record.totalCost && record.litresFilled) {
@@ -152,10 +156,11 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
   };
 
   const downloadTemplate = () => {
-    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading
-6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,
-26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,
-22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415`;
+    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit
+6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false
+26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false
+22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false
+4F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -183,9 +188,9 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
                 Import your diesel records using a CSV file with the following columns:
               </p>
               <ul className="text-sm text-blue-700 mt-2 list-disc list-inside">
-                <li>fleetNumber - Vehicle fleet number (e.g., "6H", "26H")</li>
+                <li>fleetNumber - Vehicle fleet number (e.g., "6H", "26H", "4F" for reefer)</li>
                 <li>date - Date of refueling (YYYY-MM-DD)</li>
-                <li>kmReading - Current odometer reading</li>
+                <li>kmReading - Current odometer reading (not needed for reefer units)</li>
                 <li>previousKmReading - Previous odometer reading (optional)</li>
                 <li>litresFilled - Amount of diesel in litres</li>
                 <li>costPerLitre - Cost per litre (optional if totalCost provided)</li>
@@ -195,6 +200,7 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
                 <li>notes - Additional notes (optional)</li>
                 <li>currency - ZAR or USD (optional, defaults to ZAR)</li>
                 <li>probeReading - Probe reading in litres (optional)</li>
+                <li>isReeferUnit - true/false (optional, defaults to false)</li>
               </ul>
               <div className="mt-3">
                 <Button

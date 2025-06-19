@@ -31,6 +31,7 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
   const [showFilters, setShowFilters] = useState(false);
   const [selectedTripIds, setSelectedTripIds] = useState<string[]>([]);
   const [selectMode, setSelectMode] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const openImportModal = () => setIsImportModalOpen(true);
   const closeImportModal = () => setIsImportModalOpen(false);
@@ -47,23 +48,25 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
   };
 
   // Bulk delete handler
-  const handleBulkDelete = () => {
+  const handleBulkDelete = async () => {
     if (selectedTripIds.length === 0) {
       alert('No trips selected for deletion');
       return;
     }
 
     if (confirm(`Delete ${selectedTripIds.length} selected trips? This cannot be undone.`)) {
-      bulkDeleteTrips(selectedTripIds)
-        .then(() => {
-          alert(`Successfully deleted ${selectedTripIds.length} trips`);
-          setSelectedTripIds([]);
-          setSelectMode(false);
-        })
-        .catch(error => {
-          console.error('Error deleting trips:', error);
-          alert(`Error deleting trips: ${error.message}`);
-        });
+      try {
+        setIsDeleting(true);
+        await bulkDeleteTrips(selectedTripIds);
+        alert(`Successfully deleted ${selectedTripIds.length} trips`);
+        setSelectedTripIds([]);
+        setSelectMode(false);
+      } catch (error) {
+        console.error('Error deleting trips:', error);
+        alert(`Error deleting trips: ${error.message}`);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -137,6 +140,8 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
               variant="danger" 
               onClick={handleBulkDelete}
               icon={<Trash2 className="w-4 h-4" />}
+              isLoading={isDeleting}
+              disabled={isDeleting}
             >
               Delete Selected ({selectedTripIds.length})
             </Button>
@@ -234,6 +239,8 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({ trips, onEdit, onDelete, onVi
               variant="danger" 
               onClick={handleBulkDelete}
               icon={<Trash2 className="w-4 h-4" />}
+              isLoading={isDeleting}
+              disabled={isDeleting}
             >
               Delete Selected
             </Button>

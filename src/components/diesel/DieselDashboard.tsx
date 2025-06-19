@@ -36,9 +36,11 @@ interface DieselNorms {
   tolerancePercentage: number; // e.g., 10% = 10
   lastUpdated: string;
   updatedBy: string;
+  isReeferUnit?: boolean;
 }
 
 const DEFAULT_NORMS: DieselNorms[] = [
+  // Truck norms
   { fleetNumber: '4H', expectedKmPerLitre: 3.5, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: '6H', expectedKmPerLitre: 3.2, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: '21H', expectedKmPerLitre: 3.0, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
@@ -52,7 +54,12 @@ const DEFAULT_NORMS: DieselNorms[] = [
   { fleetNumber: '31H', expectedKmPerLitre: 3.0, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: '32H', expectedKmPerLitre: 3.2, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: '33H', expectedKmPerLitre: 3.1, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
-  { fleetNumber: 'UD', expectedKmPerLitre: 2.8, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' }
+  { fleetNumber: 'UD', expectedKmPerLitre: 2.8, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
+  // Reefer norms
+  { fleetNumber: '4F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
+  { fleetNumber: '5F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
+  { fleetNumber: '7F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
+  { fleetNumber: '8F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true }
 ];
 
 const DieselDashboard: React.FC = () => {
@@ -69,6 +76,7 @@ const DieselDashboard: React.FC = () => {
   const [isDebriefModalOpen, setIsDebriefModalOpen] = useState(false);
   const [isNormsModalOpen, setIsNormsModalOpen] = useState(false);
   const [isTripLinkageModalOpen, setIsTripLinkageModalOpen] = useState(false);
+  const [isProbeVerificationModalOpen, setIsProbeVerificationModalOpen] = useState(false);
   const [selectedDieselId, setSelectedDieselId] = useState<string>('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState({
@@ -86,22 +94,24 @@ const DieselDashboard: React.FC = () => {
   const [filterDate, setFilterDate] = useState<string>('');
   const [filterCurrency, setFilterCurrency] = useState<string>('');
   const [filterProbeStatus, setFilterProbeStatus] = useState<string>('');
+  const [filterUnitType, setFilterUnitType] = useState<string>('');
 
   // Calculate enhanced metrics for each record
   const enhancedRecords = dieselRecords.map(record => {
+    const isReeferUnit = ['4F', '5F', '7F', '8F'].includes(record.fleetNumber);
     const norm = dieselNorms.find(n => n.fleetNumber === record.fleetNumber);
     const expectedKmPerLitre = norm?.expectedKmPerLitre || 3.0;
     const tolerance = norm?.tolerancePercentage || 10;
     
     // Calculate distance travelled if not provided
     let distanceTravelled = record.distanceTravelled || 0;
-    if (!distanceTravelled && record.previousKmReading && record.kmReading) {
+    if (!distanceTravelled && record.previousKmReading && record.kmReading && !isReeferUnit) {
       distanceTravelled = record.kmReading - record.previousKmReading;
     }
     
     // Calculate KM/L if not provided
     let kmPerLitre = record.kmPerLitre || 0;
-    if (!kmPerLitre && distanceTravelled > 0 && record.litresFilled > 0) {
+    if (!kmPerLitre && distanceTravelled > 0 && record.litresFilled > 0 && !isReeferUnit) {
       kmPerLitre = distanceTravelled / record.litresFilled;
     }
     
@@ -111,15 +121,21 @@ const DieselDashboard: React.FC = () => {
     // Calculate cost per litre if not provided
     const costPerLitre = record.costPerLitre || (record.litresFilled > 0 ? record.totalCost / record.litresFilled : 0);
     
-    // Performance analysis
-    const efficiencyVariance = ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100;
-    const toleranceRange = tolerance;
-    const isWithinTolerance = Math.abs(efficiencyVariance) <= toleranceRange;
-    const performanceStatus = isWithinTolerance ? 'normal' : 
-                             efficiencyVariance < -toleranceRange ? 'poor' : 'excellent';
+    // Performance analysis - only for non-reefer units
+    let efficiencyVariance = 0;
+    let isWithinTolerance = true;
+    let performanceStatus = 'normal' as 'normal' | 'poor' | 'excellent';
     
-    // Flag for debrief if outside tolerance
-    const requiresDebrief = !isWithinTolerance;
+    if (!isReeferUnit) {
+      efficiencyVariance = ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100;
+      const toleranceRange = tolerance;
+      isWithinTolerance = Math.abs(efficiencyVariance) <= toleranceRange;
+      performanceStatus = isWithinTolerance ? 'normal' : 
+                         efficiencyVariance < -toleranceRange ? 'poor' : 'excellent';
+    }
+    
+    // Flag for debrief if outside tolerance and not a reefer unit
+    const requiresDebrief = !isReeferUnit && !isWithinTolerance;
     
     // Get linked trip info if available
     const linkedTrip = record.tripId ? trips.find(t => t.id === record.tripId) : undefined;
@@ -146,7 +162,7 @@ const DieselDashboard: React.FC = () => {
       efficiencyVariance,
       performanceStatus,
       requiresDebrief,
-      toleranceRange,
+      toleranceRange: tolerance,
       linkedTripInfo: linkedTrip ? {
         route: linkedTrip.route,
         startDate: linkedTrip.startDate,
@@ -155,7 +171,8 @@ const DieselDashboard: React.FC = () => {
       hasProbe,
       probeDiscrepancy,
       needsProbeVerification,
-      currency: record.currency || 'ZAR' // Default to ZAR if not specified
+      currency: record.currency || 'ZAR', // Default to ZAR if not specified
+      isReeferUnit
     };
   });
 
@@ -165,6 +182,10 @@ const DieselDashboard: React.FC = () => {
     if (filterDriver && record.driverName !== filterDriver) return false;
     if (filterDate && record.date !== filterDate) return false;
     if (filterCurrency && record.currency !== filterCurrency) return false;
+    if (filterUnitType) {
+      if (filterUnitType === 'truck' && record.isReeferUnit) return false;
+      if (filterUnitType === 'reefer' && !record.isReeferUnit) return false;
+    }
     if (filterProbeStatus) {
       if (filterProbeStatus === 'has-probe' && !record.hasProbe) return false;
       if (filterProbeStatus === 'needs-verification' && !record.needsProbeVerification) return false;
@@ -254,15 +275,21 @@ const DieselDashboard: React.FC = () => {
     setIsTripLinkageModalOpen(true);
   };
 
+  const handleVerifyProbe = (recordId: string) => {
+    setSelectedDieselId(recordId);
+    setIsProbeVerificationModalOpen(true);
+  };
+
   const updateNorms = (updatedNorms: DieselNorms[]) => {
     setDieselNorms(updatedNorms);
   };
 
   const exportCSVTemplate = () => {
-    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading
-6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,
-26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,
-22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415`;
+    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit
+6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false
+26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false
+22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false
+4F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -278,7 +305,9 @@ const DieselDashboard: React.FC = () => {
     acc.totalRecords++;
     acc.totalLitres += record.litresFilled;
     acc.totalCost += record.totalCost;
-    acc.totalDistance += record.distanceTravelled || 0;
+    if (!record.isReeferUnit) {
+      acc.totalDistance += record.distanceTravelled || 0;
+    }
     if (record.requiresDebrief) acc.recordsRequiringDebrief++;
     if (record.performanceStatus === 'poor') acc.poorPerformanceRecords++;
     if (record.performanceStatus === 'excellent') acc.excellentPerformanceRecords++;
@@ -286,6 +315,7 @@ const DieselDashboard: React.FC = () => {
     if (record.hasProbe) acc.recordsWithProbe++;
     if (record.needsProbeVerification) acc.recordsNeedingProbeVerification++;
     if (record.probeVerified) acc.recordsWithVerifiedProbe++;
+    if (record.isReeferUnit) acc.reeferUnitRecords++;
     
     // Track by currency
     if (record.currency === 'USD') {
@@ -312,11 +342,14 @@ const DieselDashboard: React.FC = () => {
     usdRecords: 0,
     zarRecords: 0,
     usdTotalCost: 0,
-    zarTotalCost: 0
+    zarTotalCost: 0,
+    reeferUnitRecords: 0
   });
 
-  const averageKmPerLitre = fleetSummary.totalLitres > 0 ? fleetSummary.totalDistance / fleetSummary.totalLitres : 0;
-  const averageCostPerKm = fleetSummary.totalDistance > 0 ? fleetSummary.totalCost / fleetSummary.totalDistance : 0;
+  const averageKmPerLitre = fleetSummary.totalLitres > 0 && fleetSummary.totalDistance > 0 ? 
+    fleetSummary.totalDistance / fleetSummary.totalLitres : 0;
+  const averageCostPerKm = fleetSummary.totalDistance > 0 ? 
+    fleetSummary.totalCost / fleetSummary.totalDistance : 0;
 
   // Get unique drivers and fleets for filters
   const uniqueFleets = [...new Set(enhancedRecords.map(r => r.fleetNumber))].sort();
@@ -433,7 +466,9 @@ const DieselDashboard: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-500">Fleet Average KM/L</p>
                 <p className="text-2xl font-bold text-blue-600">{averageKmPerLitre.toFixed(2)}</p>
-                <p className="text-xs text-gray-400">kilometers per litre</p>
+                <p className="text-xs text-gray-400">
+                  {fleetSummary.reeferUnitRecords} reefer units
+                </p>
               </div>
               <Calculator className="w-8 h-8 text-blue-500" />
             </div>
@@ -483,7 +518,7 @@ const DieselDashboard: React.FC = () => {
               options={[
                 { label: 'All Fleets', value: '' },
                 ...uniqueFleets.map(fleet => ({ 
-                  label: `${fleet}${['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(fleet) ? ' (Probe)' : ''}`, 
+                  label: `${fleet}${['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(fleet) ? ' (Probe)' : ['4F', '5F', '7F', '8F'].includes(fleet) ? ' (Reefer)' : ''}`, 
                   value: fleet 
                 }))
               ]}
@@ -520,6 +555,16 @@ const DieselDashboard: React.FC = () => {
               ]}
             />
             <Select
+              label="Unit Type"
+              value={filterUnitType}
+              onChange={(e) => setFilterUnitType(e.target.value)}
+              options={[
+                { label: 'All Units', value: '' },
+                { label: 'Trucks', value: 'truck' },
+                { label: 'Reefer Units', value: 'reefer' }
+              ]}
+            />
+            <Select
               label="Probe Status"
               value={filterProbeStatus}
               onChange={(e) => setFilterProbeStatus(e.target.value)}
@@ -542,6 +587,7 @@ const DieselDashboard: React.FC = () => {
                 setFilterDate('');
                 setFilterCurrency('');
                 setFilterProbeStatus('');
+                setFilterUnitType('');
               }}
             >
               Clear Filters
@@ -564,7 +610,7 @@ const DieselDashboard: React.FC = () => {
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <Fuel className="w-8 h-8 text-gray-600 mx-auto mb-2" />
               <p className="text-lg font-bold text-gray-600">
-                {fleetSummary.totalRecords - fleetSummary.excellentPerformanceRecords - fleetSummary.poorPerformanceRecords}
+                {fleetSummary.totalRecords - fleetSummary.excellentPerformanceRecords - fleetSummary.poorPerformanceRecords - fleetSummary.reeferUnitRecords}
               </p>
               <p className="text-sm text-gray-700">Normal Performance</p>
               <p className="text-xs text-gray-500">Within tolerance range</p>
@@ -575,11 +621,11 @@ const DieselDashboard: React.FC = () => {
               <p className="text-sm text-red-700">Poor Performance</p>
               <p className="text-xs text-gray-500">Below expected efficiency</p>
             </div>
-            <div className="text-center p-4 bg-amber-50 rounded-lg">
-              <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-              <p className="text-lg font-bold text-amber-600">{fleetSummary.recordsNeedingProbeVerification}</p>
-              <p className="text-sm text-amber-700">Probe Discrepancies</p>
-              <p className="text-xs text-gray-500">Need verification</p>
+            <div className="text-center p-4 bg-purple-50 rounded-lg">
+              <Fuel className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+              <p className="text-lg font-bold text-purple-600">{fleetSummary.reeferUnitRecords}</p>
+              <p className="text-sm text-purple-700">Reefer Units</p>
+              <p className="text-xs text-gray-500">Refrigeration trailers</p>
             </div>
           </div>
         </CardContent>
@@ -620,10 +666,11 @@ const DieselDashboard: React.FC = () => {
               record.needsProbeVerification ? 'border-l-4 border-l-red-400' :
               record.requiresDebrief ? 'border-l-4 border-l-amber-400' : 
               record.performanceStatus === 'excellent' ? 'border-l-4 border-l-green-400' :
-              record.performanceStatus === 'poor' ? 'border-l-4 border-l-red-400' : ''
+              record.performanceStatus === 'poor' ? 'border-l-4 border-l-red-400' :
+              record.isReeferUnit ? 'border-l-4 border-l-purple-400' : ''
             }`}>
               <CardHeader
-                title={`Fleet ${record.fleetNumber}`}
+                title={`Fleet ${record.fleetNumber}${record.isReeferUnit ? ' (Reefer)' : ''}`}
                 subtitle={
                   <div className="flex items-center space-x-4">
                     <span>{formatDate(record.date)} • {record.fuelStation}</span>
@@ -633,13 +680,20 @@ const DieselDashboard: React.FC = () => {
                         Requires Debrief
                       </span>
                     )}
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                      record.performanceStatus === 'excellent' ? 'bg-green-100 text-green-800' :
-                      record.performanceStatus === 'poor' ? 'bg-red-100 text-red-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {record.performanceStatus.toUpperCase()}
-                    </span>
+                    {!record.isReeferUnit && (
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
+                        record.performanceStatus === 'excellent' ? 'bg-green-100 text-green-800' :
+                        record.performanceStatus === 'poor' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {record.performanceStatus.toUpperCase()}
+                      </span>
+                    )}
+                    {record.isReeferUnit && (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
+                        REEFER UNIT
+                      </span>
+                    )}
                     {record.linkedTripInfo && (
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
                         <Link className="w-3 h-3 mr-1" />
@@ -672,38 +726,42 @@ const DieselDashboard: React.FC = () => {
                     <p className="font-medium">{record.driverName}</p>
                   </div>
 
-                  <div>
-                    <p className="text-sm text-gray-500">KM Reading</p>
-                    {editingId === record.id ? (
-                      <input
-                        type="number"
-                        className="border rounded px-2 py-1 w-full text-sm"
-                        value={editData.kmReading}
-                        onChange={e => setEditData(prev => ({ ...prev, kmReading: e.target.value }))}
-                      />
-                    ) : (
-                      <p className="font-medium">{record.kmReading.toLocaleString()}</p>
-                    )}
-                  </div>
+                  {!record.isReeferUnit && (
+                    <>
+                      <div>
+                        <p className="text-sm text-gray-500">KM Reading</p>
+                        {editingId === record.id ? (
+                          <input
+                            type="number"
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            value={editData.kmReading}
+                            onChange={e => setEditData(prev => ({ ...prev, kmReading: e.target.value }))}
+                          />
+                        ) : (
+                          <p className="font-medium">{record.kmReading.toLocaleString()}</p>
+                        )}
+                      </div>
 
-                  <div>
-                    <p className="text-sm text-gray-500">Previous KM</p>
-                    {editingId === record.id ? (
-                      <input
-                        type="number"
-                        className="border rounded px-2 py-1 w-full text-sm"
-                        value={editData.previousKmReading}
-                        onChange={e => setEditData(prev => ({ ...prev, previousKmReading: e.target.value }))}
-                      />
-                    ) : (
-                      <p className="font-medium">{record.previousKmReading?.toLocaleString() || 'N/A'}</p>
-                    )}
-                  </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Previous KM</p>
+                        {editingId === record.id ? (
+                          <input
+                            type="number"
+                            className="border rounded px-2 py-1 w-full text-sm"
+                            value={editData.previousKmReading}
+                            onChange={e => setEditData(prev => ({ ...prev, previousKmReading: e.target.value }))}
+                          />
+                        ) : (
+                          <p className="font-medium">{record.previousKmReading?.toLocaleString() || 'N/A'}</p>
+                        )}
+                      </div>
 
-                  <div>
-                    <p className="text-sm text-gray-500">Distance</p>
-                    <p className="font-medium">{record.distanceTravelled?.toLocaleString() || 'N/A'} km</p>
-                  </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Distance</p>
+                        <p className="font-medium">{record.distanceTravelled?.toLocaleString() || 'N/A'} km</p>
+                      </div>
+                    </>
+                  )}
 
                   <div>
                     <p className="text-sm text-gray-500">Litres Filled</p>
@@ -747,28 +805,30 @@ const DieselDashboard: React.FC = () => {
                     )}
                   </div>
 
-                  <div>
-                    <p className="text-sm text-gray-500">KM/L</p>
-                    <div className="flex items-center space-x-2">
-                      <p className={`font-medium ${
-                        record.performanceStatus === 'excellent' ? 'text-green-600' :
-                        record.performanceStatus === 'poor' ? 'text-red-600' :
-                        'text-gray-900'
-                      }`}>
-                        {record.kmPerLitre?.toFixed(2) || 'N/A'}
-                      </p>
-                      {record.efficiencyVariance !== 0 && (
-                        <span className={`text-xs px-1 py-0.5 rounded ${
-                          record.efficiencyVariance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  {!record.isReeferUnit && (
+                    <div>
+                      <p className="text-sm text-gray-500">KM/L</p>
+                      <div className="flex items-center space-x-2">
+                        <p className={`font-medium ${
+                          record.performanceStatus === 'excellent' ? 'text-green-600' :
+                          record.performanceStatus === 'poor' ? 'text-red-600' :
+                          'text-gray-900'
                         }`}>
-                          {record.efficiencyVariance > 0 ? '+' : ''}{record.efficiencyVariance.toFixed(1)}%
-                        </span>
-                      )}
+                          {record.kmPerLitre?.toFixed(2) || 'N/A'}
+                        </p>
+                        {record.efficiencyVariance !== 0 && (
+                          <span className={`text-xs px-1 py-0.5 rounded ${
+                            record.efficiencyVariance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {record.efficiencyVariance > 0 ? '+' : ''}{record.efficiencyVariance.toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Expected: {record.expectedKmPerLitre}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Expected: {record.expectedKmPerLitre}
-                    </p>
-                  </div>
+                  )}
 
                   <div>
                     {editingId === record.id ? (
@@ -918,15 +978,6 @@ const DieselDashboard: React.FC = () => {
             isOpen={isTripLinkageModalOpen}
             onClose={() => {
               setIsTripLinkageModalOpen(false);
-              setSelectedDieselId('');
-            }}
-            dieselRecordId={selectedDieselId}
-          />
-          
-          <ProbeVerificationModal
-            isOpen={isProbeVerificationModalOpen}
-            onClose={() => {
-              setIsProbeVerificationModalOpen(false);
               setSelectedDieselId('');
             }}
             dieselRecordId={selectedDieselId}

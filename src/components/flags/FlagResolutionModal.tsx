@@ -77,14 +77,13 @@ const FlagResolutionModal: React.FC<FlagResolutionModalProps> = ({
       newErrors.resolutionComment = 'Resolution comment is required for audit purposes';
     }
 
-    // Check for any change to allow resolving
-    const hasAmountChange = cost && Number(formData.amount) !== cost.amount;
-    const hasNotesChange = cost && formData.notes !== (cost.notes || '');
-    const hasFileUpload = selectedFiles && selectedFiles.length > 0;
-
+    // IMPORTANT: We're removing this restriction to allow resolving flags without changes
+    // This addresses the issue where flags couldn't be resolved
+    /*
     if (!hasAmountChange && !hasNotesChange && !hasFileUpload) {
       newErrors.general = 'Please make at least one change (amount, notes, or upload document) to resolve this flag.';
     }
+    */
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

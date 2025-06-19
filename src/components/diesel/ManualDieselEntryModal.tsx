@@ -44,7 +44,9 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     fuelStation: '',
     driverName: '',
     notes: '',
-    tripId: '' // Link to trip
+    tripId: '', // Link to trip
+    currency: 'ZAR' as 'USD' | 'ZAR', // Add currency field with default value
+    isReeferUnit: false // Add flag for reefer units
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -56,7 +58,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     trip.status === 'active'
   );
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear errors
@@ -65,7 +67,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     }
 
     // Auto-calculate when relevant fields change
-    if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost'].includes(field)) {
+    if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost'].includes(field) && typeof value === 'string') {
       autoCalculateFields(field, value);
     }
   };
@@ -103,6 +105,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     if (!formData.totalCost) newErrors.totalCost = 'Total cost is required';
     if (!formData.fuelStation) newErrors.fuelStation = 'Fuel station is required';
     if (!formData.driverName) newErrors.driverName = 'Driver name is required';
+    if (!formData.currency) newErrors.currency = 'Currency is required';
 
     // Validate numbers
     if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) {
@@ -127,6 +130,12 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       }
     }
 
+    // Skip KM validation for reefer units
+    if (formData.isReeferUnit) {
+      delete newErrors.kmReading;
+      delete newErrors.previousKmReading;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -141,25 +150,26 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const costPerLitre = formData.costPerLitre ? Number(formData.costPerLitre) : totalCost / litresFilled;
 
     // Calculate derived values
-    const distanceTravelled = previousKmReading !== undefined ? kmReading - previousKmReading : undefined;
-    const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
+    const distanceTravelled = !formData.isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : undefined;
+    const kmPerLitre = !formData.isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
 
     // Patch: Only include tripId if it is a non-empty string
     const recordData: any = {
       id: `diesel-${Date.now()}`,
       fleetNumber: formData.fleetNumber,
       date: formData.date,
-      kmReading,
+      kmReading: formData.isReeferUnit ? 0 : kmReading,
       litresFilled,
       costPerLitre,
       totalCost,
       fuelStation: String(formData.fuelStation ?? '').trim(),
       driverName: formData.driverName,
       notes: String(formData.notes ?? '').trim(),
-      previousKmReading,
+      previousKmReading: formData.isReeferUnit ? undefined : previousKmReading,
       distanceTravelled,
       kmPerLitre,
-      currency: 'ZAR'
+      currency: formData.currency,
+      isReeferUnit: formData.isReeferUnit
     };
     if (formData.tripId && typeof formData.tripId === 'string' && formData.tripId.trim() !== '') {
       recordData.tripId = formData.tripId;
@@ -167,7 +177,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
     try {
       addDieselRecord(recordData);
-      alert(`Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\nKM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\nCost: R${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`);
+      alert(`Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\n${!formData.isReeferUnit ? `KM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}` : 'Reefer Unit'}\nCost: ${formData.currency === 'USD' ? '$' : 'R'}${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`);
       // Reset form
       setFormData({
         fleetNumber: '',
@@ -180,7 +190,9 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
         fuelStation: '',
         driverName: '',
         notes: '',
-        tripId: ''
+        tripId: '',
+        currency: 'ZAR',
+        isReeferUnit: false
       });
       setErrors({});
       onClose();
@@ -202,6 +214,18 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const litres = Number(formData.litresFilled) || 0;
     return distance > 0 && litres > 0 ? distance / litres : 0;
   };
+
+  // Check if the selected fleet is a reefer unit
+  const isReeferUnit = ['4F', '5F', '7F', '8F'].includes(formData.fleetNumber);
+
+  // Update isReeferUnit when fleet number changes
+  React.useEffect(() => {
+    if (['4F', '5F', '7F', '8F'].includes(formData.fleetNumber)) {
+      setFormData(prev => ({ ...prev, isReeferUnit: true }));
+    } else {
+      setFormData(prev => ({ ...prev, isReeferUnit: false }));
+    }
+  }, [formData.fleetNumber]);
 
   return (
     <Modal
@@ -240,6 +264,20 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </label>
         </div>
 
+        {/* Reefer Unit Toggle */}
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="isReeferUnit"
+            checked={formData.isReeferUnit}
+            onChange={(e) => handleChange('isReeferUnit', e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="isReeferUnit" className="flex items-center text-sm font-medium text-gray-700">
+            This is a refrigeration trailer (4F, 5F, 7F, 8F)
+          </label>
+        </div>
+
         {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
@@ -248,7 +286,11 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             onChange={value => handleChange('fleetNumber', value)}
             options={[
               { label: 'Select fleet...', value: '' },
-              ...FLEET_NUMBERS.map(f => ({ label: f, value: f }))
+              ...FLEET_NUMBERS.map(f => ({ label: f, value: f })),
+              { label: '4F - Reefer', value: '4F' },
+              { label: '5F - Reefer', value: '5F' },
+              { label: '7F - Reefer', value: '7F' },
+              { label: '8F - Reefer', value: '8F' }
             ]}
             error={errors.fleetNumber}
           />
@@ -261,27 +303,31 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.date}
           />
 
-          <Input
-            label="Current KM Reading *"
-            type="number"
-            step="1"
-            min="0"
-            value={formData.kmReading}
-            onChange={value => handleChange('kmReading', value)}
-            placeholder="125000"
-            error={errors.kmReading}
-          />
+          {!formData.isReeferUnit && (
+            <>
+              <Input
+                label="Current KM Reading *"
+                type="number"
+                step="1"
+                min="0"
+                value={formData.kmReading}
+                onChange={value => handleChange('kmReading', value)}
+                placeholder="125000"
+                error={errors.kmReading}
+              />
 
-          <Input
-            label="Previous KM Reading"
-            type="number"
-            step="1"
-            min="0"
-            value={formData.previousKmReading}
-            onChange={value => handleChange('previousKmReading', value)}
-            placeholder="123560"
-            error={errors.previousKmReading}
-          />
+              <Input
+                label="Previous KM Reading"
+                type="number"
+                step="1"
+                min="0"
+                value={formData.previousKmReading}
+                onChange={value => handleChange('previousKmReading', value)}
+                placeholder="123560"
+                error={errors.previousKmReading}
+              />
+            </>
+          )}
 
           <Input
             label="Litres Filled *"
@@ -295,7 +341,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           />
 
           <Input
-            label="Cost per Litre (R)"
+            label="Cost per Litre"
             type="number"
             step="0.01"
             min="0"
@@ -305,16 +351,29 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.costPerLitre}
           />
 
-          <Input
-            label="Total Cost (R) *"
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={formData.totalCost}
-            onChange={value => handleChange('totalCost', value)}
-            placeholder="8325.00"
-            error={errors.totalCost}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <Select
+              label="Currency *"
+              value={formData.currency}
+              onChange={value => handleChange('currency', value)}
+              options={[
+                { label: 'ZAR (R)', value: 'ZAR' },
+                { label: 'USD ($)', value: 'USD' }
+              ]}
+              error={errors.currency}
+            />
+            
+            <Input
+              label="Total Cost *"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={formData.totalCost}
+              onChange={value => handleChange('totalCost', value)}
+              placeholder="8325.00"
+              error={errors.totalCost}
+            />
+          </div>
 
           <Select
             label="Fuel Station *"
@@ -362,7 +421,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
         />
 
         {/* Calculation Preview */}
-        {(formData.kmReading && formData.previousKmReading && formData.litresFilled) && (
+        {!formData.isReeferUnit && (formData.kmReading && formData.previousKmReading && formData.litresFilled) && (
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <h4 className="text-sm font-medium text-green-800 mb-2">Calculated Metrics</h4>
             <div className="grid grid-cols-3 gap-4 text-sm">
@@ -377,10 +436,21 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
               <div>
                 <p className="text-green-600">Cost per KM</p>
                 <p className="font-bold text-green-800">
-                  R{calculateDistance() > 0 ? (Number(formData.totalCost) / calculateDistance()).toFixed(2) : '0.00'}
+                  {formData.currency === 'USD' ? '$' : 'R'}{calculateDistance() > 0 ? (Number(formData.totalCost) / calculateDistance()).toFixed(2) : '0.00'}
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Reefer Unit Info */}
+        {formData.isReeferUnit && (
+          <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
+            <h4 className="text-sm font-medium text-purple-800 mb-2">Refrigeration Trailer Information</h4>
+            <p className="text-sm text-purple-700">
+              Refrigeration trailers are measured in litres per hour instead of kilometers per litre.
+              KM readings are not required for reefer units.
+            </p>
           </div>
         )}
 

@@ -31,6 +31,7 @@ interface DieselNorms {
   tolerancePercentage: number;
   lastUpdated: string;
   updatedBy: string;
+  isReeferUnit?: boolean;
 }
 
 interface DieselNormsModalProps {
@@ -87,7 +88,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
   };
 
   const addNewFleetNorm = () => {
-    const availableFleets = FLEET_NUMBERS.filter(fleet =>
+    const availableFleets = [...FLEET_NUMBERS, '4F', '5F', '7F', '8F'].filter(fleet =>
       !editedNorms.some(norm => norm.fleetNumber === fleet)
     );
 
@@ -96,12 +97,16 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
       return;
     }
 
+    const selectedFleet = availableFleets[0];
+    const isReeferUnit = ['4F', '5F', '7F', '8F'].includes(selectedFleet);
+
     const newNorm: DieselNorms = {
-      fleetNumber: availableFleets[0],
-      expectedKmPerLitre: 3.0,
-      tolerancePercentage: 10,
+      fleetNumber: selectedFleet,
+      expectedKmPerLitre: isReeferUnit ? 0 : 3.0, // Default value for trucks
+      tolerancePercentage: isReeferUnit ? 15 : 10, // Higher tolerance for reefers
       lastUpdated: new Date().toISOString(),
-      updatedBy: 'Current User'
+      updatedBy: 'Current User',
+      isReeferUnit
     };
 
     setEditedNorms(prev => [...prev, newNorm]);
@@ -127,13 +132,26 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
 
   const resetToDefaults = () => {
     if (confirm('Reset all norms to default values? This will overwrite your current settings.')) {
-      const defaultNorms = FLEET_NUMBERS.map(fleet => ({
-        fleetNumber: fleet,
-        expectedKmPerLitre: fleet === 'UD' ? 2.8 : 3.2,
-        tolerancePercentage: fleet === 'UD' ? 15 : 10,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: 'System Default'
-      }));
+      const defaultNorms = [
+        // Truck norms
+        ...FLEET_NUMBERS.map(fleet => ({
+          fleetNumber: fleet,
+          expectedKmPerLitre: fleet === 'UD' ? 2.8 : 3.2,
+          tolerancePercentage: fleet === 'UD' ? 15 : 10,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'System Default',
+          isReeferUnit: false
+        })),
+        // Reefer norms
+        ...['4F', '5F', '7F', '8F'].map(fleet => ({
+          fleetNumber: fleet,
+          expectedKmPerLitre: 0, // Reefers don't use km/l
+          tolerancePercentage: 15,
+          lastUpdated: new Date().toISOString(),
+          updatedBy: 'System Default',
+          isReeferUnit: true
+        }))
+      ];
       setEditedNorms(defaultNorms);
     }
   };
@@ -187,7 +205,7 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
           {editedNorms.map(norm => (
             <Card key={norm.fleetNumber} className="relative">
               <CardHeader
-                title={`Fleet ${norm.fleetNumber}`}
+                title={`Fleet ${norm.fleetNumber} ${norm.isReeferUnit ? '(Reefer)' : ''}`}
                 action={
                   <Button
                     size="sm"
@@ -199,25 +217,34 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                 }
               />
               <CardContent className="space-y-4">
-                <Input
-                  label="Expected KM/L"
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  max="10"
-                  value={norm.expectedKmPerLitre.toString()}
-                  onChange={e => {
-                    // Patch: Robustly handle both event and value
-                    let value = '';
-                    if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
-                      value = e.target.value;
-                    } else if (typeof e === 'string') {
-                      value = e;
-                    }
-                    handleNormChange(norm.fleetNumber, 'expectedKmPerLitre', value);
-                  }}
-                  error={errors[`${norm.fleetNumber}-expectedKmPerLitre`]}
-                />
+                {!norm.isReeferUnit ? (
+                  <Input
+                    label="Expected KM/L"
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="10"
+                    value={norm.expectedKmPerLitre.toString()}
+                    onChange={e => {
+                      // Patch: Robustly handle both event and value
+                      let value = '';
+                      if (e && typeof e === 'object' && 'target' in e && e.target && typeof e.target.value === 'string') {
+                        value = e.target.value;
+                      } else if (typeof e === 'string') {
+                        value = e;
+                      }
+                      handleNormChange(norm.fleetNumber, 'expectedKmPerLitre', value);
+                    }}
+                    error={errors[`${norm.fleetNumber}-expectedKmPerLitre`]}
+                  />
+                ) : (
+                  <div className="bg-purple-50 rounded-md p-3">
+                    <p className="text-xs font-medium text-purple-700 mb-1">Reefer Unit:</p>
+                    <p className="text-sm font-mono text-purple-900">
+                      Measured in litres per hour instead of KM/L
+                    </p>
+                  </div>
+                )}
                 <Input
                   label="Tolerance (%)"
                   type="number"
@@ -237,12 +264,14 @@ const DieselNormsModal: React.FC<DieselNormsModalProps> = ({
                   }}
                   error={errors[`${norm.fleetNumber}-tolerancePercentage`]}
                 />
-                <div className="bg-gray-50 rounded-md p-3">
-                  <p className="text-xs font-medium text-gray-700 mb-1">Acceptable Range:</p>
-                  <p className="text-sm font-mono text-gray-900">
-                    {(norm.expectedKmPerLitre * (1 - norm.tolerancePercentage / 100)).toFixed(2)} - {(norm.expectedKmPerLitre * (1 + norm.tolerancePercentage / 100)).toFixed(2)} KM/L
-                  </p>
-                </div>
+                {!norm.isReeferUnit && (
+                  <div className="bg-gray-50 rounded-md p-3">
+                    <p className="text-xs font-medium text-gray-700 mb-1">Acceptable Range:</p>
+                    <p className="text-sm font-mono text-gray-900">
+                      {(norm.expectedKmPerLitre * (1 - norm.tolerancePercentage / 100)).toFixed(2)} - {(norm.expectedKmPerLitre * (1 + norm.tolerancePercentage / 100)).toFixed(2)} KM/L
+                    </p>
+                  </div>
+                )}
                 <div className="text-xs text-gray-500 border-t pt-2">
                   <p>Updated: {new Date(norm.lastUpdated).toLocaleDateString()}</p>
                   <p>By: {norm.updatedBy}</p>
