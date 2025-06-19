@@ -158,7 +158,8 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
       reportedAt: new Date().toISOString(),
       status: formData.status,
       actionTaken: formData.actionTaken,
-      points: formData.points
+      points: formData.points,
+      date: new Date().toISOString() // For compatibility
     };
     
     if (event) {
@@ -296,8 +297,8 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
         
         <TextArea
           label="Description *"
-          value={formData.description || ''}
-          onChange={e => setFormData(prev => ({ ...prev, description: typeof e === 'string' ? e : e.target?.value || '' }))}
+          value={formData.description}
+          onChange={(value) => handleChange('description', value)}
           placeholder="Describe the event..."
           rows={3}
           error={errors.description}
@@ -306,7 +307,7 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
         <TextArea
           label="Action Taken"
           value={formData.actionTaken}
-          onChange={(e) => handleChange('actionTaken', typeof e === 'string' ? e : e.target?.value || '')}
+          onChange={(value) => handleChange('actionTaken', value)}
           placeholder="Describe any actions taken to address this behavior..."
           rows={2}
         />

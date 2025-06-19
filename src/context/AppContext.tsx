@@ -50,6 +50,7 @@ import {
   updateCARReportInFirebase,
   deleteCARReportFromFirebase
 } from '../firebase';
+import { startDriverEventPolling, stopDriverEventPolling } from '../utils/driverBehaviorIntegration';
 
 interface AppContextType {
   trips: Trip[];
@@ -192,6 +193,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setConnectionStatus('disconnected');
     });
 
+    // Start polling for driver behavior events from Google Sheets
+    const driverEventPollingId = startDriverEventPolling(60000); // Poll every minute
+
     return () => {
       tripsUnsub();
       missedLoadsUnsub();
@@ -199,6 +203,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       driverBehaviorUnsub();
       carReportsUnsub();
       actionItemsUnsub();
+      stopDriverEventPolling(driverEventPollingId);
     };
   }, []);
 

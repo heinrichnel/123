@@ -137,6 +137,7 @@ export interface Trip {
   shippingNotes?: string;
   deliveredAt?: string;
   deliveryNotes?: string;
+  timeSpent?: string;
 }
 
 // Missed Load Types
@@ -309,6 +310,9 @@ export interface DriverBehaviorEvent {
   carReportId?: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   points: number;
+  serialNumber?: string; // Added for Google Sheets integration
+  latitude?: string;     // Added for Google Sheets integration
+  longitude?: string;    // Added for Google Sheets integration
 }
 
 export type DriverBehaviorEventType = 
@@ -321,6 +325,20 @@ export type DriverBehaviorEventType =
   | 'fatigue_alert'
   | 'phone_usage'
   | 'seatbelt_violation'
+  | 'distracted'
+  | 'lane_weaving'
+  | 'passenger'
+  | 'tailgating'
+  | 'obstruction'
+  | 'wrong_pin_code'
+  | 'violent_left_turn'
+  | 'violent_right_turn'
+  | 'de_acceleration'
+  | 'acceleration'
+  | 'button_pressed'
+  | 'smoking'
+  | 'tamper'
+  | 'accident'
   | 'other';
 
 // Driver Performance Types
@@ -613,6 +631,20 @@ export const DRIVER_BEHAVIOR_EVENT_TYPES = [
   { value: "fatigue_alert", label: "Fatigue Alert", severity: "high", points: 8 },
   { value: "phone_usage", label: "Phone Usage While Driving", severity: "high", points: 10 },
   { value: "seatbelt_violation", label: "Seatbelt Violation", severity: "high", points: 7 },
+  { value: "distracted", label: "Distracted", severity: "high", points: 10 },
+  { value: "lane_weaving", label: "Lane Weaving", severity: "medium", points: 5 },
+  { value: "passenger", label: "Passenger", severity: "medium", points: 3 },
+  { value: "tailgating", label: "Tailgating", severity: "high", points: 7 },
+  { value: "obstruction", label: "Obstruction", severity: "medium", points: 4 },
+  { value: "wrong_pin_code", label: "Wrong PIN Code", severity: "low", points: 2 },
+  { value: "violent_left_turn", label: "Violent Left Turn", severity: "medium", points: 5 },
+  { value: "violent_right_turn", label: "Violent Right Turn", severity: "medium", points: 5 },
+  { value: "de_acceleration", label: "De-Acceleration", severity: "medium", points: 3 },
+  { value: "acceleration", label: "Acceleration", severity: "medium", points: 3 },
+  { value: "button_pressed", label: "Button Pressed", severity: "low", points: 1 },
+  { value: "smoking", label: "Smoking", severity: "medium", points: 4 },
+  { value: "tamper", label: "Tamper", severity: "high", points: 8 },
+  { value: "accident", label: "Accident", severity: "critical", points: 50 },
   { value: "other", label: "Other", severity: "medium", points: 2 }
 ];
 
