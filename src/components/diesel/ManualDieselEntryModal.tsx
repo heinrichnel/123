@@ -111,7 +111,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
+    
     if (!formData.fleetNumber) newErrors.fleetNumber = 'Fleet number is required';
     if (!formData.date) newErrors.date = 'Date is required';
     if (!formData.litresFilled) newErrors.litresFilled = 'Litres filled is required';
@@ -171,9 +171,12 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const distanceTravelled = !formData.isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : undefined;
     const kmPerLitre = !formData.isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
 
-    // Patch: Only include tripId if it is a non-empty string
-    const recordData: any = {
-      id: `diesel-${Date.now()}`,
+    // Create a unique ID for the diesel record
+    const newId = `diesel-${Date.now()}`;
+
+    // Prepare the record data
+    const recordData: DieselConsumptionRecord = {
+      id: newId,
       fleetNumber: formData.fleetNumber,
       date: formData.date,
       kmReading: formData.isReeferUnit ? 0 : kmReading,
@@ -335,7 +338,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           <Select
             label="Fleet Number *"
             value={formData.fleetNumber}
-            onChange={value => handleChange('fleetNumber', value)}
+            onChange={val => handleChange('fleetNumber', val)}
             options={[
               { label: 'Select fleet...', value: '' },
               ...FLEET_NUMBERS.map(f => ({ label: f, value: f })),
@@ -352,7 +355,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             label="Date *"
             type="date"
             value={formData.date}
-            onChange={value => handleChange('date', value)}
+            onChange={val => handleChange('date', val)}
             error={errors.date}
           />
 
@@ -364,7 +367,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
                 step="1"
                 min="0"
                 value={formData.kmReading}
-                onChange={value => handleChange('kmReading', value)}
+                onChange={val => handleChange('kmReading', val)}
                 placeholder="125000"
                 error={errors.kmReading}
               />
@@ -375,7 +378,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
                 step="1"
                 min="0"
                 value={formData.previousKmReading}
-                onChange={value => handleChange('previousKmReading', value)}
+                onChange={val => handleChange('previousKmReading', val)}
                 placeholder="123560"
                 error={errors.previousKmReading}
               />
@@ -388,7 +391,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="0.1"
             min="0.1"
             value={formData.litresFilled}
-            onChange={value => handleChange('litresFilled', value)}
+            onChange={val => handleChange('litresFilled', val)}
             placeholder="450"
             error={errors.litresFilled}
           />
@@ -399,7 +402,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="0.01"
             min="0"
             value={formData.costPerLitre}
-            onChange={value => handleChange('costPerLitre', value)}
+            onChange={val => handleChange('costPerLitre', val)}
             placeholder="18.50"
             error={errors.costPerLitre}
           />
@@ -408,7 +411,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             <Select
               label="Currency *"
               value={formData.currency}
-              onChange={value => handleChange('currency', value)}
+              onChange={val => handleChange('currency', val)}
               options={[
                 { label: 'ZAR (R)', value: 'ZAR' },
                 { label: 'USD ($)', value: 'USD' }
@@ -422,7 +425,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
               step="0.01"
               min="0.01"
               value={formData.totalCost}
-              onChange={value => handleChange('totalCost', value)}
+              onChange={val => handleChange('totalCost', val)}
               placeholder="8325.00"
               error={errors.totalCost}
             />
@@ -431,7 +434,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           <Select
             label="Fuel Station *"
             value={formData.fuelStation}
-            onChange={value => handleChange('fuelStation', value)}
+            onChange={val => handleChange('fuelStation', val)}
             options={[
               { label: 'Select fuel station...', value: '' },
               ...FUEL_STATIONS.map(station => ({ label: station, value: station }))
@@ -442,7 +445,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           <Select
             label="Driver *"
             value={formData.driverName}
-            onChange={value => handleChange('driverName', value)}
+            onChange={val => handleChange('driverName', val)}
             options={[
               { label: 'Select driver...', value: '' },
               ...DRIVERS.map(d => ({ label: d, value: d }))
@@ -454,7 +457,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             <Select
               label="Link to Trip (Optional)"
               value={formData.tripId}
-              onChange={value => handleChange('tripId', value)}
+              onChange={val => handleChange('tripId', val)}
               options={[
                 { label: 'No trip linkage', value: '' },
                 ...availableTrips.map(trip => ({ 
@@ -468,7 +471,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             <Select
               label="Link to Horse (Optional)"
               value={formData.linkedHorseId}
-              onChange={value => handleChange('linkedHorseId', value)}
+              onChange={val => handleChange('linkedHorseId', val)}
               options={[
                 { label: 'No horse linkage', value: '' },
                 ...availableHorses.map(horse => {
@@ -489,7 +492,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
         <TextArea
           label="Notes"
           value={formData.notes}
-          onChange={value => handleChange('notes', value)}
+          onChange={val => handleChange('notes', val)}
           placeholder="Additional notes about this fuel entry..."
           rows={3}
         />

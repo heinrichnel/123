@@ -67,6 +67,8 @@ export interface DelayReason {
   reportedBy: string;
   severity?: 'minor' | 'moderate' | 'major';
   date?: string;
+  reason?: string;
+  duration?: number;
   createdAt?: string;
   updatedAt?: string;
 }

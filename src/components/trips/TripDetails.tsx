@@ -18,9 +18,8 @@ import FileUpload from '../ui/FileUpload';
 import CostForm from '../costs/CostForm';
 import CostList from '../costs/CostList';
 import SystemCostGenerator from '../costs/IndirectCost';
-import TripPlanningForm from '../planning/TripPlanningForm';
-import InvoiceSubmissionModal from './InvoiceSubmissionModal';
 import TripReport from '../reports/TripReport';
+import InvoiceSubmissionModal from './InvoiceSubmissionModal';
 
 // ─── Helpers ─────────────────────────────────────────────────────
 import {
@@ -80,14 +79,14 @@ interface TripDetailsProps {
 }
 
 const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
-  const { addCostEntry, updateCostEntry, deleteCostEntry, updateTrip, addAdditionalCost, removeAdditionalCost, addDelayReason } = useAppContext();
+  const { addCostEntry, updateCostEntry, deleteCostEntry, updateTrip, addAdditionalCost, removeAdditionalCost } = useAppContext();
   const [showCostForm, setShowCostForm] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showSystemCostGenerator, setShowSystemCostGenerator] = useState(false);
   const [showInvoiceSubmission, setShowInvoiceSubmission] = useState(false);
-  const [showTripPlanning, setShowTripPlanning] = useState(false);
   const [editingCost, setEditingCost] = useState<CostEntry | undefined>();
   const [costEntries, setCostEntries] = useState<CostEntry[]>([]);
+  const [viewingAttachment, setViewingAttachment] = useState<{url: string, filename: string} | null>(null);
 
   // Ensure trip has costs array
   if (!trip.costs) {
@@ -228,38 +227,22 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
   };
 
   const handleCompleteTrip = () => {
-    const unresolvedFlags = getUnresolvedFlagsCount(costEntries);
-    
-    if (unresolvedFlags > 0) {
-      alert(`Cannot complete trip: ${unresolvedFlags} unresolved flagged items must be resolved before completing the trip.\n\nPlease go to the Flags & Investigations section to resolve all outstanding issues.`);
-      return;
-    }
-
-    const confirmMessage = `Are you sure you want to mark this trip as COMPLETED?\n\n` +
-      `This will:\n` +
-      `• Lock the trip from further editing\n` +
-      `• Move it to the Completed Trips section\n` +
-      `• Make it available for invoicing\n\n` +
-      `This action cannot be undone.`;
-
-    if (confirm(confirmMessage)) {
-      try {
-        const updatedTrip = {
-          ...trip,
-          costs: costEntries,
-          status: 'completed' as const,
-          completedAt: new Date().toISOString(),
-          completedBy: 'Current User' // In a real app, this would be the logged-in user
-        };
-        
-        updateTrip(updatedTrip);
-        
-        alert('Trip has been successfully completed and is now ready for invoicing.');
-        onBack();
-      } catch (error) {
-        console.error('Error completing trip:', error);
-        alert('Error completing trip. Please try again.');
-      }
+    try {
+      const updatedTrip = {
+        ...trip,
+        costs: costEntries,
+        status: 'completed' as const,
+        completedAt: new Date().toISOString(),
+        completedBy: 'Current User' // In a real app, this would be the logged-in user
+      };
+      
+      updateTrip(updatedTrip);
+      
+      alert('Trip has been successfully completed and is now ready for invoicing.');
+      onBack();
+    } catch (error) {
+      console.error('Error completing trip:', error);
+      alert('Error completing trip. Please try again.');
     }
   };
 
@@ -358,26 +341,19 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
     setEditingCost(undefined);
   };
 
+  // Handle viewing attachment
+  const handleViewAttachment = (url: string, filename: string) => {
+    setViewingAttachment({ url, filename });
+  };
+
   const kpis = calculateKPIs(trip);
   const flaggedCount = getFlaggedCostsCount(costEntries);
   const unresolvedFlags = getUnresolvedFlagsCount(costEntries);
-  const canComplete = canCompleteTrip({...trip, costs: costEntries});
   
   // Check if system costs have been generated
   const hasSystemCosts = costEntries.some(cost => cost.isSystemGenerated);
   const systemCosts = costEntries.filter(cost => cost.isSystemGenerated);
   const manualCosts = costEntries.filter(cost => !cost.isSystemGenerated);
-
-  // Calculate timeline discrepancies for display
-  const hasTimelineDiscrepancies = () => {
-    if (!trip.plannedArrivalDateTime || !trip.actualArrivalDateTime) return false;
-    
-    const planned = new Date(trip.plannedArrivalDateTime);
-    const actual = new Date(trip.actualArrivalDateTime);
-    const diffHours = Math.abs((actual.getTime() - planned.getTime()) / (1000 * 60 * 60));
-    
-    return diffHours > 1; // More than 1 hour difference
-  };
 
   return (
     <div className="space-y-6">
@@ -398,14 +374,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
           
           {trip.status === 'active' && (
             <>
-              <Button 
-                variant="outline"
-                onClick={() => setShowTripPlanning(true)} 
-                icon={<Calendar className="w-4 h-4" />}
-              >
-                Trip Planning
-              </Button>
-
               {!hasSystemCosts && (
                 <Button 
                   variant="outline"
@@ -425,10 +393,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
               
               <Button 
                 onClick={handleCompleteTrip}
-                disabled={!canComplete}
                 icon={<CheckCircle className="w-4 h-4" />}
-                className={!canComplete ? 'opacity-50 cursor-not-allowed' : ''}
-                title={!canComplete ? `Cannot complete: ${unresolvedFlags} unresolved flags` : 'Mark trip as completed'}
               >
                 Complete Trip
               </Button>
@@ -464,23 +429,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
                   ✓ Timeline validated on {formatDateTime(trip.timelineValidatedAt!)}
                 </p>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Timeline Discrepancy Alert */}
-      {hasTimelineDiscrepancies() && trip.status === 'active' && (
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-md">
-          <div className="flex items-start">
-            <Clock className="w-5 h-5 text-amber-600 mt-0.5 mr-3" />
-            <div>
-              <h4 className="text-sm font-medium text-amber-800">
-                Timeline Discrepancies Detected
-              </h4>
-              <p className="text-sm text-amber-700 mt-1">
-                Significant differences found between planned and actual times. Review timeline in Trip Planning section before completion.
-              </p>
             </div>
           </div>
         </div>
@@ -578,7 +526,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
             <div>
               <h4 className="text-sm font-medium text-green-800">Trip Completed - Ready for Invoicing</h4>
               <p className="text-sm text-green-700">
-                This trip was completed on {trip.completedAt} by {trip.completedBy}. 
+                This trip was completed on {formatDate(trip.completedAt || '')} by {trip.completedBy}. 
                 All cost entries are finalized and the trip is ready for invoice submission.
               </p>
             </div>
@@ -591,8 +539,8 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
         <CardHeader 
           title={`Fleet ${trip.fleetNumber} - Trip Details`}
           subtitle={
-            trip.status === 'completed' ? `Completed ${trip.completedAt}` : 
-            trip.status === 'invoiced' ? `Invoiced ${trip.invoiceDate}` :
+            trip.status === 'completed' ? `Completed ${formatDate(trip.completedAt || '')}` : 
+            trip.status === 'invoiced' ? `Invoiced ${formatDate(trip.invoiceDate || '')}` :
             'Active Trip'
           }
         />
@@ -743,19 +691,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
                     </div>
                   </div>
                 </div>
-                {trip.status === 'active' && (
-                  <div>
-                    <p className="text-sm text-gray-500">Completion Status</p>
-                    <p className={`font-medium ${canComplete ? 'text-green-600' : 'text-red-600'}`}>
-                      {canComplete ? 'Ready to Complete' : 'Cannot Complete'}
-                    </p>
-                    {!canComplete && (
-                      <p className="text-xs text-red-500 mt-1">
-                        Resolve {unresolvedFlags} flag{unresolvedFlags !== 1 ? 's' : ''} first
-                      </p>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -779,6 +714,7 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
             costs={costEntries} 
             onEdit={trip.status === 'active' ? handleEditCost : undefined}
             onDelete={trip.status === 'active' ? handleDeleteCost : undefined}
+            onViewAttachment={handleViewAttachment}
           />
         </CardContent>
       </Card>
@@ -811,19 +747,6 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
               onGenerateSystemCosts={handleGenerateSystemCosts}
             />
           </Modal>
-
-          <Modal
-            isOpen={showTripPlanning}
-            onClose={() => setShowTripPlanning(false)}
-            title="Trip Planning & Timeline"
-            maxWidth="2xl"
-          >
-            <TripPlanningForm
-              trip={trip}
-              onUpdate={updateTrip}
-              onAddDelay={(delay) => addDelayReason(trip.id, delay)}
-            />
-          </Modal>
         </>
       )}
 
@@ -845,6 +768,59 @@ const TripDetails: React.FC<TripDetailsProps> = ({ trip, onBack }) => {
         maxWidth="2xl"
       >
         <TripReport trip={{...trip, costs: costEntries}} />
+      </Modal>
+
+      {/* Attachment Viewer Modal */}
+      <Modal
+        isOpen={!!viewingAttachment}
+        onClose={() => setViewingAttachment(null)}
+        title={viewingAttachment?.filename || "View Attachment"}
+        maxWidth="2xl"
+      >
+        {viewingAttachment && (
+          <div className="flex flex-col items-center space-y-4">
+            {viewingAttachment.url.includes('.pdf') ? (
+              <iframe 
+                src={viewingAttachment.url} 
+                className="w-full h-[70vh]" 
+                title={viewingAttachment.filename}
+              />
+            ) : viewingAttachment.url.includes('image') ? (
+              <img 
+                src={viewingAttachment.url} 
+                alt={viewingAttachment.filename} 
+                className="max-w-full max-h-[70vh] object-contain"
+              />
+            ) : (
+              <div className="text-center p-8 bg-gray-100 rounded-lg">
+                <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-700">{viewingAttachment.filename}</p>
+                <p className="text-sm text-gray-500 mt-2">This file type cannot be previewed directly.</p>
+                <Button 
+                  className="mt-4"
+                  onClick={() => window.open(viewingAttachment.url, '_blank')}
+                >
+                  Download File
+                </Button>
+              </div>
+            )}
+            <div className="flex justify-center space-x-4">
+              <Button
+                onClick={() => window.open(viewingAttachment.url, '_blank')}
+                icon={<Download className="w-4 h-4" />}
+              >
+                Download
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setViewingAttachment(null)}
+                icon={<X className="w-4 h-4" />}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

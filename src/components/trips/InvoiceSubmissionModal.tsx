@@ -49,70 +49,12 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
     invoiceNumber: '',
     invoiceDate: new Date().toISOString().split('T')[0],
     invoiceDueDate: '',
-    finalArrivalDateTime: trip.actualArrivalDateTime || trip.plannedArrivalDateTime || '',
-    finalOffloadDateTime: trip.actualOffloadDateTime || trip.plannedOffloadDateTime || '',
-    finalDepartureDateTime: trip.actualDepartureDateTime || trip.plannedDepartureDateTime || '',
     validationNotes: ''
   });
 
   const [proofOfDelivery, setProofOfDelivery] = useState<FileList | null>(null);
   const [signedInvoice, setSignedInvoice] = useState<FileList | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Calculate timeline discrepancies
-  const calculateDiscrepancies = () => {
-    const discrepancies = [];
-    
-    if (trip.plannedArrivalDateTime && formData.finalArrivalDateTime) {
-      const planned = new Date(trip.plannedArrivalDateTime);
-      const final = new Date(formData.finalArrivalDateTime);
-      const diffHours = (final.getTime() - planned.getTime()) / (1000 * 60 * 60);
-      
-      if (Math.abs(diffHours) > 1) {
-        discrepancies.push({
-          type: 'Arrival',
-          planned: formatDateTime(planned),
-          final: formatDateTime(final),
-          difference: `${diffHours > 0 ? '+' : ''}${diffHours.toFixed(1)} hours`,
-          severity: Math.abs(diffHours) > 4 ? 'major' : Math.abs(diffHours) > 2 ? 'moderate' : 'minor'
-        });
-      }
-    }
-
-    if (trip.plannedOffloadDateTime && formData.finalOffloadDateTime) {
-      const planned = new Date(trip.plannedOffloadDateTime);
-      const final = new Date(formData.finalOffloadDateTime);
-      const diffHours = (final.getTime() - planned.getTime()) / (1000 * 60 * 60);
-      
-      if (Math.abs(diffHours) > 1) {
-        discrepancies.push({
-          type: 'Offload',
-          planned: formatDateTime(planned),
-          final: formatDateTime(final),
-          difference: `${diffHours > 0 ? '+' : ''}${diffHours.toFixed(1)} hours`,
-          severity: Math.abs(diffHours) > 4 ? 'major' : Math.abs(diffHours) > 2 ? 'moderate' : 'minor'
-        });
-      }
-    }
-
-    if (trip.plannedDepartureDateTime && formData.finalDepartureDateTime) {
-      const planned = new Date(trip.plannedDepartureDateTime);
-      const final = new Date(formData.finalDepartureDateTime);
-      const diffHours = (final.getTime() - planned.getTime()) / (1000 * 60 * 60);
-      
-      if (Math.abs(diffHours) > 1) {
-        discrepancies.push({
-          type: 'Departure',
-          planned: formatDateTime(planned),
-          final: formatDateTime(final),
-          difference: `${diffHours > 0 ? '+' : ''}${diffHours.toFixed(1)} hours`,
-          severity: Math.abs(diffHours) > 4 ? 'major' : Math.abs(diffHours) > 2 ? 'moderate' : 'minor'
-        });
-      }
-    }
-
-    return discrepancies;
-  };
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -149,26 +91,9 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
       newErrors.invoiceDueDate = 'Due date is required';
     }
     
-    if (!formData.finalArrivalDateTime) {
-      newErrors.finalArrivalDateTime = 'Final arrival time is required';
-    }
-    
-    if (!formData.finalOffloadDateTime) {
-      newErrors.finalOffloadDateTime = 'Final offload time is required';
-    }
-    
-    if (!formData.finalDepartureDateTime) {
-      newErrors.finalDepartureDateTime = 'Final departure time is required';
-    }
-    
     // Check for required documents
     if (!proofOfDelivery || proofOfDelivery.length === 0) {
       newErrors.proofOfDelivery = 'Proof of delivery is required for invoicing';
-    }
-    
-    const discrepancies = calculateDiscrepancies();
-    if (discrepancies.length > 0 && !formData.validationNotes.trim()) {
-      newErrors.validationNotes = 'Validation notes are required when there are timeline discrepancies';
     }
     
     setErrors(newErrors);
@@ -183,9 +108,9 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
       invoiceDate: formData.invoiceDate,
       invoiceDueDate: formData.invoiceDueDate,
       finalTimeline: {
-        finalArrivalDateTime: formData.finalArrivalDateTime,
-        finalOffloadDateTime: formData.finalOffloadDateTime,
-        finalDepartureDateTime: formData.finalDepartureDateTime
+        finalArrivalDateTime: trip.actualArrivalDateTime || trip.plannedArrivalDateTime || new Date().toISOString(),
+        finalOffloadDateTime: trip.actualOffloadDateTime || trip.plannedOffloadDateTime || new Date().toISOString(),
+        finalDepartureDateTime: trip.actualDepartureDateTime || trip.plannedDepartureDateTime || new Date().toISOString()
       },
       validationNotes: formData.validationNotes.trim(),
       proofOfDelivery,
@@ -194,8 +119,6 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
   };
 
   const kpis = calculateKPIs(trip);
-  const discrepancies = calculateDiscrepancies();
-  const hasDiscrepancies = discrepancies.length > 0;
   const totalAdditionalCosts = trip.additionalCosts?.reduce((sum, cost) => sum + cost.amount, 0) || 0;
   const finalInvoiceAmount = kpis.totalRevenue + totalAdditionalCosts;
 
@@ -260,97 +183,44 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
           </div>
         </div>
 
-        {/* Timeline Validation */}
+        {/* Invoice Details */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">Final Timeline Validation</h3>
+          <h3 className="text-lg font-medium text-gray-900">Invoice Details</h3>
           
-          {hasDiscrepancies && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-                <div>
-                  <h4 className="text-sm font-medium text-amber-800">Timeline Discrepancies Detected</h4>
-                  <p className="text-sm text-amber-700 mt-1">
-                    Significant differences found between planned and final times. Please review and provide validation notes.
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {discrepancies.map((disc, index) => (
-                      <div key={index} className="text-sm bg-amber-100 p-2 rounded border border-amber-300">
-                        <div className="flex items-center space-x-2">
-                          <Flag className={`w-4 h-4 ${
-                            disc.severity === 'major' ? 'text-red-600' : 
-                            disc.severity === 'moderate' ? 'text-orange-600' : 'text-yellow-600'
-                          }`} />
-                          <span className="font-medium text-amber-800">{disc.type} Time Variance ({disc.severity})</span>
-                        </div>
-                        <div className="ml-6 mt-1 space-y-1">
-                          <div className="text-amber-700">
-                            <span className="font-medium">Planned:</span> {disc.planned}
-                          </div>
-                          <div className="text-amber-700">
-                            <span className="font-medium">Final:</span> {disc.final}
-                          </div>
-                          <div className="text-amber-800 font-medium">
-                            <span className="font-medium">Difference:</span> {disc.difference}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Input
-              label="Final Arrival Date & Time *"
-              type="datetime-local"
-              value={formData.finalArrivalDateTime}
-              onChange={value => handleChange('finalArrivalDateTime', value)}
-              error={errors.finalArrivalDateTime}
+              label="Invoice Number *"
+              value={formData.invoiceNumber}
+              onChange={value => handleChange('invoiceNumber', value)}
+              placeholder="e.g., INV-2025-001"
+              error={errors.invoiceNumber}
             />
+            
             <Input
-              label="Final Offload Date & Time *"
-              type="datetime-local"
-              value={formData.finalOffloadDateTime}
-              onChange={value => handleChange('finalOffloadDateTime', value)}
-              error={errors.finalOffloadDateTime}
+              label="Invoice Date *"
+              type="date"
+              value={formData.invoiceDate}
+              onChange={value => handleChange('invoiceDate', value)}
+              error={errors.invoiceDate}
             />
+            
             <Input
-              label="Final Departure Date & Time *"
-              type="datetime-local"
-              value={formData.finalDepartureDateTime}
-              onChange={value => handleChange('finalDepartureDateTime', value)}
-              error={errors.finalDepartureDateTime}
+              label="Due Date *"
+              type="date"
+              value={formData.invoiceDueDate}
+              onChange={value => handleChange('invoiceDueDate', value)}
+              error={errors.invoiceDueDate}
             />
           </div>
-
-          {hasDiscrepancies && (
-            <TextArea
-              label="Timeline Validation Notes *"
-              value={formData.validationNotes}
-              onChange={value => handleChange('validationNotes', value)}
-              placeholder="Explain the timeline discrepancies and any delays encountered..."
-              rows={3}
-              error={errors.validationNotes}
-            />
-          )}
+          
+          <TextArea
+            label="Invoice Notes (Optional)"
+            value={formData.validationNotes}
+            onChange={value => handleChange('validationNotes', value)}
+            placeholder="Add any notes about this invoice..."
+            rows={3}
+          />
         </div>
-
-        {/* Delay Reasons Summary */}
-        {trip.delayReasons && trip.delayReasons.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <h4 className="text-sm font-medium text-red-800 mb-2">Recorded Delays ({trip.delayReasons.length})</h4>
-            <ul className="list-disc list-inside text-sm text-red-700 max-h-32 overflow-y-auto">
-              {trip.delayReasons.map((delay) => (
-                <li key={delay.id}>
-                  {formatDate(delay.date)} - {delay.reason} ({delay.duration} minutes) - {delay.notes}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {/* Proof of Delivery & Signed Invoice Upload */}
         <div className="space-y-6">

@@ -32,6 +32,19 @@ const SystemCostGenerator: React.FC<SystemCostGeneratorProps> = ({
     if (systemCostRates) {
       setSystemRates(systemCostRates);
     }
+    
+    // Also check localStorage for saved rates
+    const savedRates = localStorage.getItem('systemCostRates');
+    if (savedRates) {
+      try {
+        const parsedRates = JSON.parse(savedRates);
+        if (parsedRates.USD && parsedRates.ZAR) {
+          setSystemRates(parsedRates);
+        }
+      } catch (error) {
+        console.error("Error parsing saved system cost rates:", error);
+      }
+    }
   }, [systemCostRates]);
   
   // Use effective date logic to determine which rates to apply

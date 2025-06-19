@@ -139,7 +139,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // System Cost Rates (following centralized context pattern)
   const [systemCostRates, setSystemCostRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
 
-  // Load system cost rates from localStorage on component mount
+  // Load system cost rates from localStorage on initialization
   useEffect(() => {
     const savedRates = localStorage.getItem('systemCostRates');
     if (savedRates) {
@@ -465,16 +465,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       const trip = trips.find((t) => t.id === tripId);
       if (!trip) {
         throw new Error("Trip not found");
-      }
-
-      // Check for unresolved flags
-      const unresolvedFlags = trip.costs?.some(
-        (cost) => cost.isFlagged && cost.investigationStatus !== "resolved"
-      );
-      if (unresolvedFlags) {
-        throw new Error(
-          "Cannot complete trip: unresolved flagged cost entries present"
-        );
       }
 
       // Update the trip status
@@ -951,16 +941,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       await setDoc(doc(db, "systemCostRates", currency), removeUndefinedValues(rates));
       
       // Update local state
-      setSystemCostRates(prev => ({
-        ...prev,
+      const updatedRates = {
+        ...systemCostRates,
         [currency]: rates,
-      }));
+      };
+      
+      setSystemCostRates(updatedRates);
       
       // Save to localStorage for persistence
-      localStorage.setItem('systemCostRates', JSON.stringify({
-        ...systemCostRates,
-        [currency]: rates
-      }));
+      localStorage.setItem('systemCostRates', JSON.stringify(updatedRates));
     } catch (error) {
       console.error("Error updating system cost rates:", error);
       throw error;
@@ -970,32 +959,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Diesel CRUD
   const addDieselRecord = async (record: DieselConsumptionRecord) => {
     try {
-      // Add the diesel record to Firestore
       await addDieselToFirebase(removeUndefinedValues(record));
       
-      // Update local state
+      // Update local state immediately
       setDieselRecords(prev => [...prev, record]);
-      
-      // If this is a regular diesel record linked to a trip, create a cost entry
-      if (!record.isReeferUnit && record.tripId) {
-        // Create a cost entry for the diesel
-        const costData: Omit<CostEntry, "id" | "attachments"> = {
-          tripId: record.tripId,
-          category: "Fuel",
-          subCategory: "Diesel",
-          amount: record.totalCost,
-          currency: record.currency || "ZAR",
-          referenceNumber: `DIESEL-${record.id}`,
-          date: record.date,
-          notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled}L`,
-          isFlagged: false,
-          isSystemGenerated: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        
-        await addCostEntry(record.tripId, costData);
-      }
       
       // If this is a reefer unit linked to a horse, and the horse is linked to a trip,
       // automatically create a cost entry for the reefer diesel
@@ -1031,7 +998,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await updateDieselInFirebase(record.id, removeUndefinedValues(record));
       
-      // Update local state
+      // Update local state immediately
       setDieselRecords(prev => prev.map(r => r.id === record.id ? record : r));
       
       // If this is a reefer unit and the linked horse has changed
@@ -1099,6 +1066,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
                 };
                 
                 await updateCostEntry(updatedCostEntry);
+              } else {
+                // If no cost entry exists yet, create one
+                const costData: Omit<CostEntry, "id" | "attachments"> = {
+                  tripId: horseRecord.tripId,
+                  category: "Fuel",
+                  subCategory: "Reefer Diesel",
+                  amount: record.totalCost,
+                  currency: record.currency || "ZAR",
+                  referenceNumber: `REEFER-DIESEL-${record.id}`,
+                  date: record.date,
+                  notes: `Reefer diesel for ${record.fleetNumber} - ${record.litresFilled}L at ${record.fuelStation}`,
+                  isFlagged: false,
+                  isSystemGenerated: false,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                };
+                
+                await addCostEntry(horseRecord.tripId, costData);
               }
             }
           }
@@ -1127,6 +1112,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
               };
               
               await updateCostEntry(updatedCostEntry);
+            } else {
+              // If no cost entry exists yet, create one
+              const costData: Omit<CostEntry, "id" | "attachments"> = {
+                tripId: record.tripId,
+                category: "Fuel",
+                subCategory: "Diesel",
+                amount: record.totalCost,
+                currency: record.currency || "ZAR",
+                referenceNumber: `DIESEL-${record.id}`,
+                date: record.date,
+                notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled}L`,
+                isFlagged: false,
+                isSystemGenerated: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+              
+              await addCostEntry(record.tripId, costData);
             }
           }
         }
@@ -1186,9 +1189,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
   
   const importDieselRecords = async (formData: FormData) => {
-    // This would be implemented to handle CSV import
-    console.log("Importing diesel records:", formData);
-    // Placeholder for actual implementation
+    try {
+      const recordsJson = formData.get('records');
+      if (!recordsJson || typeof recordsJson !== 'string') {
+        throw new Error('No valid records data found in form');
+      }
+      
+      const records = JSON.parse(recordsJson) as DieselConsumptionRecord[];
+      
+      // Process each record
+      for (const record of records) {
+        await addDieselRecord(record);
+      }
+      
+      return { success: true, count: records.length };
+    } catch (error) {
+      console.error("Error importing diesel records:", error);
+      throw error;
+    }
   };
 
   // Driver Behavior Event CRUD

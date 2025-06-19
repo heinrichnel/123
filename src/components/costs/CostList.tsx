@@ -31,9 +31,10 @@ interface CostListProps {
   costs: CostEntry[];
   onEdit?: (cost: CostEntry) => void;
   onDelete?: (id: string) => void;
+  onViewAttachment?: (url: string, filename: string) => void;
 }
 
-const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
+const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete, onViewAttachment }) => {
   if (costs.length === 0) {
     return (
       <div className="text-center py-8">
@@ -66,7 +67,9 @@ const CostList: React.FC<CostListProps> = ({ costs, onEdit, onDelete }) => {
   };
 
   const handleViewAttachment = (attachment: any) => {
-    if (attachment.fileUrl) {
+    if (onViewAttachment) {
+      onViewAttachment(attachment.fileUrl, attachment.filename);
+    } else if (attachment.fileUrl) {
       window.open(attachment.fileUrl, '_blank');
     } else {
       alert(`Viewing ${attachment.filename}\n\nIn a production system, this would open or download the file.`);

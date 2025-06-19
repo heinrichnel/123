@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
-import { formatDate, formatCurrency } from '../../utils/helpers';
+import { formatCurrency, formatDate } from '../../utils/helpers';
 
 
 interface TripLinkageModalProps {
@@ -37,7 +37,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
   onClose,
   dieselRecordId
 }) => {
-  const { trips, dieselRecords, allocateDieselToTrip, removeDieselFromTrip, updateDieselRecord } = useAppContext();
+  const { trips, dieselRecords, allocateDieselToTrip, removeDieselFromTrip, updateDieselRecord, deleteCostEntry } = useAppContext();
   const [selectedTripId, setSelectedTripId] = useState<string>('');
   const [selectedHorseId, setSelectedHorseId] = useState<string>('');
   const [errors, setErrors] = useState<Record<string, string>>({});
