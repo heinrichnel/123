@@ -82,7 +82,7 @@ interface AppContextType {
 
   // Missed Loads (following centralized context pattern)
   missedLoads: MissedLoad[];
-  addMissedLoad: (missedLoad: Omit<MissedLoad, "id">) => string;
+  addMissedLoad: (missedLoad: Omit<MissedLoad, "id">) => Promise<string>;
   updateMissedLoad: (missedLoad: MissedLoad) => Promise<void>;
   deleteMissedLoad: (id: string) => Promise<void>;
 
@@ -110,11 +110,11 @@ interface AppContextType {
 
   // System Cost Rates (following centralized context pattern)
   systemCostRates: Record<'USD' | 'ZAR', SystemCostRates>;
-  updateSystemCostRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
+  updateSystemCostRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => Promise<void>;
 
   // Action Items
   actionItems: ActionItem[];
-  addActionItem: (item: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => string;
+  addActionItem: (item: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>) => Promise<string>;
   updateActionItem: (item: ActionItem) => Promise<void>;
   deleteActionItem: (id: string) => Promise<void>;
   addActionItemComment: (itemId: string, comment: string) => Promise<void>;
@@ -179,6 +179,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setConnectionStatus('disconnected');
     });
 
+    // System Cost Rates sync
+    const systemCostRatesUnsub = onSnapshot(collection(db, 'systemCostRates'), (snapshot) => {
+      if (!snapshot.empty) {
+        const ratesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const formattedRates: Record<'USD' | 'ZAR', SystemCostRates> = { ...DEFAULT_SYSTEM_COST_RATES };
+        
+        ratesData.forEach(rate => {
+          if (rate.currency === 'USD' || rate.currency === 'ZAR') {
+            formattedRates[rate.currency] = rate as SystemCostRates;
+          }
+        });
+        
+        setSystemCostRates(formattedRates);
+      }
+    }, (error) => {
+      console.error("System cost rates listener error:", error);
+    });
+
     return () => {
       tripsUnsub();
       missedLoadsUnsub();
@@ -186,6 +204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       driverBehaviorUnsub();
       carReportsUnsub();
       actionItemsUnsub();
+      systemCostRatesUnsub();
     };
   }, []);
 
@@ -801,7 +820,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }
 
-  const addMissedLoad = (missedLoadData: Omit<MissedLoad, "id">): string => {
+  const addMissedLoad = async (missedLoadData: Omit<MissedLoad, "id">): Promise<string> => {
     try {
       // Generate a unique ID for the missed load
       const newId = `ML${Date.now()}`;
@@ -814,11 +833,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       
       // Add the missed load to Firestore
       const sanitized = sanitizeMissedLoad(newMissedLoad);
-      addDoc(collection(db, "missedLoads"), sanitized)
-        .catch(error => {
-          console.error("Error adding missed load to Firestore:", error);
-          throw error;
-        });
+      await setDoc(doc(db, "missedLoads", newId), sanitized);
       
       // Update local state
       setMissedLoads(prev => [...prev, newMissedLoad]);
@@ -864,13 +879,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // System Cost Rates Handler (following uniform handler pattern)
-  const updateSystemCostRates = (currency: 'USD' | 'ZAR', rates: SystemCostRates): void => {
-    setSystemCostRates(prev => ({
-      ...prev,
-      [currency]: rates,
-    }));
-    // Note: In a full implementation, you would also save this to Firestore
-    // But preserving current calculation methodology as requested
+  const updateSystemCostRates = async (currency: 'USD' | 'ZAR', rates: SystemCostRates): Promise<void> => {
+    try {
+      // Update in Firestore
+      const rateId = `${currency}_rates`;
+      const cleanRates = removeUndefinedValues(rates);
+      
+      // Check if document exists
+      const rateDoc = await getDoc(doc(db, "systemCostRates", rateId));
+      
+      if (rateDoc.exists()) {
+        await updateDoc(doc(db, "systemCostRates", rateId), cleanRates);
+      } else {
+        await setDoc(doc(db, "systemCostRates", rateId), cleanRates);
+      }
+      
+      // Update local state
+      setSystemCostRates(prev => ({
+        ...prev,
+        [currency]: rates,
+      }));
+    } catch (error) {
+      console.error("Error updating system cost rates:", error);
+      throw error;
+    }
   };
 
   // Diesel CRUD
@@ -1043,7 +1075,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Action Items CRUD (Firestore)
-  const addActionItem = (itemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>): string => {
+  const addActionItem = async (itemData: Omit<ActionItem, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>): Promise<string> => {
     try {
       // Generate a unique ID for the action item
       const newId = `AI${Date.now()}`;
@@ -1058,11 +1090,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       
       // Add the action item to Firestore
-      addDoc(collection(db, 'actionItems'), removeUndefinedValues(newActionItem))
-        .catch(error => {
-          console.error("Error adding action item to Firestore:", error);
-          throw error;
-        });
+      await setDoc(doc(db, 'actionItems', newId), removeUndefinedValues(newActionItem));
       
       // Update local state
       setActionItems(prev => [...prev, newActionItem]);
