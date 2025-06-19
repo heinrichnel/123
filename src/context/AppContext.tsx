@@ -139,6 +139,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // System Cost Rates (following centralized context pattern)
   const [systemCostRates, setSystemCostRates] = useState<Record<'USD' | 'ZAR', SystemCostRates>>(DEFAULT_SYSTEM_COST_RATES);
 
+  // Load system cost rates from localStorage on component mount
+  useEffect(() => {
+    const savedRates = localStorage.getItem('systemCostRates');
+    if (savedRates) {
+      try {
+        const parsedRates = JSON.parse(savedRates);
+        if (parsedRates.USD && parsedRates.ZAR) {
+          setSystemCostRates(parsedRates);
+        }
+      } catch (error) {
+        console.error("Error parsing saved system cost rates:", error);
+      }
+    }
+  }, []);
+
   // Firestore realtime listeners setup
   useEffect(() => {
     // Trips realtime sync
@@ -596,7 +611,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       // Update the diesel record to remove the trip ID
       const updatedDieselRecord = {
         ...dieselRecord,
-        tripId: null,
+        tripId: undefined,
         updatedAt: new Date().toISOString(),
       };
       
@@ -939,6 +954,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
       setSystemCostRates(prev => ({
         ...prev,
         [currency]: rates,
+      }));
+      
+      // Save to localStorage for persistence
+      localStorage.setItem('systemCostRates', JSON.stringify({
+        ...systemCostRates,
+        [currency]: rates
       }));
     } catch (error) {
       console.error("Error updating system cost rates:", error);

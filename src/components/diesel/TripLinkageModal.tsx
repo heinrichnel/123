@@ -149,7 +149,6 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
         await removeDieselFromTrip(dieselRecordId);
         alert('Diesel record has been unlinked from the trip and the cost entry has been removed.');
       } else if (isReeferUnit && dieselRecord.linkedHorseId) {
-        // Remove horse linkage
         const horseRecord = dieselRecords.find(r => r.id === dieselRecord.linkedHorseId);
         
         // Update the diesel record to remove the linked horse ID

@@ -22,15 +22,16 @@ import {
   Building
 } from 'lucide-react';
 
-// ─── Helper function ─────────────────────────────────────────────
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString();
-};
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// ─── Helper function ─────────────────────────────────────────────
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString();
+};
 
 const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   isOpen,

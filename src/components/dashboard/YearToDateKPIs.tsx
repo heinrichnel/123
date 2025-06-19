@@ -1,5 +1,5 @@
 // ─── React & State ───────────────────────────────────────────────
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 // ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
@@ -106,6 +106,24 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       updatedBy: 'Operations Manager'
     }
   });
+
+  // Load YTD data from localStorage on component mount
+  useEffect(() => {
+    const savedYtdData = localStorage.getItem('ytdData');
+    if (savedYtdData) {
+      try {
+        const parsedData = JSON.parse(savedYtdData);
+        setYtdData(parsedData);
+      } catch (error) {
+        console.error('Error parsing saved YTD data:', error);
+      }
+    }
+  }, []);
+
+  // Save YTD data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ytdData', JSON.stringify(ytdData));
+  }, [ytdData]);
 
   // Calculate weekly metrics from completed trips
   const weeklyMetrics = useMemo(() => {

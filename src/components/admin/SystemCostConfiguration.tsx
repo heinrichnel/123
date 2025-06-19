@@ -32,6 +32,34 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showReminderNotification, setShowReminderNotification] = useState(false);
 
+  // Load saved rates from localStorage on component mount
+  useEffect(() => {
+    const savedRates = localStorage.getItem('systemCostRates');
+    if (savedRates) {
+      try {
+        const parsedRates = JSON.parse(savedRates);
+        // Only update if the structure is valid
+        if (parsedRates.USD && parsedRates.ZAR) {
+          onUpdateRates('USD', parsedRates.USD);
+          onUpdateRates('ZAR', parsedRates.ZAR);
+        }
+      } catch (error) {
+        console.error("Error parsing saved system cost rates:", error);
+      }
+    }
+    
+    // Load saved reminder settings
+    const savedReminder = localStorage.getItem('systemCostReminder');
+    if (savedReminder) {
+      try {
+        const parsedReminder = JSON.parse(savedReminder);
+        setReminder(parsedReminder);
+      } catch (error) {
+        console.error("Error parsing saved reminder settings:", error);
+      }
+    }
+  }, []);
+
   // NEW: Check for monthly reminder on component mount
   useEffect(() => {
     const checkMonthlyReminder = () => {
@@ -57,12 +85,15 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
     const now = new Date();
     const nextReminder = new Date(now.getTime() + reminder.reminderFrequencyDays * 24 * 60 * 60 * 1000);
     
-    setReminder(prev => ({
-      ...prev,
+    const updatedReminder = {
+      ...reminder,
       lastReminderDate: now.toISOString(),
       nextReminderDate: nextReminder.toISOString(),
       updatedAt: now.toISOString()
-    }));
+    };
+    
+    setReminder(updatedReminder);
+    localStorage.setItem('systemCostReminder', JSON.stringify(updatedReminder));
     
     setShowReminderNotification(false);
     alert(`Monthly indirect cost reminder dismissed.\n\nNext reminder will appear on: ${nextReminder.toLocaleDateString()}`);
@@ -78,13 +109,16 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
     const now = new Date();
     const nextReminder = new Date(now.getTime() + newFrequency * 24 * 60 * 60 * 1000);
     
-    setReminder(prev => ({
-      ...prev,
+    const updatedReminder = {
+      ...reminder,
       reminderFrequencyDays: newFrequency,
       isActive,
       nextReminderDate: nextReminder.toISOString(),
       updatedAt: now.toISOString()
-    }));
+    };
+    
+    setReminder(updatedReminder);
+    localStorage.setItem('systemCostReminder', JSON.stringify(updatedReminder));
     
     setShowReminderModal(false);
     alert(`Reminder settings updated!\n\nFrequency: Every ${newFrequency} days\nStatus: ${isActive ? 'Active' : 'Disabled'}\nNext reminder: ${nextReminder.toLocaleDateString()}`);
@@ -185,6 +219,14 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
       };
       
       await onUpdateRates(editingCurrency, updatedRates);
+      
+      // Save to localStorage for persistence
+      const updatedAllRates = {
+        ...currentRates,
+        [editingCurrency]: updatedRates
+      };
+      localStorage.setItem('systemCostRates', JSON.stringify(updatedAllRates));
+      
       setIsOpen(false);
       setEditingCurrency(null);
       setFormData(null);
