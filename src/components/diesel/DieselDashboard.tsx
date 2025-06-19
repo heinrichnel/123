@@ -195,6 +195,11 @@ const DieselDashboard: React.FC = () => {
     return true;
   });
 
+  // Sort records by date (newest first)
+  const sortedRecords = [...filteredRecords].sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
   const handleEdit = (recordId: string) => {
     const record = dieselRecords.find(r => r.id === recordId);
     if (record) {
@@ -643,25 +648,27 @@ const DieselDashboard: React.FC = () => {
               ? 'No records match your current filter criteria.' 
               : 'Import your diesel consumption data to start tracking fuel efficiency and costs.'}
           </p>
-          <div className="flex justify-center space-x-3">
-            <Button 
-              variant="outline"
-              onClick={() => setIsManualEntryModalOpen(true)}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              Manual Entry
-            </Button>
-            <Button 
-              icon={<Upload className="w-4 h-4" />} 
-              onClick={() => setIsImportModalOpen(true)}
-            >
-              Import Diesel CSV
-            </Button>
-          </div>
+          {enhancedRecords.length === 0 && (
+            <div className="flex justify-center space-x-3">
+              <Button 
+                variant="outline"
+                onClick={() => setIsManualEntryModalOpen(true)}
+                icon={<Plus className="w-4 h-4" />}
+              >
+                Manual Entry
+              </Button>
+              <Button 
+                icon={<Upload className="w-4 h-4" />} 
+                onClick={() => setIsImportModalOpen(true)}
+              >
+                Import Diesel CSV
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid gap-4">
-          {filteredRecords.map(record => (
+          {sortedRecords.map(record => (
             <Card key={record.id} className={`hover:shadow-md transition-shadow ${
               record.needsProbeVerification ? 'border-l-4 border-l-red-400' :
               record.requiresDebrief ? 'border-l-4 border-l-amber-400' : 
@@ -720,7 +727,7 @@ const DieselDashboard: React.FC = () => {
                 }
               />
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-8 gap-4 items-end">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 items-end">
                   <div>
                     <p className="text-sm text-gray-500">Driver</p>
                     <p className="font-medium">{record.driverName}</p>

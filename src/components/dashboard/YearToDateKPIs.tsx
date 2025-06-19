@@ -279,8 +279,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `weekly-revenue-report-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `weekly-revenue-report-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
