@@ -94,7 +94,10 @@ export function splitDateTime(dateTimeStr: string): { date: string, time: string
 // -------------------- Main Function --------------------
 export async function fetchAndSaveDriverEventToFirestore() {
   try {
-    const endpointUrl = "https://script.google.com/macros/s/AKfycbxvEqDXD8rgQr6ewNXRe_GARxeG_9I9hEzEJMo3Wylg5rJUjMN6DUlWvYMd4Bqj3Ql56g/exec";
+    // Use the exact URL you provided
+    const endpointUrl = "https://script.google.com/macros/s/AKfycbwwQKS1kTxxPJuI1b_wAFL7lzgJ3sTVL1hx7OKNu2el8_DmW_V--owrq2tOUKHm9vsYRQ/exec";
+    
+    console.log("Fetching driver events from:", endpointUrl);
     const response = await fetch(endpointUrl);
     
     if (!response.ok) {
@@ -102,6 +105,7 @@ export async function fetchAndSaveDriverEventToFirestore() {
     }
     
     const data = await response.json();
+    console.log("Received data:", data);
 
     // --- Raw event type extraction & filtering ---
     const rawEventType = (data.eventType || data["Event Type"] || "").toString().trim().toLowerCase();
