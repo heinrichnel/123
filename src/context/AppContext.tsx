@@ -25,12 +25,13 @@ import {
   disableNetwork,
   deleteDoc,
   getDoc,
+  setDoc,
   getDocs,
   query,
   where,
   orderBy,
   limit,
-  setDoc
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { generateTripId, shouldAutoCompleteTrip, isOnline } from "../utils/helpers";

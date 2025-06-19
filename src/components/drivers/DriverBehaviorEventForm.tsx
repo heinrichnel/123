@@ -72,15 +72,15 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
       setFormData({
         driverName: event.driverName,
         fleetNumber: event.fleetNumber,
-        eventDate: event.eventDate,
-        eventTime: event.eventTime,
+        eventDate: event.eventDate || event.date.split('T')[0],
+        eventTime: event.eventTime || '00:00',
         eventType: event.eventType,
         description: event.description,
         location: event.location || '',
-        severity: event.severity,
-        status: event.status,
+        severity: event.severity || 'medium',
+        status: event.status || 'pending',
         actionTaken: event.actionTaken || '',
-        points: event.points
+        points: event.points || 0
       });
     } else {
       // Reset form for new event
@@ -113,6 +113,7 @@ const DriverBehaviorEventForm: React.FC<DriverBehaviorEventFormProps> = ({
         const eventType = DRIVER_BEHAVIOR_EVENT_TYPES.find(t => t.value === value);
         if (eventType) {
           updated.points = eventType.points;
+          updated.severity = eventType.severity as any;
         }
       }
       
