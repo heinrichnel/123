@@ -1,6 +1,9 @@
 // ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
 
+// ─── Types ───────────────────────────────────────────────────────
+import { DieselConsumptionRecord } from '../../types';
+
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -20,7 +23,8 @@ import {
   Printer,
   Calendar,
   User,
-  FileSignature
+  FileSignature,
+  Clock
 } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
@@ -48,6 +52,9 @@ interface DieselRecord {
   tripId?: string;
   currency?: 'USD' | 'ZAR';
   isReeferUnit?: boolean;
+  litresPerHour?: number;
+  expectedLitresPerHour?: number;
+  hoursOperated?: number;
 }
 
 interface DieselNorms {
@@ -56,6 +63,8 @@ interface DieselNorms {
   tolerancePercentage: number;
   lastUpdated: string;
   updatedBy: string;
+  isReeferUnit?: boolean;
+  litresPerHour?: number;
 }
 
 interface DieselDebriefModalProps {
@@ -89,18 +98,26 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
 
   const generateCSV = () => {
     const rows = [
-      ['Fleet Number', 'Date', 'Driver', 'KM Reading', 'Litres', 'KM/L', 'Expected', 'Variance (%)', 'Performance', 'Fuel Station', 'Total Cost', 'Debrief Notes', 'Debrief Date', 'Signed']
+      ['Fleet Number', 'Date', 'Driver', 'KM Reading', 'Litres', 'KM/L or L/hr', 'Expected', 'Variance (%)', 'Performance', 'Fuel Station', 'Total Cost', 'Debrief Notes', 'Debrief Date', 'Signed']
     ];
 
     records.forEach(r => {
+      const efficiencyMetric = r.isReeferUnit 
+        ? `${r.litresPerHour?.toFixed(2) || 'N/A'} L/hr` 
+        : `${r.kmPerLitre?.toFixed(2) || 'N/A'} KM/L`;
+      
+      const expectedMetric = r.isReeferUnit
+        ? `${r.expectedLitresPerHour?.toFixed(2) || '3.5'} L/hr`
+        : `${r.expectedKmPerLitre.toString()} KM/L`;
+      
       rows.push([
         r.fleetNumber,
         r.date,
         r.driverName,
         r.kmReading.toString(),
         r.litresFilled.toString(),
-        r.kmPerLitre?.toFixed(2) || '',
-        r.expectedKmPerLitre.toString(),
+        efficiencyMetric,
+        expectedMetric,
         r.efficiencyVariance.toFixed(2),
         r.performanceStatus,
         r.fuelStation,
@@ -184,7 +201,7 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
       // Record header
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 128);
-      doc.text(`Record #${index + 1}: Fleet ${record.fleetNumber}`, 14, yPos);
+      doc.text(`Record #${index + 1}: Fleet ${record.fleetNumber}${record.isReeferUnit ? ' (Reefer)' : ''}`, 14, yPos);
       yPos += 8;
       
       // Record details
@@ -196,17 +213,23 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
       yPos += 6;
       doc.text(`Fuel Station: ${record.fuelStation}`, 20, yPos);
       yPos += 6;
-      doc.text(`KM Reading: ${record.kmReading.toLocaleString()}`, 20, yPos);
-      yPos += 6;
       
-      if (record.previousKmReading) {
-        doc.text(`Previous KM: ${record.previousKmReading.toLocaleString()}`, 20, yPos);
+      if (record.isReeferUnit) {
+        doc.text(`Hours Operated: ${record.hoursOperated?.toFixed(1) || 'N/A'} hours`, 20, yPos);
         yPos += 6;
-      }
-      
-      if (record.distanceTravelled) {
-        doc.text(`Distance: ${record.distanceTravelled.toLocaleString()} km`, 20, yPos);
+      } else {
+        doc.text(`KM Reading: ${record.kmReading.toLocaleString()}`, 20, yPos);
         yPos += 6;
+        
+        if (record.previousKmReading) {
+          doc.text(`Previous KM: ${record.previousKmReading.toLocaleString()}`, 20, yPos);
+          yPos += 6;
+        }
+        
+        if (record.distanceTravelled) {
+          doc.text(`Distance: ${record.distanceTravelled.toLocaleString()} km`, 20, yPos);
+          yPos += 6;
+        }
       }
       
       doc.text(`Litres Filled: ${record.litresFilled}`, 20, yPos);
@@ -218,7 +241,11 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
       
       // Efficiency metrics
       doc.setTextColor(255, 0, 0);
-      doc.text(`KM/L: ${record.kmPerLitre?.toFixed(2) || 'N/A'} (Expected: ${record.expectedKmPerLitre})`, 20, yPos);
+      if (record.isReeferUnit) {
+        doc.text(`L/hr: ${record.litresPerHour?.toFixed(2) || 'N/A'} (Expected: ${record.expectedLitresPerHour?.toFixed(1) || '3.5'})`, 20, yPos);
+      } else {
+        doc.text(`KM/L: ${record.kmPerLitre?.toFixed(2) || 'N/A'} (Expected: ${record.expectedKmPerLitre})`, 20, yPos);
+      }
       yPos += 6;
       
       doc.text(`Variance: ${record.efficiencyVariance.toFixed(1)}%`, 20, yPos);
@@ -306,7 +333,7 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
             <div key={r.id} className="border p-4 rounded-lg space-y-2 bg-gray-50">
               <div className="flex justify-between items-center">
                 <p className="text-sm font-medium text-gray-700">
-                  {r.fleetNumber} - {r.driverName} ({r.date})
+                  {r.fleetNumber}{r.isReeferUnit ? ' (Reefer)' : ''} - {r.driverName} ({r.date})
                 </p>
                 <span className={`text-xs px-2 py-1 rounded ${
                   r.performanceStatus === 'poor'
@@ -319,8 +346,18 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs text-gray-600">
-                <div><strong>KM/L:</strong> {r.kmPerLitre?.toFixed(2) || 'N/A'}</div>
-                <div><strong>Expected:</strong> {r.expectedKmPerLitre}</div>
+                {r.isReeferUnit ? (
+                  <>
+                    <div><strong>Hours:</strong> {r.hoursOperated?.toFixed(1) || 'N/A'}</div>
+                    <div><strong>L/Hour:</strong> {r.litresPerHour?.toFixed(2) || 'N/A'}</div>
+                    <div><strong>Expected:</strong> {r.expectedLitresPerHour?.toFixed(1) || '3.5'}</div>
+                  </>
+                ) : (
+                  <>
+                    <div><strong>KM/L:</strong> {r.kmPerLitre?.toFixed(2) || 'N/A'}</div>
+                    <div><strong>Expected:</strong> {r.expectedKmPerLitre}</div>
+                  </>
+                )}
                 <div><strong>Variance:</strong> {r.efficiencyVariance.toFixed(1)}%</div>
                 <div><strong>Fuel Station:</strong> {r.fuelStation}</div>
               </div>

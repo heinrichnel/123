@@ -5,9 +5,7 @@ import { Input, TextArea } from '../ui/FormElements';
 import { useAppContext } from '../../context/AppContext';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 import { CheckCircle, X, Save, AlertTriangle } from 'lucide-react';
-
-// Define which fleets have probes
-const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
+import { FLEETS_WITH_PROBES } from '../../types';
 
 interface ProbeVerificationModalProps {
   isOpen: boolean;
@@ -128,7 +126,7 @@ const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
       <div className="space-y-6">
         {/* Record Summary */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">Diesel Record Details</h3>
+          <h4 className="text-sm font-medium text-blue-800 mb-2">Diesel Record Details</h4>
           <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
             <div>
               <p><strong>Fleet:</strong> {record.fleetNumber}</p>

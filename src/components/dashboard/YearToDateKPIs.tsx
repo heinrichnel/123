@@ -269,6 +269,12 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       [editingYear]: updatedData
     }));
 
+    // Save to localStorage for persistence
+    localStorage.setItem('ytdData', JSON.stringify({
+      ...ytdData,
+      [editingYear]: updatedData
+    }));
+
     setShowEditModal(false);
     setEditingYear(null);
     setFormData({});

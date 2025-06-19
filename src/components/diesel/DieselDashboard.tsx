@@ -1,3 +1,4 @@
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import DieselImportModal from './DieselImportModal';
@@ -31,9 +32,7 @@ import {
   Clock
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
-
-// Define which fleets have probes
-const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
+import { FLEETS_WITH_PROBES } from '../../types';
 
 interface DieselNorms {
   fleetNumber: string;
@@ -95,7 +94,7 @@ const DieselDashboard: React.FC = () => {
     probeReading: '',
     hoursOperated: ''
   });
-  const [dieselNorms, setDieselNorms] = useState<DieselNorms[]>(DEFAULT_NORMS);
+  const [dieselNorms, setDieselNorms] = useState<DieselNorms[]>([]);
   const [filterFleet, setFilterFleet] = useState<string>('');
   const [filterDriver, setFilterDriver] = useState<string>('');
   const [filterDate, setFilterDate] = useState<string>('');
@@ -112,7 +111,10 @@ const DieselDashboard: React.FC = () => {
         setDieselNorms(parsedNorms);
       } catch (error) {
         console.error("Error parsing saved diesel norms:", error);
+        setDieselNorms(DEFAULT_NORMS);
       }
+    } else {
+      setDieselNorms(DEFAULT_NORMS);
     }
   }, []);
 
@@ -146,7 +148,8 @@ const DieselDashboard: React.FC = () => {
     const costPerKm = !isReeferUnit && distanceTravelled > 0 ? record.totalCost / distanceTravelled : 0;
     
     // Calculate cost per hour (for reefer units)
-    const costPerHour = isReeferUnit && record.hoursOperated ? record.totalCost / record.hoursOperated : 0;
+    const costPerHour = isReeferUnit && record.hoursOperated && record.hoursOperated > 0 ? 
+                        record.totalCost / record.hoursOperated : 0;
     
     // Calculate cost per litre if not provided
     const costPerLitre = record.costPerLitre || (record.litresFilled > 0 ? record.totalCost / record.litresFilled : 0);
@@ -157,19 +160,18 @@ const DieselDashboard: React.FC = () => {
       // For regular units - compare km/l
       efficiencyVariance = ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100;
     } else if (isReeferUnit && litresPerHour > 0) {
-      // For reefer units - compare litres/hour
-      efficiencyVariance = ((litresPerHour - expectedLitresPerHour) / expectedLitresPerHour) * 100;
-      // Invert the variance for reefer units since lower L/hr is better
-      efficiencyVariance = -efficiencyVariance;
+      // For reefer units - compare l/hr (inverse relationship - lower is better)
+      efficiencyVariance = ((expectedLitresPerHour - litresPerHour) / expectedLitresPerHour) * 100;
     }
     
     const toleranceRange = tolerance;
     const isWithinTolerance = Math.abs(efficiencyVariance) <= toleranceRange;
-    const performanceStatus = isWithinTolerance ? 'normal' : 
+    const performanceStatus = isReeferUnit ? 'normal' : 
+                             isWithinTolerance ? 'normal' : 
                              efficiencyVariance < -toleranceRange ? 'poor' : 'excellent';
     
-    // Flag for debrief if outside tolerance
-    const requiresDebrief = !isWithinTolerance;
+    // Flag for debrief if outside tolerance and not a reefer unit
+    const requiresDebrief = !isReeferUnit && !isWithinTolerance;
     
     // Get linked trip info if available
     const linkedTrip = record.tripId ? trips.find(t => t.id === record.tripId) : undefined;
@@ -201,9 +203,6 @@ const DieselDashboard: React.FC = () => {
       costPerKm,
       costPerLitre,
       expectedKmPerLitre,
-      expectedLitresPerHour,
-      litresPerHour,
-      costPerHour,
       efficiencyVariance,
       performanceStatus,
       requiresDebrief,
@@ -226,7 +225,10 @@ const DieselDashboard: React.FC = () => {
           startDate: linkedHorseTrip.startDate,
           endDate: linkedHorseTrip.endDate
         } : undefined
-      } : undefined
+      } : undefined,
+      litresPerHour,
+      costPerHour,
+      expectedLitresPerHour
     };
   });
 
@@ -276,19 +278,8 @@ const DieselDashboard: React.FC = () => {
       
       // Validate number fields
       const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
-      
-      if (isNaN(litresFilled) || isNaN(totalCost)) {
-        alert('Please enter valid numbers for litres filled and total cost.');
-        return;
-      }
-      
-      if (!isReeferUnit && isNaN(kmReading)) {
-        alert('Please enter a valid number for km reading.');
-        return;
-      }
-      
-      if (isReeferUnit && (isNaN(hoursOperated!) || hoursOperated! <= 0)) {
-        alert('Please enter a valid number for hours operated.');
+      if (isNaN(litresFilled) || isNaN(totalCost) || (isNaN(kmReading) && !isReeferUnit)) {
+        alert('Please enter valid numbers for litres filled, total cost, and km reading.');
         return;
       }
       
@@ -296,6 +287,9 @@ const DieselDashboard: React.FC = () => {
       const distanceTravelled = !isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : record.distanceTravelled;
       const kmPerLitre = !isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
       const costPerLitre = litresFilled > 0 ? totalCost / litresFilled : 0;
+      
+      // Calculate litres per hour for reefer units
+      const litresPerHour = isReeferUnit && hoursOperated && hoursOperated > 0 ? litresFilled / hoursOperated : undefined;
       
       // Calculate probe discrepancy if applicable
       const probeDiscrepancy = probeReading !== undefined ? litresFilled - probeReading : undefined;
@@ -397,12 +391,7 @@ const DieselDashboard: React.FC = () => {
     if (record.hasProbe) acc.recordsWithProbe++;
     if (record.needsProbeVerification) acc.recordsNeedingProbeVerification++;
     if (record.probeVerified) acc.recordsWithVerifiedProbe++;
-    if (record.isReeferUnit) {
-      acc.reeferUnits++;
-      if (record.hoursOperated) {
-        acc.totalReeferHours += record.hoursOperated;
-      }
-    }
+    if (record.isReeferUnit) acc.reeferUnits++;
     
     // Track by currency
     if (record.currency === 'USD') {
@@ -411,6 +400,11 @@ const DieselDashboard: React.FC = () => {
     } else {
       acc.zarRecords++;
       acc.zarTotalCost += record.totalCost;
+    }
+    
+    // Track total hours for reefer units
+    if (record.isReeferUnit && record.hoursOperated) {
+      acc.totalReeferHours += record.hoursOperated;
     }
     
     return acc;
@@ -853,7 +847,7 @@ const DieselDashboard: React.FC = () => {
                             onChange={e => setEditData(prev => ({ ...prev, hoursOperated: e.target.value }))}
                           />
                         ) : (
-                          <p className="font-medium">{record.hoursOperated?.toFixed(1) || 'N/A'} hrs</p>
+                          <p className="font-medium">{record.hoursOperated?.toFixed(1) || 'N/A'} hours</p>
                         )}
                       </div>
                     )}
@@ -925,7 +919,7 @@ const DieselDashboard: React.FC = () => {
                       </div>
                     ) : (
                       <div>
-                        <p className="text-sm text-gray-500">Litres/Hour</p>
+                        <p className="text-sm text-gray-500">L/Hour</p>
                         <div className="flex items-center space-x-2">
                           <p className={`font-medium ${
                             record.performanceStatus === 'excellent' ? 'text-green-600' :
@@ -943,7 +937,7 @@ const DieselDashboard: React.FC = () => {
                           )}
                         </div>
                         <p className="text-xs text-gray-500">
-                          Expected: {record.expectedLitresPerHour}
+                          Expected: {record.expectedLitresPerHour?.toFixed(1) || '3.5'}
                         </p>
                       </div>
                     )}

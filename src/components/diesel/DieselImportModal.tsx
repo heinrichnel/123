@@ -13,14 +13,14 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   CheckCircle,
-  Download
+  Download,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { FUEL_STATIONS } from '../../types';
+import { FUEL_STATIONS, FLEETS_WITH_PROBES } from '../../types';
 
-// Define which fleets have probes
-const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
 
 interface DieselImportModalProps {
   isOpen: boolean;
@@ -187,6 +187,27 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({
       maxWidth="md"
     >
       <div className="space-y-6">
+        {/* Connection Status Warning */}
+        {connectionStatus !== 'connected' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+            <div className="flex items-start space-x-3">
+              {connectionStatus === 'disconnected' ? (
+                <WifiOff className="w-5 h-5 text-amber-600 mt-0.5" />
+              ) : (
+                <Wifi className="w-5 h-5 text-amber-600 mt-0.5" />
+              )}
+              <div>
+                <h4 className="text-sm font-medium text-amber-800">
+                  {connectionStatus === 'disconnected' ? 'Working Offline' : 'Reconnecting...'}
+                </h4>
+                <p className="text-sm text-amber-700 mt-1">
+                  You can still import diesel records while offline. Your data will be stored locally and synced with the server when your connection is restored.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex items-start space-x-3">
             <FileSpreadsheet className="w-5 h-5 text-blue-600 mt-0.5" />

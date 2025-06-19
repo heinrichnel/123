@@ -557,6 +557,9 @@ export const RESPONSIBLE_PERSONS = [
   "Decide Murahwa"
 ];
 
+// Define which fleets have probes
+export const FLEETS_WITH_PROBES = ['22H', '23H', '24H', '26H', '28H', '31H', '30H'];
+
 export const CLIENT_TYPES = [
   { value: "internal", label: "Internal Client" },
   { value: "external", label: "External Client" }

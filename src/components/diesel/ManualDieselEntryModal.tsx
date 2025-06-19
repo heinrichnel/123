@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 
 // ─── Types ───────────────────────────────────────────────────────
-import { Trip, DRIVERS, FUEL_STATIONS, FLEET_NUMBERS, DieselConsumptionRecord } from '../../types';
+import { Trip, DRIVERS, FUEL_STATIONS, FLEET_NUMBERS, DieselConsumptionRecord, FLEETS_WITH_PROBES } from '../../types';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
@@ -25,6 +25,7 @@ import {
 
 // ─── Utilities ───────────────────────────────────────────────────
 import { formatDate } from '../../utils/helpers';
+
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;
@@ -279,6 +280,9 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
   // Check if the selected fleet is a reefer unit
   const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(formData.fleetNumber);
+  
+  // Check if the selected fleet has a probe
+  const hasProbe = FLEETS_WITH_PROBES.includes(formData.fleetNumber);
 
   // Update isReeferUnit when fleet number changes
   useEffect(() => {
@@ -349,12 +353,10 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             onChange={val => handleChange('fleetNumber', val)}
             options={[
               { label: 'Select fleet...', value: '' },
-              ...FLEET_NUMBERS.map(f => ({ label: f, value: f })),
-              { label: '4F - Reefer', value: '4F' },
-              { label: '5F - Reefer', value: '5F' },
-              { label: '6F - Reefer', value: '6F' },
-              { label: '7F - Reefer', value: '7F' },
-              { label: '8F - Reefer', value: '8F' }
+              ...FLEET_NUMBERS.map(f => ({ 
+                label: `${f}${FLEETS_WITH_PROBES.includes(f) ? ' (Probe)' : ['4F', '5F', '6F', '7F', '8F'].includes(f) ? ' (Reefer)' : ''}`, 
+                value: f 
+              }))
             ]}
             error={errors.fleetNumber}
           />
