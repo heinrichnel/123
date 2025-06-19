@@ -10,26 +10,24 @@ import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
 import { 
-  AlertTriangle,
-  Building,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Download,
-  Edit,
-  FileSpreadsheet,
-  Flag,
+  Upload, 
+  Trash2, 
+  Edit, 
+  Save, 
+  X, 
+  AlertTriangle, 
+  TrendingDown, 
+  TrendingUp,
   Fuel,
-  Link,
-  MapPin,
-  Plus,
-  Printer,
-  Save,
+  Calculator,
+  FileSpreadsheet,
   Settings,
-  Trash2,
-  Upload,
-  User,
-  X
+  Flag,
+  CheckCircle,
+  Plus,
+  Link,
+  FileText,
+  Printer
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../utils/helpers';
 
@@ -57,19 +55,20 @@ const DEFAULT_NORMS: DieselNorms[] = [
   { fleetNumber: '32H', expectedKmPerLitre: 3.2, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: '33H', expectedKmPerLitre: 3.1, tolerancePercentage: 10, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
   { fleetNumber: 'UD', expectedKmPerLitre: 2.8, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default' },
-  // Add reefer units
+  // Add reefer units with 0 km/l (they use litres per hour instead)
   { fleetNumber: '4F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
   { fleetNumber: '5F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
+  { fleetNumber: '6F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
   { fleetNumber: '7F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true },
   { fleetNumber: '8F', expectedKmPerLitre: 0, tolerancePercentage: 15, lastUpdated: new Date().toISOString(), updatedBy: 'System Default', isReeferUnit: true }
 ];
 
 const DieselDashboard: React.FC = () => {
   const {
-    trips,
     dieselRecords,
     updateDieselRecord,
     deleteDieselRecord,
+    trips,
     connectionStatus
   } = useAppContext();
 
@@ -96,11 +95,11 @@ const DieselDashboard: React.FC = () => {
   const [filterDate, setFilterDate] = useState<string>('');
   const [filterCurrency, setFilterCurrency] = useState<string>('');
   const [filterProbeStatus, setFilterProbeStatus] = useState<string>('');
-  const [filterReeferStatus, setFilterReeferStatus] = useState<string>('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Calculate enhanced metrics for each record
   const enhancedRecords = dieselRecords.map(record => {
-    const isReeferUnit = record.isReeferUnit || ['4F', '5F', '7F', '8F'].includes(record.fleetNumber);
+    const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
     const norm = dieselNorms.find(n => n.fleetNumber === record.fleetNumber);
     const expectedKmPerLitre = norm?.expectedKmPerLitre || 3.0;
     const tolerance = norm?.tolerancePercentage || 10;
@@ -124,9 +123,9 @@ const DieselDashboard: React.FC = () => {
     const costPerLitre = record.costPerLitre || (record.litresFilled > 0 ? record.totalCost / record.litresFilled : 0);
     
     // Performance analysis (skip for reefer units)
-    const efficiencyVariance = !isReeferUnit && expectedKmPerLitre > 0 ? ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100 : 0;
+    const efficiencyVariance = !isReeferUnit && kmPerLitre > 0 ? ((kmPerLitre - expectedKmPerLitre) / expectedKmPerLitre) * 100 : 0;
     const toleranceRange = tolerance;
-    const isWithinTolerance = !isReeferUnit ? Math.abs(efficiencyVariance) <= toleranceRange : true;
+    const isWithinTolerance = Math.abs(efficiencyVariance) <= toleranceRange;
     const performanceStatus = isReeferUnit ? 'normal' : 
                              isWithinTolerance ? 'normal' : 
                              efficiencyVariance < -toleranceRange ? 'poor' : 'excellent';
@@ -136,10 +135,6 @@ const DieselDashboard: React.FC = () => {
     
     // Get linked trip info if available
     const linkedTrip = record.tripId ? trips.find(t => t.id === record.tripId) : undefined;
-    
-    // Get linked horse info if available (for reefer units)
-    const linkedHorse = isReeferUnit && record.linkedHorseId ? 
-                       dieselRecords.find(r => r.id === record.linkedHorseId) : undefined;
     
     // Check if truck has probe
     const hasProbe = ['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(record.fleetNumber);
@@ -153,9 +148,16 @@ const DieselDashboard: React.FC = () => {
                                   (!record.probeVerified || 
                                    (probeDiscrepancy !== undefined && Math.abs(probeDiscrepancy) > 50));
     
+    // Get linked horse info for reefer units
+    const linkedHorse = isReeferUnit && record.linkedHorseId ? 
+                        dieselRecords.find(r => r.id === record.linkedHorseId) : undefined;
+    
+    // Get linked horse's trip
+    const linkedHorseTrip = linkedHorse?.tripId ? 
+                           trips.find(t => t.id === linkedHorse.tripId) : undefined;
+    
     return {
       ...record,
-      isReeferUnit,
       distanceTravelled,
       kmPerLitre,
       costPerKm,
@@ -170,15 +172,20 @@ const DieselDashboard: React.FC = () => {
         startDate: linkedTrip.startDate,
         endDate: linkedTrip.endDate
       } : undefined,
-      linkedHorseInfo: linkedHorse ? {
-        fleetNumber: linkedHorse.fleetNumber,
-        driverName: linkedHorse.driverName,
-        tripId: linkedHorse.tripId
-      } : undefined,
       hasProbe,
       probeDiscrepancy,
       needsProbeVerification,
-      currency: record.currency || 'ZAR' // Default to ZAR if not specified
+      currency: record.currency || 'ZAR', // Default to ZAR if not specified
+      isReeferUnit,
+      linkedHorseInfo: linkedHorse ? {
+        fleetNumber: linkedHorse.fleetNumber,
+        driverName: linkedHorse.driverName,
+        tripInfo: linkedHorseTrip ? {
+          route: linkedHorseTrip.route,
+          startDate: linkedHorseTrip.startDate,
+          endDate: linkedHorseTrip.endDate
+        } : undefined
+      } : undefined
     };
   });
 
@@ -188,15 +195,12 @@ const DieselDashboard: React.FC = () => {
     if (filterDriver && record.driverName !== filterDriver) return false;
     if (filterDate && record.date !== filterDate) return false;
     if (filterCurrency && record.currency !== filterCurrency) return false;
-    if (filterReeferStatus) {
-      if (filterReeferStatus === 'reefer' && !record.isReeferUnit) return false;
-      if (filterReeferStatus === 'horse' && record.isReeferUnit) return false;
-    }
     if (filterProbeStatus) {
       if (filterProbeStatus === 'has-probe' && !record.hasProbe) return false;
       if (filterProbeStatus === 'needs-verification' && !record.needsProbeVerification) return false;
       if (filterProbeStatus === 'verified' && (!record.hasProbe || !record.probeVerified)) return false;
       if (filterProbeStatus === 'large-discrepancy' && (!record.probeDiscrepancy || Math.abs(record.probeDiscrepancy) <= 50)) return false;
+      if (filterProbeStatus === 'reefer-units' && !record.isReeferUnit) return false;
     }
     return true;
   });
@@ -227,13 +231,14 @@ const DieselDashboard: React.FC = () => {
       const previousKmReading = editData.previousKmReading ? parseFloat(editData.previousKmReading) : undefined;
       const probeReading = editData.probeReading ? parseFloat(editData.probeReading) : undefined;
       // Validate number fields
-      if (isNaN(litresFilled) || isNaN(totalCost) || (record.isReeferUnit ? false : isNaN(kmReading))) {
+      if (isNaN(litresFilled) || isNaN(totalCost) || (isNaN(kmReading) && !['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber))) {
         alert('Please enter valid numbers for litres filled, total cost, and km reading.');
         return;
       }
       // Calculate derived values
-      const distanceTravelled = !record.isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : record.distanceTravelled;
-      const kmPerLitre = !record.isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
+      const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
+      const distanceTravelled = !isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : record.distanceTravelled;
+      const kmPerLitre = !isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
       const costPerLitre = litresFilled > 0 ? totalCost / litresFilled : 0;
       // Calculate probe discrepancy if applicable
       const probeDiscrepancy = probeReading !== undefined ? litresFilled - probeReading : undefined;
@@ -241,8 +246,8 @@ const DieselDashboard: React.FC = () => {
         ...record,
         litresFilled,
         totalCost,
-        kmReading: record.isReeferUnit ? 0 : kmReading,
-        previousKmReading: record.isReeferUnit ? undefined : previousKmReading,
+        kmReading: isReeferUnit ? 0 : kmReading,
+        previousKmReading: isReeferUnit ? undefined : previousKmReading,
         distanceTravelled,
         kmPerLitre,
         costPerLitre,
@@ -269,10 +274,19 @@ const DieselDashboard: React.FC = () => {
     });
   };
 
-  const handleDelete = (recordId: string) => {
+  const handleDelete = async (recordId: string) => {
     const record = dieselRecords.find(r => r.id === recordId);
     if (record && confirm(`Are you sure you want to delete the diesel record for Fleet ${record.fleetNumber} on ${record.date}?`)) {
-      deleteDieselRecord(recordId);
+      try {
+        setIsDeleting(true);
+        await deleteDieselRecord(recordId);
+        alert(`Diesel record for Fleet ${record.fleetNumber} deleted successfully`);
+      } catch (error) {
+        console.error("Error deleting diesel record:", error);
+        alert(`Error deleting diesel record: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -295,7 +309,7 @@ const DieselDashboard: React.FC = () => {
 6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false
 26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false
 22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false
-4F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true`;
+6F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -322,7 +336,6 @@ const DieselDashboard: React.FC = () => {
     if (record.needsProbeVerification) acc.recordsNeedingProbeVerification++;
     if (record.probeVerified) acc.recordsWithVerifiedProbe++;
     if (record.isReeferUnit) acc.reeferUnits++;
-    if (record.isReeferUnit && record.linkedHorseId) acc.reeferLinkedToHorse++;
     
     // Track by currency
     if (record.currency === 'USD') {
@@ -346,12 +359,11 @@ const DieselDashboard: React.FC = () => {
     recordsWithProbe: 0,
     recordsNeedingProbeVerification: 0,
     recordsWithVerifiedProbe: 0,
-    reeferUnits: 0,
-    reeferLinkedToHorse: 0,
     usdRecords: 0,
     zarRecords: 0,
     usdTotalCost: 0,
-    zarTotalCost: 0
+    zarTotalCost: 0,
+    reeferUnits: 0
   });
 
   const averageKmPerLitre = fleetSummary.totalLitres > 0 && fleetSummary.totalDistance > 0 ? 
@@ -451,33 +463,6 @@ const DieselDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Reefer Units Alert */}
-      {fleetSummary.reeferUnits > 0 && fleetSummary.reeferUnits > fleetSummary.reeferLinkedToHorse && (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <div className="flex items-start space-x-3">
-            <Fuel className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-blue-800">Reefer Units Need Linking</h4>
-              <p className="text-sm text-blue-700 mt-1">
-                {fleetSummary.reeferUnits - fleetSummary.reeferLinkedToHorse} reefer diesel record{fleetSummary.reeferUnits - fleetSummary.reeferLinkedToHorse !== 1 ? 's' : ''} need to be linked to a horse. 
-                Link reefer units to horses to ensure proper cost allocation.
-              </p>
-              <div className="mt-3">
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setFilterReeferStatus('reefer');
-                    setFilterFleet('');
-                  }}
-                >
-                  View Reefer Units
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Fleet Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -531,9 +516,9 @@ const DieselDashboard: React.FC = () => {
               <div>
                 <p className="text-sm text-gray-500">Reefer Units</p>
                 <p className="text-2xl font-bold text-purple-600">{fleetSummary.reeferUnits}</p>
-                <p className="text-xs text-gray-400">{fleetSummary.reeferLinkedToHorse} linked to horses</p>
+                <p className="text-xs text-gray-400">refrigeration trailers</p>
               </div>
-              <Building className="w-8 h-8 text-purple-500" />
+              <Fuel className="w-8 h-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -551,7 +536,7 @@ const DieselDashboard: React.FC = () => {
               options={[
                 { label: 'All Fleets', value: '' },
                 ...uniqueFleets.map(fleet => ({ 
-                  label: `${fleet}${['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(fleet) ? ' (Probe)' : ['4F', '5F', '7F', '8F'].includes(fleet) ? ' (Reefer)' : ''}`, 
+                  label: `${fleet}${['4H', '6H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(fleet) ? ' (Probe)' : ['4F', '5F', '6F', '7F', '8F'].includes(fleet) ? ' (Reefer)' : ''}`, 
                   value: fleet 
                 }))
               ]}
@@ -596,17 +581,8 @@ const DieselDashboard: React.FC = () => {
                 { label: 'Has Probe', value: 'has-probe' },
                 { label: 'Needs Verification', value: 'needs-verification' },
                 { label: 'Verified', value: 'verified' },
-                { label: 'Large Discrepancy', value: 'large-discrepancy' }
-              ]}
-            />
-            <Select
-              label="Unit Type"
-              value={filterReeferStatus}
-              onChange={(e) => setFilterReeferStatus(e.target.value)}
-              options={[
-                { label: 'All Units', value: '' },
-                { label: 'Horse Units', value: 'horse' },
-                { label: 'Reefer Units', value: 'reefer' }
+                { label: 'Large Discrepancy', value: 'large-discrepancy' },
+                { label: 'Reefer Units', value: 'reefer-units' }
               ]}
             />
           </div>
@@ -620,7 +596,6 @@ const DieselDashboard: React.FC = () => {
                 setFilterDate('');
                 setFilterCurrency('');
                 setFilterProbeStatus('');
-                setFilterReeferStatus('');
               }}
             >
               Clear Filters
@@ -633,7 +608,7 @@ const DieselDashboard: React.FC = () => {
       <Card>
         <CardHeader title="Fleet Performance Summary" />
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
               <p className="text-lg font-bold text-green-600">{fleetSummary.excellentPerformanceRecords}</p>
@@ -654,11 +629,11 @@ const DieselDashboard: React.FC = () => {
               <p className="text-sm text-red-700">Poor Performance</p>
               <p className="text-xs text-gray-500">Below expected efficiency</p>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <Building className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <p className="text-lg font-bold text-purple-600">{fleetSummary.reeferUnits}</p>
-              <p className="text-sm text-purple-700">Reefer Units</p>
-              <p className="text-xs text-gray-500">{fleetSummary.reeferLinkedToHorse} linked to horses</p>
+            <div className="text-center p-4 bg-amber-50 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
+              <p className="text-lg font-bold text-amber-600">{fleetSummary.recordsNeedingProbeVerification}</p>
+              <p className="text-sm text-amber-700">Probe Discrepancies</p>
+              <p className="text-xs text-gray-500">Need verification</p>
             </div>
           </div>
         </CardContent>
@@ -670,8 +645,8 @@ const DieselDashboard: React.FC = () => {
           <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Upload className="w-12 h-12 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No diesel records found</h3>
-          <p className="text-gray-500">
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No diesel records found</h3>
+          <p className="mt-1 text-sm text-gray-500">
             {enhancedRecords.length > 0 
               ? 'No records match your current filter criteria.' 
               : 'Import your diesel consumption data to start tracking fuel efficiency and costs.'}
@@ -685,20 +660,13 @@ const DieselDashboard: React.FC = () => {
               >
                 Manual Entry
               </Button>
-              <Button 
-                icon={<Upload className="w-4 h-4" />} 
-                onClick={() => setIsImportModalOpen(true)}
-                className="ml-3"
-              >
-                Import Diesel CSV
-              </Button>
             </div>
           )}
         </div>
       ) : (
         <div className="grid gap-4">
           {filteredRecords.map((record) => {
-            const isReeferUnit = record.isReeferUnit || ['4F', '5F', '7F', '8F'].includes(record.fleetNumber);
+            const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(record.fleetNumber);
             
             return (
               <Card key={record.id} className={`hover:shadow-md transition-shadow ${
@@ -720,12 +688,11 @@ const DieselDashboard: React.FC = () => {
                         </span>
                       )}
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
-                        isReeferUnit ? 'bg-purple-100 text-purple-800' :
                         record.performanceStatus === 'excellent' ? 'bg-green-100 text-green-800' :
                         record.performanceStatus === 'poor' ? 'bg-red-100 text-red-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {isReeferUnit ? 'REEFER UNIT' : record.performanceStatus.toUpperCase()}
+                        {record.performanceStatus.toUpperCase()}
                       </span>
                       {record.linkedTripInfo && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
@@ -733,7 +700,7 @@ const DieselDashboard: React.FC = () => {
                           Linked to Trip
                         </span>
                       )}
-                      {isReeferUnit && record.linkedHorseInfo && (
+                      {record.linkedHorseInfo && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-800">
                           <Link className="w-3 h-3 mr-1" />
                           Linked to Horse {record.linkedHorseInfo.fleetNumber}
@@ -941,19 +908,16 @@ const DieselDashboard: React.FC = () => {
                             </div>
                           )}
 
-                          {isReeferUnit && record.linkedHorseInfo && (
+                          {record.linkedHorseInfo && (
                             <div className="text-xs bg-purple-50 p-2 rounded border border-purple-200">
                               <div className="flex items-center space-x-1">
                                 <Link className="w-3 h-3 text-purple-600" />
                                 <span className="font-medium text-purple-800">Linked Horse:</span>
                               </div>
-                              <p className="text-purple-700 mt-1">Fleet {record.linkedHorseInfo.fleetNumber}</p>
-                              <p className="text-purple-600 text-xs mt-0.5">
-                                {record.linkedHorseInfo.driverName}
-                              </p>
-                              {record.linkedHorseInfo.tripId && (
+                              <p className="text-purple-700 mt-1">Fleet {record.linkedHorseInfo.fleetNumber} - {record.linkedHorseInfo.driverName}</p>
+                              {record.linkedHorseInfo.tripInfo && (
                                 <p className="text-purple-600 text-xs mt-0.5">
-                                  Linked to trip
+                                  Trip: {record.linkedHorseInfo.tripInfo.route}
                                 </p>
                               )}
                             </div>
@@ -965,6 +929,7 @@ const DieselDashboard: React.FC = () => {
                               variant="outline"
                               icon={<Edit className="w-4 h-4" />}
                               onClick={() => handleEdit(record.id)}
+                              disabled={isDeleting}
                             >
                               Edit
                             </Button>
@@ -974,6 +939,7 @@ const DieselDashboard: React.FC = () => {
                                 variant="outline"
                                 icon={<CheckCircle className="w-4 h-4" />}
                                 onClick={() => handleVerifyProbe(record.id)}
+                                disabled={isDeleting}
                               >
                                 Verify Probe
                               </Button>
@@ -983,16 +949,20 @@ const DieselDashboard: React.FC = () => {
                               variant="outline"
                               icon={<Link className="w-4 h-4" />}
                               onClick={() => handleLinkToTrip(record.id)}
+                              disabled={isDeleting}
                             >
                               {isReeferUnit 
                                 ? (record.linkedHorseId ? 'Change Horse' : 'Link to Horse')
-                                : (record.tripId ? 'Change Trip' : 'Link to Trip')}
+                                : (record.tripId ? 'Change Trip' : 'Link to Trip')
+                              }
                             </Button>
                             <Button
                               size="sm"
                               variant="danger"
                               icon={<Trash2 className="w-4 h-4" />}
                               onClick={() => handleDelete(record.id)}
+                              disabled={isDeleting}
+                              isLoading={isDeleting}
                             >
                               Delete
                             </Button>
@@ -1055,129 +1025,6 @@ const DieselDashboard: React.FC = () => {
         </>
       )}
     </div>
-  );
-};
-
-// ProbeVerificationModal component
-interface ProbeVerificationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  dieselRecordId: string;
-}
-
-const ProbeVerificationModal: React.FC<ProbeVerificationModalProps> = ({
-  isOpen,
-  onClose,
-  dieselRecordId
-}) => {
-  const { dieselRecords, updateDieselRecord } = useAppContext();
-  const [probeReading, setProbeReading] = useState('');
-  const [verificationNotes, setVerificationNotes] = useState('');
-  
-  const dieselRecord = dieselRecords.find(r => r.id === dieselRecordId);
-  
-  if (!dieselRecord) return null;
-  
-  const handleVerify = () => {
-    if (!probeReading) {
-      alert('Please enter a probe reading');
-      return;
-    }
-    
-    const probeValue = parseFloat(probeReading);
-    if (isNaN(probeValue)) {
-      alert('Please enter a valid number for probe reading');
-      return;
-    }
-    
-    const probeDiscrepancy = dieselRecord.litresFilled - probeValue;
-    
-    updateDieselRecord({
-      ...dieselRecord,
-      probeReading: probeValue,
-      probeDiscrepancy,
-      probeVerified: true,
-      probeVerifiedAt: new Date().toISOString(),
-      probeVerifiedBy: 'Current User',
-      probeVerificationNotes: verificationNotes || undefined
-    });
-    
-    alert(`Probe verified successfully!\n\nProbe reading: ${probeValue}L\nFilled amount: ${dieselRecord.litresFilled}L\nDiscrepancy: ${probeDiscrepancy.toFixed(1)}L`);
-    
-    onClose();
-  };
-  
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Verify Probe Reading"
-      maxWidth="md"
-    >
-      <div className="space-y-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">Diesel Record Details</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm text-blue-700">
-            <div>
-              <p><strong>Fleet:</strong> {dieselRecord.fleetNumber}</p>
-              <p><strong>Driver:</strong> {dieselRecord.driverName}</p>
-              <p><strong>Date:</strong> {formatDate(dieselRecord.date)}</p>
-            </div>
-            <div>
-              <p><strong>Litres Filled:</strong> {dieselRecord.litresFilled}L</p>
-              <p><strong>Cost:</strong> {formatCurrency(dieselRecord.totalCost, dieselRecord.currency || 'ZAR')}</p>
-              <p><strong>Station:</strong> {dieselRecord.fuelStation}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Probe Reading (Litres) *
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              value={probeReading}
-              onChange={(e) => setProbeReading(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter probe reading in litres"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Verification Notes
-            </label>
-            <textarea
-              value={verificationNotes}
-              onChange={(e) => setVerificationNotes(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Add any notes about the verification process..."
-              rows={3}
-            />
-          </div>
-        </div>
-        
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            icon={<X className="w-4 h-4" />}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleVerify}
-            icon={<CheckCircle className="w-4 h-4" />}
-          >
-            Verify Probe
-          </Button>
-        </div>
-      </div>
-    </Modal>
   );
 };
 

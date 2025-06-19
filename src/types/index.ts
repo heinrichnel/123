@@ -523,6 +523,7 @@ export const FLEET_NUMBERS = [
   // Add refrigeration trailers
   "4F",
   "5F",
+  "6F",
   "7F",
   "8F"
 ];
@@ -666,7 +667,8 @@ export const COST_CATEGORIES: Record<string, string[]> = {
     'Bubi', 'Lunde', 'Mvuma', 'Gweru', 'Kadoma', 'Chegutu', 'Norton', 'Harare', 'Ruwa',
     'Marondera', 'Rusape', 'Mutare', 'Nyanga', 'Bindura', 'Shamva', 'Centenary', 'Guruve',
     'Karoi', 'Chinhoyi', 'Kariba', 'Hwange', 'Victoria Falls', 'Bulawayo', 'Gwanda',
-    'Beitbridge', 'Masvingo', 'Zvishavane', 'Shurugwi', 'Kwekwe'
+    'Beitbridge', 'Masvingo', 'Zvishavane', 'Shurugwi', 'Kwekwe',
+    'Wine route TS', 'Engen BW TS', 'African TS', 'Gateway TS', 'Lemba TS', 'Polokwane TS'
   ],
   "Diesel": [
     'ACM Petroleum Chirundu - Reefer', 'ACM Petroleum Chirundu - Horse', 'RAM Petroleum Harare - Reefer',
@@ -853,5 +855,11 @@ export const FUEL_STATIONS = [
   'Wine Routes Truck Stop (Sa)',
   'Xtreme Harare (Zimbabwe)',
   'Zuva Harare (Zimbabwe)',
-  'Others'
+  'Others',
+  'Wine route TS',
+  'Engen BW TS',
+  'African TS',
+  'Gateway TS',
+  'Lemba TS',
+  'Polokwane TS'
 ];
