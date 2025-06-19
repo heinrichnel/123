@@ -17,7 +17,9 @@ import {
   AlertTriangle,
   DollarSign,
   Truck,
-  Calendar
+  Calendar,
+  MapPin,
+  User
 } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
@@ -46,7 +48,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
   if (!dieselRecord) return null;
 
   // Check if it's a reefer unit
-  const isReeferUnit = dieselRecord.isReeferUnit || ['4F', '5F', '7F', '8F'].includes(dieselRecord.fleetNumber);
+  const isReeferUnit = dieselRecord.isReeferUnit || ['4F', '5F', '6F', '7F', '8F'].includes(dieselRecord.fleetNumber);
 
   // Get available trips for the selected fleet (for non-reefer units)
   const availableTrips = !isReeferUnit ? trips.filter(trip => 
@@ -153,7 +155,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
         // Update the diesel record to remove the linked horse ID
         const updatedRecord = {
           ...dieselRecord,
-          linkedHorseId: null,
+          linkedHorseId: undefined,
           updatedAt: new Date().toISOString()
         };
         
@@ -164,7 +166,7 @@ const TripLinkageModal: React.FC<TripLinkageModalProps> = ({
           const trip = trips.find(t => t.id === horseRecord.tripId);
           if (trip) {
             const costEntry = trip.costs.find(c => 
-              c.referenceNumber === `REEFER-DIESEL-${dieselRecord.id}`
+              c.referenceNumber === `REEFER-DIESEL-${dieselRecordId}`
             );
             
             if (costEntry) {

@@ -207,12 +207,19 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
         if (formData.linkedHorseId) {
           const horseRecord = dieselRecords.find(r => r.id === formData.linkedHorseId);
           successMessage += `Linked to Horse: ${horseRecord?.fleetNumber || formData.linkedHorseId}\n`;
+          
+          // If the horse is linked to a trip, mention that costs will be allocated
+          if (horseRecord?.tripId) {
+            const trip = trips.find(t => t.id === horseRecord.tripId);
+            successMessage += `Cost will be allocated to trip: ${trip?.route || horseRecord.tripId}\n`;
+          }
         }
       } else {
         successMessage += `KM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\n`;
         if (formData.tripId) {
           const trip = trips.find(t => t.id === formData.tripId);
           successMessage += `Linked to Trip: ${trip?.route || formData.tripId}\n`;
+          successMessage += `Cost will be allocated to trip expenses\n`;
         }
       }
       
@@ -259,11 +266,11 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   };
 
   // Check if the selected fleet is a reefer unit
-  const isReeferUnit = ['4F', '5F', '7F', '8F'].includes(formData.fleetNumber);
+  const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(formData.fleetNumber);
 
   // Update isReeferUnit when fleet number changes
   useEffect(() => {
-    if (['4F', '5F', '7F', '8F'].includes(formData.fleetNumber)) {
+    if (['4F', '5F', '6F', '7F', '8F'].includes(formData.fleetNumber)) {
       setFormData(prev => ({ ...prev, isReeferUnit: true }));
     } else {
       setFormData(prev => ({ ...prev, isReeferUnit: false }));
@@ -318,7 +325,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           />
           <label htmlFor="isReeferUnit" className="flex items-center text-sm font-medium text-gray-700">
             <Building className="w-4 h-4 mr-2" />
-            This is a refrigeration trailer (4F, 5F, 7F, 8F)
+            This is a refrigeration trailer (4F, 5F, 6F, 7F, 8F)
           </label>
         </div>
 
@@ -333,6 +340,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
               ...FLEET_NUMBERS.map(f => ({ label: f, value: f })),
               { label: '4F - Reefer', value: '4F' },
               { label: '5F - Reefer', value: '5F' },
+              { label: '6F - Reefer', value: '6F' },
               { label: '7F - Reefer', value: '7F' },
               { label: '8F - Reefer', value: '8F' }
             ]}

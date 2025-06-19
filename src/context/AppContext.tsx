@@ -948,67 +948,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Diesel CRUD
   const addDieselRecord = async (record: DieselConsumptionRecord) => {
-    await addDieselToFirebase(removeUndefinedValues(record));
-    
-    // If this is a reefer unit linked to a horse, and the horse is linked to a trip,
-    // automatically create a cost entry for the reefer diesel
-    if (record.isReeferUnit && record.linkedHorseId) {
-      const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
-      if (horseRecord?.tripId) {
-        // Create a cost entry for the reefer diesel
+    try {
+      // Add the diesel record to Firestore
+      await addDieselToFirebase(removeUndefinedValues(record));
+      
+      // Update local state
+      setDieselRecords(prev => [...prev, record]);
+      
+      // If this is a regular diesel record linked to a trip, create a cost entry
+      if (!record.isReeferUnit && record.tripId) {
+        // Create a cost entry for the diesel
         const costData: Omit<CostEntry, "id" | "attachments"> = {
-          tripId: horseRecord.tripId,
+          tripId: record.tripId,
           category: "Fuel",
-          subCategory: "Reefer Diesel",
+          subCategory: "Diesel",
           amount: record.totalCost,
           currency: record.currency || "ZAR",
-          referenceNumber: `REEFER-DIESEL-${record.id}`,
+          referenceNumber: `DIESEL-${record.id}`,
           date: record.date,
-          notes: `Reefer diesel for ${record.fleetNumber} - ${record.litresFilled}L at ${record.fuelStation}`,
+          notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled}L`,
           isFlagged: false,
           isSystemGenerated: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         
-        await addCostEntry(horseRecord.tripId, costData);
+        await addCostEntry(record.tripId, costData);
       }
-    }
-  };
-  
-  const updateDieselRecord = async (record: DieselConsumptionRecord) => {
-    await updateDieselInFirebase(record.id, removeUndefinedValues(record));
-    
-    // If this is a reefer unit and the linked horse has changed
-    if (record.isReeferUnit && record.linkedHorseId) {
-      // Find the previous version of this record
-      const oldRecord = dieselRecords.find(r => r.id === record.id);
       
-      // If the linked horse has changed
-      if (oldRecord && oldRecord.linkedHorseId !== record.linkedHorseId) {
-        // Remove any existing cost entries from the old horse's trip
-        if (oldRecord.linkedHorseId) {
-          const oldHorseRecord = dieselRecords.find(r => r.id === oldRecord.linkedHorseId);
-          if (oldHorseRecord?.tripId) {
-            const trip = trips.find(t => t.id === oldHorseRecord.tripId);
-            if (trip) {
-              const costEntry = trip.costs.find(c => 
-                c.referenceNumber === `REEFER-DIESEL-${record.id}`
-              );
-              
-              if (costEntry) {
-                await deleteCostEntry(costEntry.id);
-              }
-            }
-          }
-        }
-        
-        // Add a new cost entry to the new horse's trip
-        const newHorseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
-        if (newHorseRecord?.tripId) {
+      // If this is a reefer unit linked to a horse, and the horse is linked to a trip,
+      // automatically create a cost entry for the reefer diesel
+      if (record.isReeferUnit && record.linkedHorseId) {
+        const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
+        if (horseRecord?.tripId) {
           // Create a cost entry for the reefer diesel
           const costData: Omit<CostEntry, "id" | "attachments"> = {
-            tripId: newHorseRecord.tripId,
+            tripId: horseRecord.tripId,
             category: "Fuel",
             subCategory: "Reefer Diesel",
             amount: record.totalCost,
@@ -1022,24 +997,111 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
             updatedAt: new Date().toISOString(),
           };
           
-          await addCostEntry(newHorseRecord.tripId, costData);
+          await addCostEntry(horseRecord.tripId, costData);
         }
       }
-      // If only the cost or amount has changed, update the cost entry
-      else if (oldRecord && (oldRecord.totalCost !== record.totalCost || oldRecord.litresFilled !== record.litresFilled)) {
-        const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
-        if (horseRecord?.tripId) {
-          const trip = trips.find(t => t.id === horseRecord.tripId);
+    } catch (error) {
+      console.error("Error adding diesel record:", error);
+      throw error;
+    }
+  };
+  
+  const updateDieselRecord = async (record: DieselConsumptionRecord) => {
+    try {
+      await updateDieselInFirebase(record.id, removeUndefinedValues(record));
+      
+      // Update local state
+      setDieselRecords(prev => prev.map(r => r.id === record.id ? record : r));
+      
+      // If this is a reefer unit and the linked horse has changed
+      if (record.isReeferUnit && record.linkedHorseId) {
+        // Find the previous version of this record
+        const oldRecord = dieselRecords.find(r => r.id === record.id);
+        
+        // If the linked horse has changed
+        if (oldRecord && oldRecord.linkedHorseId !== record.linkedHorseId) {
+          // Remove any existing cost entries from the old horse's trip
+          if (oldRecord.linkedHorseId) {
+            const oldHorseRecord = dieselRecords.find(r => r.id === oldRecord.linkedHorseId);
+            if (oldHorseRecord?.tripId) {
+              const trip = trips.find(t => t.id === oldHorseRecord.tripId);
+              if (trip) {
+                const costEntry = trip.costs.find(c => 
+                  c.referenceNumber === `REEFER-DIESEL-${record.id}`
+                );
+                
+                if (costEntry) {
+                  await deleteCostEntry(costEntry.id);
+                }
+              }
+            }
+          }
+          
+          // Add a new cost entry to the new horse's trip
+          const newHorseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
+          if (newHorseRecord?.tripId) {
+            // Create a cost entry for the reefer diesel
+            const costData: Omit<CostEntry, "id" | "attachments"> = {
+              tripId: newHorseRecord.tripId,
+              category: "Fuel",
+              subCategory: "Reefer Diesel",
+              amount: record.totalCost,
+              currency: record.currency || "ZAR",
+              referenceNumber: `REEFER-DIESEL-${record.id}`,
+              date: record.date,
+              notes: `Reefer diesel for ${record.fleetNumber} - ${record.litresFilled}L at ${record.fuelStation}`,
+              isFlagged: false,
+              isSystemGenerated: false,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            
+            await addCostEntry(newHorseRecord.tripId, costData);
+          }
+        }
+        // If only the cost or amount has changed, update the cost entry
+        else if (oldRecord && (oldRecord.totalCost !== record.totalCost || oldRecord.litresFilled !== record.litresFilled)) {
+          const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
+          if (horseRecord?.tripId) {
+            const trip = trips.find(t => t.id === horseRecord.tripId);
+            if (trip) {
+              const costEntry = trip.costs.find(c => 
+                c.referenceNumber === `REEFER-DIESEL-${record.id}`
+              );
+              
+              if (costEntry) {
+                const updatedCostEntry: CostEntry = {
+                  ...costEntry,
+                  amount: record.totalCost,
+                  notes: `Reefer diesel for ${record.fleetNumber} - ${record.litresFilled}L at ${record.fuelStation}`,
+                  updatedAt: new Date().toISOString()
+                };
+                
+                await updateCostEntry(updatedCostEntry);
+              }
+            }
+          }
+        }
+      }
+      // If this is a regular diesel record linked to a trip
+      else if (!record.isReeferUnit && record.tripId) {
+        // Find the previous version of this record
+        const oldRecord = dieselRecords.find(r => r.id === record.id);
+        
+        // If the cost or amount has changed, update the cost entry
+        if (oldRecord && (oldRecord.totalCost !== record.totalCost || oldRecord.litresFilled !== record.litresFilled)) {
+          const trip = trips.find(t => t.id === record.tripId);
           if (trip) {
             const costEntry = trip.costs.find(c => 
-              c.referenceNumber === `REEFER-DIESEL-${record.id}`
+              c.referenceNumber === `DIESEL-${record.id}`
             );
             
             if (costEntry) {
               const updatedCostEntry: CostEntry = {
                 ...costEntry,
                 amount: record.totalCost,
-                notes: `Reefer diesel for ${record.fleetNumber} - ${record.litresFilled}L at ${record.fuelStation}`,
+                currency: record.currency || "ZAR",
+                notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled}L`,
                 updatedAt: new Date().toISOString()
               };
               
@@ -1048,49 +1110,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
       }
-    }
-    // If this is a regular diesel record linked to a trip
-    else if (!record.isReeferUnit && record.tripId) {
-      // Find the previous version of this record
-      const oldRecord = dieselRecords.find(r => r.id === record.id);
-      
-      // If the cost or amount has changed, update the cost entry
-      if (oldRecord && (oldRecord.totalCost !== record.totalCost || oldRecord.litresFilled !== record.litresFilled)) {
-        const trip = trips.find(t => t.id === record.tripId);
-        if (trip) {
-          const costEntry = trip.costs.find(c => 
-            c.referenceNumber === `DIESEL-${record.id}`
-          );
-          
-          if (costEntry) {
-            const updatedCostEntry: CostEntry = {
-              ...costEntry,
-              amount: record.totalCost,
-              currency: record.currency || "ZAR",
-              notes: `Diesel purchase at ${record.fuelStation} - ${record.litresFilled}L`,
-              updatedAt: new Date().toISOString()
-            };
-            
-            await updateCostEntry(updatedCostEntry);
-          }
-        }
-      }
+    } catch (error) {
+      console.error("Error updating diesel record:", error);
+      throw error;
     }
   };
   
   const deleteDieselRecord = async (id: string) => {
-    // Find the diesel record before deleting it
-    const record = dieselRecords.find(r => r.id === id);
-    
-    if (record) {
-      // If it's a reefer unit linked to a horse with a trip, remove the cost entry
-      if (record.isReeferUnit && record.linkedHorseId) {
-        const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
-        if (horseRecord?.tripId) {
-          const trip = trips.find(t => t.id === horseRecord.tripId);
+    try {
+      // Find the diesel record before deleting it
+      const record = dieselRecords.find(r => r.id === id);
+      
+      if (record) {
+        // If it's a reefer unit linked to a horse with a trip, remove the cost entry
+        if (record.isReeferUnit && record.linkedHorseId) {
+          const horseRecord = dieselRecords.find(r => r.id === record.linkedHorseId);
+          if (horseRecord?.tripId) {
+            const trip = trips.find(t => t.id === horseRecord.tripId);
+            if (trip) {
+              const costEntry = trip.costs.find(c => 
+                c.referenceNumber === `REEFER-DIESEL-${id}`
+              );
+              
+              if (costEntry) {
+                await deleteCostEntry(costEntry.id);
+              }
+            }
+          }
+        }
+        // If it's a regular diesel record linked to a trip, remove the cost entry
+        else if (record.tripId) {
+          const trip = trips.find(t => t.id === record.tripId);
           if (trip) {
             const costEntry = trip.costs.find(c => 
-              c.referenceNumber === `REEFER-DIESEL-${id}`
+              c.referenceNumber === `DIESEL-${id}`
             );
             
             if (costEntry) {
@@ -1099,23 +1152,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         }
       }
-      // If it's a regular diesel record linked to a trip, remove the cost entry
-      else if (record.tripId) {
-        const trip = trips.find(t => t.id === record.tripId);
-        if (trip) {
-          const costEntry = trip.costs.find(c => 
-            c.referenceNumber === `DIESEL-${id}`
-          );
-          
-          if (costEntry) {
-            await deleteCostEntry(costEntry.id);
-          }
-        }
-      }
+      
+      // Delete the diesel record from Firestore
+      await deleteDieselFromFirebase(id);
+      
+      // Update local state
+      setDieselRecords(prev => prev.filter(r => r.id !== id));
+    } catch (error) {
+      console.error("Error deleting diesel record:", error);
+      throw error;
     }
-    
-    // Delete the diesel record from Firestore
-    await deleteDieselFromFirebase(id);
   };
   
   const importDieselRecords = async (formData: FormData) => {
