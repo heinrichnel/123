@@ -22,6 +22,10 @@ import {
   Building
 } from 'lucide-react';
 
+// ─── Helper function ─────────────────────────────────────────────
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString();
+};
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;
@@ -32,7 +36,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { addDieselRecord, trips } = useAppContext();
+  const { addDieselRecord, trips, dieselRecords } = useAppContext();
   
   const [formData, setFormData] = useState({
     fleetNumber: '',
