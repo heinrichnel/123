@@ -136,3 +136,14 @@ export const listenToGoogleSheetChanges = () => {
   // This would be implemented in a Firebase Cloud Function
   console.log("Setting up Google Sheets integration listener");
 };
+
+// Export the addDriverBehaviorEvent function for the integration
+export const addDriverBehaviorEvent = async (eventData: any) => {
+  try {
+    const result = await addDriverBehaviorEventToFirebase(eventData);
+    return result;
+  } catch (error) {
+    console.error("Error adding driver behavior event:", error);
+    throw error;
+  }
+};
