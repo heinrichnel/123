@@ -1,6 +1,6 @@
 // ─── Driver Behavior Integration with Google Sheets ───────────────────────────────
 
-import { DriverBehaviorEvent } from '../types';
+import { DriverBehaviorEvent, DriverBehaviorEventType } from '../types';
 import { addDriverBehaviorEvent } from '../firebase';
 
 // -------------------- Mapping Configuration --------------------
@@ -121,33 +121,21 @@ export async function fetchAndSaveDriverEventToFirestore() {
     // Process each event
     for (const eventData of events) {
       // Skip ignored event types
-      if (IGNORED_EVENTS.includes(eventData.eventType?.toLowerCase())) {
-        console.log("Ignored event type:", eventData.eventType);
+      const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
+      if (IGNORED_EVENTS.includes(rawEventType)) {
+        console.log("Ignored event type:", rawEventType);
         continue;
       }
 
-      // Create driver behavior event object
-      const driverEvent: Omit<DriverBehaviorEvent, 'id'> = {
-        driverName: eventData.driverName || "Unknown",
-        fleetNumber: eventData.fleetNumber || "Unknown",
-        eventDate: parseDate(eventData.eventDate),
-        eventTime: eventData.eventTime || "00:00",
-        eventType: (eventData.eventType?.toLowerCase() || "other") as any,
-        description: eventData.description || `${eventData.eventType} event detected`,
-        location: eventData.location || "",
-        severity: (eventData.severity?.toLowerCase() || "medium") as any,
-        reportedBy: "Google Sheets Integration",
-        reportedAt: new Date().toISOString(),
-        status: "pending" as any,
-        actionTaken: "",
-        points: eventData.points || 0,
-        date: new Date().toISOString(),
-        resolved: false
-      };
-
-      // Save to Firestore
-      await addDriverBehaviorEvent(driverEvent);
-      console.log("Driver event saved:", driverEvent);
+      // Process the event data from the "Data" sheet format
+      // The data comes in the format you specified with columns A-L
+      const processedEvent = processEventFromDataSheet(eventData);
+      
+      if (processedEvent) {
+        // Save to Firestore
+        await addDriverBehaviorEvent(processedEvent);
+        console.log("Driver event saved:", processedEvent);
+      }
     }
     
     return events.length;
@@ -157,26 +145,93 @@ export async function fetchAndSaveDriverEventToFirestore() {
   }
 }
 
+// Process event data from the "Data" sheet format
+function processEventFromDataSheet(eventData: any): Omit<DriverBehaviorEvent, 'id'> | null {
+  try {
+    // Skip ignored event types
+    const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
+    if (IGNORED_EVENTS.includes(rawEventType)) {
+      return null;
+    }
+    
+    // Map the event type to our standardized types
+    let mappedEventType: DriverBehaviorEventType = "other";
+    const normalizedEventType = rawEventType.replace(/\s+/g, '_').toLowerCase();
+    
+    // Try to find a matching event type
+    for (const [key, value] of Object.entries(eventTypeMap)) {
+      if (normalizedEventType.includes(key)) {
+        mappedEventType = value as DriverBehaviorEventType;
+        break;
+      }
+    }
+    
+    // Get severity and points from rules or from the data
+    let severity = (eventData.severity || "medium").toLowerCase();
+    let points = parseInt(eventData.points) || 0;
+    
+    // If we have rules for this event type, use them
+    if (eventRules[mappedEventType]) {
+      severity = eventRules[mappedEventType].severity;
+      points = eventRules[mappedEventType].points;
+    }
+    
+    // Create the driver behavior event
+    const driverEvent: Omit<DriverBehaviorEvent, 'id'> = {
+      driverName: eventData.driverName || "Unknown",
+      fleetNumber: eventData.fleetNumber || "Unknown",
+      eventDate: parseDate(eventData.eventDate),
+      eventTime: eventData.eventTime || "00:00",
+      eventType: mappedEventType,
+      description: eventData.description || `${eventData.eventType} event detected for ${eventData.driverName}`,
+      location: eventData.location || "",
+      severity: severity as any,
+      reportedBy: "Google Sheets Integration",
+      reportedAt: eventData.reportedAt ? new Date(eventData.reportedAt).toISOString() : new Date().toISOString(),
+      status: "pending" as any,
+      actionTaken: "",
+      points: points,
+      date: new Date().toISOString(),
+      resolved: false
+    };
+    
+    return driverEvent;
+  } catch (error) {
+    console.error("Error processing event data:", error);
+    return null;
+  }
+}
+
 // Function to periodically fetch and process driver events
+let pollingIntervalId: number | null = null;
+
 export function startDriverEventPolling(intervalMs = 60000) {
   console.log("Starting driver event polling...");
+  
+  // Stop any existing polling
+  if (pollingIntervalId) {
+    stopDriverEventPolling(pollingIntervalId);
+  }
   
   // Initial fetch
   fetchAndSaveDriverEventToFirestore().catch(console.error);
   
   // Set up interval for subsequent fetches
-  const intervalId = setInterval(() => {
+  const intervalId = window.setInterval(() => {
     fetchAndSaveDriverEventToFirestore().catch(console.error);
   }, intervalMs);
+  
+  pollingIntervalId = intervalId;
   
   // Return the interval ID so it can be cleared if needed
   return intervalId;
 }
 
 // Function to stop polling
-export function stopDriverEventPolling(intervalId: number) {
+export function stopDriverEventPolling(intervalId: number | null) {
   if (intervalId) {
-    clearInterval(intervalId);
+    window.clearInterval(intervalId);
     console.log("Driver event polling stopped");
+    pollingIntervalId = null;
   }
 }

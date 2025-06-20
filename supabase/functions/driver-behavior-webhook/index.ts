@@ -136,38 +136,19 @@ serve(async (req) => {
 
     console.log("Received driver behavior event:", JSON.stringify(data));
 
-    // Skip ignored event types
-    const rawEventType = (data.eventType || "").toString().trim().toLowerCase();
-    if (IGNORED_EVENTS.includes(rawEventType)) {
+    // Process the data from the "Data" sheet format
+    // The data comes in the format specified with columns A-L
+    const driverEvent = processEventFromDataSheet(data);
+    
+    if (!driverEvent) {
       return new Response(JSON.stringify({ 
         success: false, 
-        message: "Ignored event type", 
-        eventType: rawEventType 
+        message: "Event ignored or invalid data format" 
       }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Create driver behavior event object
-    const driverEvent = {
-      id: `EVENT-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      driverName: data.driverName || "Unknown",
-      fleetNumber: data.fleetNumber || "Unknown",
-      eventDate: parseDate(data.eventDate),
-      eventTime: data.eventTime || "00:00",
-      eventType: data.eventType?.toLowerCase() || "other",
-      description: data.description || `${data.eventType} event detected`,
-      location: data.location || "",
-      severity: data.severity?.toLowerCase() || "medium",
-      reportedBy: "Google Sheets Webhook",
-      reportedAt: new Date().toISOString(),
-      status: "pending",
-      actionTaken: "",
-      points: parseInt(data.points) || 0,
-      date: new Date().toISOString(),
-      resolved: false
-    };
 
     // Write to Supabase
     const { data: savedEvent, error } = await supabase
@@ -214,3 +195,39 @@ serve(async (req) => {
     });
   }
 });
+
+// Process event data from the "Data" sheet format
+function processEventFromDataSheet(eventData: any) {
+  try {
+    // Skip ignored event types
+    const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
+    if (IGNORED_EVENTS.includes(rawEventType)) {
+      return null;
+    }
+    
+    // Create driver behavior event object
+    const driverEvent = {
+      id: `EVENT-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      driver_name: eventData.driverName || "Unknown",
+      fleet_number: eventData.fleetNumber || "Unknown",
+      event_date: parseDate(eventData.eventDate),
+      event_time: eventData.eventTime || "00:00",
+      event_type: eventData.eventType?.toLowerCase() || "other",
+      description: eventData.description || `${eventData.eventType} event detected for ${eventData.driverName}`,
+      location: eventData.location || "",
+      severity: (eventData.severity || "medium").toLowerCase(),
+      reported_by: "Google Sheets Integration",
+      reported_at: new Date().toISOString(),
+      status: "pending",
+      action_taken: "",
+      points: parseInt(eventData.points) || 0,
+      date: new Date().toISOString(),
+      resolved: false
+    };
+    
+    return driverEvent;
+  } catch (error) {
+    console.error("Error processing event data:", error);
+    return null;
+  }
+}
