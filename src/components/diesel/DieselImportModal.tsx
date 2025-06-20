@@ -1,34 +1,68 @@
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState } from 'react';
+import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { useAppContext } from '../../context/AppContext';
-import { Upload, X, FileSpreadsheet, AlertTriangle, WifiOff, Wifi } from 'lucide-react';
-import { TRUCKS_WITH_PROBES } from '../../types';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Upload,
+  X,
+  FileSpreadsheet,
+  AlertTriangle,
+  CheckCircle,
+  Download,
+  Wifi,
+  WifiOff
+} from 'lucide-react';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { FUEL_STATIONS, FLEETS_WITH_PROBES } from '../../types';
+
 
 interface DieselImportModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }) => {
-  const { importDieselFromCSV, connectionStatus } = useAppContext();
-  const [csvFile, setCsvFile] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+const DieselImportModal: React.FC<DieselImportModalProps> = ({
+  isOpen,
+  onClose
+}) => {
+  const { importDieselRecords, connectionStatus } = useAppContext();
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
   const [previewData, setPreviewData] = useState<any[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) {
-      const file = e.target.files[0];
-      setCsvFile(file);
-      
-      // Generate preview
-      try {
-        const text = await file.text();
-        const data = parseCSV(text);
-        setPreviewData(data.slice(0, 3)); // Show first 3 rows
-      } catch (error) {
-        console.error('Failed to parse CSV for preview:', error);
+    const selectedFile = e.target.files?.[0] || null;
+    setFile(selectedFile);
+
+    if (selectedFile) {
+      const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase();
+      if (fileExtension !== 'csv') {
+        setError('Only CSV files are allowed.');
+        setFile(null);
+        setPreviewData([]);
+      } else {
+        setError('');
+        
+        // Generate preview
+        try {
+          const text = await selectedFile.text();
+          const data = parseCSV(text);
+          setPreviewData(data.slice(0, 3)); // Show first 3 rows
+        } catch (error) {
+          console.error('Failed to parse CSV for preview:', error);
+          setError('Failed to parse CSV file. Please check the format.');
+        }
       }
+    } else {
+      setPreviewData([]);
     }
   };
 
@@ -51,81 +85,90 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
     return data;
   };
 
-  const handleImport = async () => {
-    if (!csvFile) return;
-
-    setIsProcessing(true);
+  const handleUpload = async () => {
+    if (!file) return;
     
+    setIsProcessing(true);
+    setError('');
+    setSuccess('');
+
     try {
-      const text = await csvFile.text();
+      const text = await file.text();
       const data = parseCSV(text);
       
-      const records = data.map((row: any) => {
-        const kmReading = parseFloat(row.kmReading || row.km || '0');
-        const previousKmReading = parseFloat(row.previousKmReading || row.previousKm || '0');
-        const litresFilled = parseFloat(row.litresFilled || row.litres || '0');
-        const costPerLitre = parseFloat(row.costPerLitre || row.pricePerLitre || '0');
-        const totalCost = parseFloat(row.totalCost || row.cost || '0');
-        const currency = row.currency || 'ZAR';
+      // Convert to diesel records
+      const dieselRecords = data.map((row: any) => {
+        const isReeferUnit = row.isReeferUnit === 'true' || row.isReeferUnit === true || ['4F', '5F', '6F', '7F', '8F'].includes(row.fleetNumber);
+        const hasProbe = FLEETS_WITH_PROBES.includes(row.fleetNumber);
         
-        // Calculate derived values
-        const distanceTravelled = previousKmReading > 0 ? kmReading - previousKmReading : 0;
-        const kmPerLitre = distanceTravelled > 0 && litresFilled > 0 ? distanceTravelled / litresFilled : 0;
-        const calculatedCostPerLitre = litresFilled > 0 ? totalCost / litresFilled : costPerLitre;
-        
-        // Check if truck has probe
-        const fleetNumber = row.fleetNumber || row.fleet || '';
-        const hasProbe = TRUCKS_WITH_PROBES.includes(fleetNumber);
-        
-        // Add probe data if available
-        const probeReading = parseFloat(row.probeReading || '0');
-        const probeDiscrepancy = probeReading > 0 ? litresFilled - probeReading : undefined;
-        const probeVerified = probeReading > 0;
-
         return {
-          fleetNumber,
-          date: row.date || '',
-          kmReading,
-          litresFilled,
-          costPerLitre: calculatedCostPerLitre,
-          totalCost,
-          fuelStation: row.fuelStation || row.station || '',
-          driverName: row.driverName || row.driver || '',
+          id: `diesel-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          fleetNumber: row.fleetNumber || '',
+          date: row.date || new Date().toISOString().split('T')[0],
+          kmReading: isReeferUnit ? 0 : parseFloat(row.kmReading || '0'),
+          previousKmReading: isReeferUnit ? undefined : (row.previousKmReading ? parseFloat(row.previousKmReading) : undefined),
+          litresFilled: parseFloat(row.litresFilled || '0'),
+          costPerLitre: row.costPerLitre ? parseFloat(row.costPerLitre) : undefined,
+          totalCost: parseFloat(row.totalCost || '0'),
+          fuelStation: row.fuelStation || '',
+          driverName: row.driverName || '',
           notes: row.notes || '',
-          previousKmReading: previousKmReading > 0 ? previousKmReading : undefined,
-          distanceTravelled: distanceTravelled > 0 ? distanceTravelled : undefined,
-          kmPerLitre: kmPerLitre > 0 ? kmPerLitre : undefined,
-          currency,
-          hasProbe,
-          probeReading: probeReading > 0 ? probeReading : undefined,
-          probeDiscrepancy,
-          probeVerified
+          currency: row.currency || 'ZAR',
+          probeReading: hasProbe && row.probeReading ? parseFloat(row.probeReading) : undefined,
+          isReeferUnit,
+          hoursOperated: isReeferUnit && row.hoursOperated ? parseFloat(row.hoursOperated) : undefined
         };
       });
 
-      importDieselFromCSV(records);
-      alert(`Successfully imported ${records.length} diesel records from CSV file.\n\nAll KM/L calculations and efficiency metrics have been automatically computed.${connectionStatus !== 'connected' ? '\n\nData will be synced when your connection is restored.' : ''}`);
-      onClose();
-    } catch (error) {
-      console.error('Failed to import CSV:', error);
-      alert('Failed to import CSV file. Please check the file format and try again.');
+      // Calculate derived values
+      dieselRecords.forEach(record => {
+        // Skip distance calculations for reefer units
+        if (!record.isReeferUnit) {
+          if (record.previousKmReading !== undefined && record.kmReading) {
+            record.distanceTravelled = record.kmReading - record.previousKmReading;
+          }
+          
+          if (record.distanceTravelled && record.litresFilled) {
+            record.kmPerLitre = record.distanceTravelled / record.litresFilled;
+          }
+        }
+        
+        if (!record.costPerLitre && record.totalCost && record.litresFilled) {
+          record.costPerLitre = record.totalCost / record.litresFilled;
+        }
+        
+        if (record.probeReading !== undefined) {
+          record.probeDiscrepancy = record.litresFilled - record.probeReading;
+        }
+      });
+
+      // Create FormData for upload
+      const formData = new FormData();
+      formData.append('records', JSON.stringify(dieselRecords));
+      
+      await importDieselRecords(formData);
+      setSuccess(`Successfully imported ${dieselRecords.length} diesel records.`);
+      setFile(null);
+      setPreviewData([]);
+      
+      // Close modal after a short delay
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to import diesel records:', err);
+      setError('Error importing records. Please check the file format and try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleClose = () => {
-    setCsvFile(null);
-    setIsProcessing(false);
-    setPreviewData([]);
-    onClose();
-  };
-
-  const exportCSVTemplate = () => {
-    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,totalCost,fuelStation,driverName,notes,currency,probeReading
-6H,2025-01-15,125000,123560,450,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,
-26H,2025-01-16,89000,87670,380,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,
-22H,2025-01-17,156000,154824,420,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415`;
+  const downloadTemplate = () => {
+    const csvContent = `data:text/csv;charset=utf-8,fleetNumber,date,kmReading,previousKmReading,litresFilled,costPerLitre,totalCost,fuelStation,driverName,notes,currency,probeReading,isReeferUnit,hoursOperated
+6H,2025-01-15,125000,123560,450,18.50,8325,RAM Petroleum Harare,Enock Mukonyerwa,Full tank before long trip,ZAR,,false,
+26H,2025-01-16,89000,87670,380,19.20,7296,Engen Beitbridge,Jonathan Bepete,Border crossing fill-up,ZAR,,false,
+22H,2025-01-17,156000,154824,420,18.75,7875,Shell Mutare,Lovemore Qochiwe,Regular refuel,ZAR,415,false,
+6F,2025-01-18,0,,250,19.50,4875,Engen Beitbridge,Peter Farai,Reefer unit refill,ZAR,,true,5.5`;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -137,7 +180,12 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Import Diesel Records from CSV" maxWidth="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Import Diesel Records"
+      maxWidth="md"
+    >
       <div className="space-y-6">
         {/* Connection Status Warning */}
         {connectionStatus !== 'connected' && (
@@ -160,108 +208,77 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
           </div>
         )}
 
-        {/* Enhanced CSV Format Requirements */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-          <h4 className="text-sm font-medium text-blue-800 mb-2">CSV Format Requirements</h4>
-          <div className="text-sm text-blue-700 space-y-2">
-            <p>Your CSV file should include the following columns (all calculations will be done automatically):</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-              <div>
-                <p className="font-medium text-blue-800 mb-1">Required Fields:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li><strong>fleetNumber</strong> - Fleet identifier (e.g., "6H", "26H")</li>
-                  <li><strong>date</strong> - Date of fuel purchase (YYYY-MM-DD)</li>
-                  <li><strong>kmReading</strong> - Current kilometer reading</li>
-                  <li><strong>litresFilled</strong> - Liters of fuel purchased</li>
-                  <li><strong>totalCost</strong> - Total cost of fuel</li>
-                  <li><strong>fuelStation</strong> - Name of fuel station</li>
-                  <li><strong>driverName</strong> - Driver name</li>
-                </ul>
-              </div>
-              
-              <div>
-                <p className="font-medium text-blue-800 mb-1">Optional Fields:</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li><strong>previousKmReading</strong> - Previous km reading</li>
-                  <li><strong>costPerLitre</strong> - Price per liter</li>
-                  <li><strong>notes</strong> - Additional notes</li>
-                  <li><strong>currency</strong> - ZAR or USD (defaults to ZAR)</li>
-                  <li><strong>probeReading</strong> - Probe reading (for trucks with probes)</li>
-                </ul>
+          <div className="flex items-start space-x-3">
+            <FileSpreadsheet className="w-5 h-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-medium text-blue-800">CSV Import Instructions</h4>
+              <p className="text-sm text-blue-700 mt-1">
+                Import your diesel records using a CSV file with the following columns:
+              </p>
+              <ul className="text-sm text-blue-700 mt-2 list-disc list-inside">
+                <li>fleetNumber - Vehicle fleet number (e.g., "6H", "26H", "6F" for reefer)</li>
+                <li>date - Date of refueling (YYYY-MM-DD)</li>
+                <li>kmReading - Current odometer reading (not needed for reefer units)</li>
+                <li>previousKmReading - Previous odometer reading (optional)</li>
+                <li>litresFilled - Amount of diesel in litres</li>
+                <li>costPerLitre - Cost per litre (optional if totalCost provided)</li>
+                <li>totalCost - Total cost of the diesel purchase</li>
+                <li>fuelStation - Name of the fuel station</li>
+                <li>driverName - Name of the driver</li>
+                <li>notes - Additional notes (optional)</li>
+                <li>currency - ZAR or USD (optional, defaults to ZAR)</li>
+                <li>probeReading - Probe reading in litres (only for fleets with probes)</li>
+                <li>isReeferUnit - true/false (optional, defaults to false)</li>
+                <li>hoursOperated - Hours the reefer unit operated (for reefer units only)</li>
+              </ul>
+              <div className="mt-3">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={downloadTemplate}
+                  icon={<Download className="w-4 h-4" />}
+                >
+                  Download Template
+                </Button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Automatic Calculations Info */}
-        <div className="bg-green-50 border border-green-200 rounded-md p-4">
-          <h4 className="text-sm font-medium text-green-800 mb-2">Automatic Calculations</h4>
-          <div className="text-sm text-green-700 space-y-1">
-            <p>The system will automatically calculate:</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li><strong>Distance Travelled:</strong> Current KM - Previous KM</li>
-              <li><strong>KM per Litre:</strong> Distance ÷ Litres Filled</li>
-              <li><strong>Cost per Litre:</strong> Total Cost ÷ Litres (if not provided)</li>
-              <li><strong>Cost per KM:</strong> Total Cost ÷ Distance</li>
-              <li><strong>Efficiency Variance:</strong> Compared to fleet norms</li>
-              <li><strong>Performance Status:</strong> Excellent/Normal/Poor classification</li>
-              <li><strong>Probe Discrepancy:</strong> Difference between filled litres and probe reading</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Probe Verification Info */}
-        <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-medium text-amber-800">Probe Verification System</h4>
-              <p className="text-sm text-amber-700 mt-1">
-                For trucks with fuel probes (22H, 23H, 24H, 26H, 28H, 30H, 31H), the system will automatically compare the filled litres with probe readings.
-                Discrepancies greater than 50L will be flagged for investigation.
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center p-4 bg-gray-50 border border-gray-200 rounded-md">
+            <Upload className="w-6 h-6 text-gray-500 mr-3" />
+            <div className="flex-1">
+              <p className="text-sm text-gray-700">
+                Select a CSV file containing your diesel records. The first row should contain column headers.
               </p>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <label className="block text-sm font-medium text-gray-700">
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium text-gray-700">
               Select CSV File
             </label>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={exportCSVTemplate}
-              icon={<FileSpreadsheet className="w-4 h-4" />}
-            >
-              Download Template
-            </Button>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              className="p-2 border border-gray-300 rounded-md"
+            />
+            {error && (
+              <p className="text-sm text-red-600">
+                <AlertTriangle className="w-4 h-4 inline-block mr-1" />
+                {error}
+              </p>
+            )}
+            {success && (
+              <p className="text-sm text-green-600">
+                <CheckCircle className="w-4 h-4 inline-block mr-1" />
+                {success}
+              </p>
+            )}
           </div>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
-              file:rounded-md file:border-0 file:text-sm file:font-medium 
-              file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100
-              file:cursor-pointer cursor-pointer"
-          />
-
-          {csvFile && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
-              <div className="flex items-center space-x-2">
-                <Upload className="w-4 h-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">
-                  Selected: {csvFile.name}
-                </span>
-                <span className="text-sm text-green-600">
-                  ({(csvFile.size / 1024).toFixed(1)} KB)
-                </span>
-              </div>
-            </div>
-          )}
 
           {/* Data Preview */}
           {previewData.length > 0 && (
@@ -271,12 +288,12 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
                 <table className="min-w-full text-xs">
                   <thead>
                     <tr className="border-b">
-                      {Object.keys(previewData[0]).slice(0, 5).map((header) => (
+                      {Object.keys(previewData[0]).slice(0, 6).map((header) => (
                         <th key={header} className="px-2 py-1 text-left font-medium text-gray-700">
                           {header}
                         </th>
                       ))}
-                      {Object.keys(previewData[0]).length > 5 && (
+                      {Object.keys(previewData[0]).length > 6 && (
                         <th className="px-2 py-1 text-left font-medium text-gray-700">...</th>
                       )}
                     </tr>
@@ -284,12 +301,12 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
                   <tbody>
                     {previewData.map((row, rowIndex) => (
                       <tr key={rowIndex} className="border-b">
-                        {Object.entries(row).slice(0, 5).map(([key, value], colIndex) => (
+                        {Object.entries(row).slice(0, 6).map(([key, value], colIndex) => (
                           <td key={`${rowIndex}-${colIndex}`} className="px-2 py-1 text-gray-600">
                             {String(value)}
                           </td>
                         ))}
-                        {Object.keys(row).length > 5 && (
+                        {Object.keys(row).length > 6 && (
                           <td className="px-2 py-1 text-gray-600">...</td>
                         )}
                       </tr>
@@ -299,25 +316,25 @@ const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }
               </div>
             </div>
           )}
-        </div>
 
-        <div className="flex justify-end space-x-3 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isProcessing}
-            icon={<X className="w-4 h-4" />}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleImport}
-            disabled={!csvFile || isProcessing}
-            isLoading={isProcessing}
-            icon={<Upload className="w-4 h-4" />}
-          >
-            {isProcessing ? 'Importing & Calculating...' : 'Import & Calculate'}
-          </Button>
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isProcessing}
+              icon={<X className="w-4 h-4" />}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpload}
+              disabled={!file || isProcessing}
+              isLoading={isProcessing}
+              icon={<Upload className="w-4 h-4" />}
+            >
+              {isProcessing ? 'Importing...' : 'Upload and Import'}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

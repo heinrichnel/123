@@ -6,10 +6,11 @@ import { Input } from '../ui/FormElements';
 import Modal from '../ui/Modal';
 import { Settings, Save, X, AlertTriangle, DollarSign, Clock, Navigation, History, Shield, Bell, Calendar } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '../../utils/helpers';
+import { useAppContext } from '../../context/AppContext';
 
 interface SystemCostConfigurationProps {
   currentRates?: Record<'USD' | 'ZAR', SystemCostRates>;
-  onUpdateRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => void;
+  onUpdateRates: (currency: 'USD' | 'ZAR', rates: SystemCostRates) => Promise<void>;
   userRole: 'admin' | 'manager' | 'operator';
 }
 
@@ -18,16 +19,46 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
   onUpdateRates,
   userRole
 }) => {
+  const { connectionStatus } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
   const [editingCurrency, setEditingCurrency] = useState<'USD' | 'ZAR' | null>(null);
   const [formData, setFormData] = useState<SystemCostRates | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [changeReason, setChangeReason] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // NEW: Monthly reminder system state
   const [reminder, setReminder] = useState<SystemCostReminder>(DEFAULT_SYSTEM_COST_REMINDER);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showReminderNotification, setShowReminderNotification] = useState(false);
+
+  // Load saved rates from localStorage on component mount
+  useEffect(() => {
+    const savedRates = localStorage.getItem('systemCostRates');
+    if (savedRates) {
+      try {
+        const parsedRates = JSON.parse(savedRates);
+        // Only update if the structure is valid
+        if (parsedRates.USD && parsedRates.ZAR) {
+          onUpdateRates('USD', parsedRates.USD);
+          onUpdateRates('ZAR', parsedRates.ZAR);
+        }
+      } catch (error) {
+        console.error("Error parsing saved system cost rates:", error);
+      }
+    }
+    
+    // Load saved reminder settings
+    const savedReminder = localStorage.getItem('systemCostReminder');
+    if (savedReminder) {
+      try {
+        const parsedReminder = JSON.parse(savedReminder);
+        setReminder(parsedReminder);
+      } catch (error) {
+        console.error("Error parsing saved reminder settings:", error);
+      }
+    }
+  }, []);
 
   // NEW: Check for monthly reminder on component mount
   useEffect(() => {
@@ -54,15 +85,18 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
     const now = new Date();
     const nextReminder = new Date(now.getTime() + reminder.reminderFrequencyDays * 24 * 60 * 60 * 1000);
     
-    setReminder(prev => ({
-      ...prev,
+    const updatedReminder = {
+      ...reminder,
       lastReminderDate: now.toISOString(),
       nextReminderDate: nextReminder.toISOString(),
       updatedAt: now.toISOString()
-    }));
+    };
+    
+    setReminder(updatedReminder);
+    localStorage.setItem('systemCostReminder', JSON.stringify(updatedReminder));
     
     setShowReminderNotification(false);
-    alert(`Monthly system cost reminder dismissed.\n\nNext reminder will appear on: ${nextReminder.toLocaleDateString()}`);
+    alert(`Monthly indirect cost reminder dismissed.\n\nNext reminder will appear on: ${nextReminder.toLocaleDateString()}`);
   };
 
   // NEW: Handle reminder configuration
@@ -75,13 +109,16 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
     const now = new Date();
     const nextReminder = new Date(now.getTime() + newFrequency * 24 * 60 * 60 * 1000);
     
-    setReminder(prev => ({
-      ...prev,
+    const updatedReminder = {
+      ...reminder,
       reminderFrequencyDays: newFrequency,
       isActive,
       nextReminderDate: nextReminder.toISOString(),
       updatedAt: now.toISOString()
-    }));
+    };
+    
+    setReminder(updatedReminder);
+    localStorage.setItem('systemCostReminder', JSON.stringify(updatedReminder));
     
     setShowReminderModal(false);
     alert(`Reminder settings updated!\n\nFrequency: Every ${newFrequency} days\nStatus: ${isActive ? 'Active' : 'Disabled'}\nNext reminder: ${nextReminder.toLocaleDateString()}`);
@@ -115,9 +152,8 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
   };
 
   const validateForm = () => {
-    if (!formData) return false;
-    
     const newErrors: Record<string, string> = {};
+    if (!formData) return false;
     
     // Validate change reason
     if (!changeReason.trim()) {
@@ -164,7 +200,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
     return false;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData || !editingCurrency || !validateForm()) return;
     
     if (!hasChanges()) {
@@ -172,21 +208,38 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
       return;
     }
     
-    const updatedRates: SystemCostRates = {
-      ...formData,
-      lastUpdated: new Date().toISOString(),
-      updatedBy: 'Current User', // In real app, use actual user
-      effectiveDate: new Date().toISOString()
-    };
-    
-    onUpdateRates(editingCurrency, updatedRates);
-    setIsOpen(false);
-    setEditingCurrency(null);
-    setFormData(null);
-    setChangeReason('');
-    setErrors({});
-    
-    alert(`${editingCurrency} system cost rates updated successfully!\n\nReason: ${changeReason}\n\nNew rates will apply to all trips created from now onwards. Historical trips retain their original rates.`);
+    try {
+      setIsSubmitting(true);
+      
+      const updatedRates: SystemCostRates = {
+        ...formData,
+        lastUpdated: new Date().toISOString(),
+        updatedBy: 'Current User', // In real app, use actual user
+        effectiveDate: new Date().toISOString()
+      };
+      
+      await onUpdateRates(editingCurrency, updatedRates);
+      
+      // Save to localStorage for persistence
+      const updatedAllRates = {
+        ...currentRates,
+        [editingCurrency]: updatedRates
+      };
+      localStorage.setItem('systemCostRates', JSON.stringify(updatedAllRates));
+      
+      setIsOpen(false);
+      setEditingCurrency(null);
+      setFormData(null);
+      setChangeReason('');
+      setErrors({});
+      
+      alert(`${editingCurrency} indirect cost rates updated successfully!\n\nReason: ${changeReason}\n\nNew rates will apply to all trips created from now onwards. Historical trips retain their original rates.`);
+    } catch (error) {
+      console.error("Error saving system cost rates:", error);
+      alert(`Error saving rates: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -210,9 +263,9 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
               <div className="flex items-start space-x-3">
                 <Bell className="w-5 h-5 text-orange-600 mt-0.5" />
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-orange-800">Monthly System Cost Review</h4>
+                  <h4 className="text-sm font-medium text-orange-800">Monthly Indirect Cost Review</h4>
                   <p className="text-sm text-orange-700 mt-1">
-                    It's time for your monthly system cost configuration review. Please verify and update rates as needed.
+                    It's time for your monthly indirect cost configuration review. Please verify and update rates as needed.
                   </p>
                   <div className="mt-3 flex space-x-2">
                     <Button
@@ -252,7 +305,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
       <div id="system-cost-section">
         <Card>
           <CardHeader 
-            title="System Cost Configuration"
+            title="Indirect Cost Configuration"
             subtitle="Manage automatic operational cost rates for trip profitability calculation"
             icon={<Settings className="w-5 h-5 text-blue-600" />}
             action={
@@ -276,7 +329,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   <div>
                     <h4 className="text-sm font-medium text-amber-800">View Only Access</h4>
                     <p className="text-sm text-amber-700 mt-1">
-                      Only administrators and managers can modify system cost rates. Contact your administrator to request changes.
+                      Only administrators and managers can modify indirect cost rates. Contact your administrator to request changes.
                     </p>
                   </div>
                 </div>
@@ -308,7 +361,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                 <div>
                   <h4 className="text-sm font-medium text-blue-800">Rate Change Impact & Version Control</h4>
                   <div className="text-sm text-blue-700 mt-1 space-y-1">
-                    <p>• Changes to system cost rates will only affect <strong>new trips created after this update</strong></p>
+                    <p>• Changes to indirect cost rates will only affect <strong>new trips created after this update</strong></p>
                     <p>• Historical trips will retain the rates that were in effect at the time of creation</p>
                     <p>• All rate changes are logged with timestamps and reasons for audit purposes</p>
                     <p>• Each currency maintains independent rate tables</p>
@@ -327,6 +380,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                       size="sm"
                       onClick={() => handleEditRates('USD')}
                       icon={<Settings className="w-4 h-4" />}
+                      disabled={connectionStatus !== 'connected'}
                     >
                       Edit USD Rates
                     </Button>
@@ -403,6 +457,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                       size="sm"
                       onClick={() => handleEditRates('ZAR')}
                       icon={<Settings className="w-4 h-4" />}
+                      disabled={connectionStatus !== 'connected'}
                     >
                       Edit ZAR Rates
                     </Button>
@@ -478,8 +533,8 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                 <p>• When a trip is created, the system automatically applies the current rates based on the trip's currency</p>
                 <p>• Per-KM costs are calculated using: <strong>Distance × Rate per KM</strong></p>
                 <p>• Per-Day costs are calculated using: <strong>Trip Duration × Rate per Day</strong></p>
-                <p>• System costs appear under the "System Costs" category and are marked as auto-generated</p>
-                <p>• All system costs are locked from manual editing to maintain consistency</p>
+                <p>• Indirect costs appear under the "Indirect Costs" category and are marked as auto-generated</p>
+                <p>• All indirect costs are locked from manual editing to maintain consistency</p>
               </div>
             </div>
           </CardContent>
@@ -490,7 +545,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
-        title={`Edit ${editingCurrency} System Cost Rates`}
+        title={`Edit ${editingCurrency} Indirect Cost Rates`}
         maxWidth="lg"
       >
         {formData && editingCurrency && (
@@ -528,7 +583,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   step="0.01"
                   min="0"
                   value={formData.perKmCosts.repairMaintenance.toString()}
-                  onChange={(e) => handleChange('perKmCosts', 'repairMaintenance', e.target.value)}
+                  onChange={(value: string) => handleChange('perKmCosts', 'repairMaintenance', value)}
                   error={errors['perKmCosts.repairMaintenance']}
                 />
                 <Input
@@ -537,7 +592,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                   step="0.01"
                   min="0"
                   value={formData.perKmCosts.tyreCost.toString()}
-                  onChange={(e) => handleChange('perKmCosts', 'tyreCost', e.target.value)}
+                  onChange={(value: string) => handleChange('perKmCosts', 'tyreCost', value)}
                   error={errors['perKmCosts.tyreCost']}
                 />
               </div>
@@ -555,7 +610,7 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                     step="0.01"
                     min="0"
                     value={value.toString()}
-                    onChange={(e) => handleChange('perDayCosts', key, e.target.value)}
+                    onChange={(value: string) => handleChange('perDayCosts', key, value)}
                     error={errors[`perDayCosts.${key}`]}
                   />
                 ))}
@@ -585,13 +640,15 @@ const SystemCostConfiguration: React.FC<SystemCostConfigurationProps> = ({
                 variant="outline"
                 onClick={handleClose}
                 icon={<X className="w-4 h-4" />}
+                disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!hasChanges() || !changeReason.trim()}
+                disabled={!hasChanges() || !changeReason.trim() || isSubmitting}
                 icon={<Save className="w-4 h-4" />}
+                isLoading={isSubmitting}
               >
                 Save {editingCurrency} Rates
               </Button>
@@ -654,9 +711,9 @@ const ReminderConfigForm: React.FC<{
         <div className="flex items-start space-x-3">
           <Bell className="w-5 h-5 text-blue-600 mt-0.5" />
           <div>
-            <h4 className="text-sm font-medium text-blue-800">Monthly System Cost Review Reminder</h4>
+            <h4 className="text-sm font-medium text-blue-800">Monthly Indirect Cost Review Reminder</h4>
             <p className="text-sm text-blue-700 mt-1">
-              Configure automatic reminders to review and update system cost rates. This helps ensure rates stay current with market conditions.
+              Configure automatic reminders to review and update indirect cost rates. This helps ensure rates stay current with market conditions.
             </p>
           </div>
         </div>
@@ -682,7 +739,7 @@ const ReminderConfigForm: React.FC<{
           min="1"
           max="365"
           value={frequency}
-          onChange={(e) => setFrequency(e.target.value)}
+          onChange={(value: string) => setFrequency(value)}
           error={errors.frequency}
           disabled={!isActive}
         />

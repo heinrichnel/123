@@ -1,21 +1,31 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, CustomerPerformance } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import { 
-  Users, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Award, 
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Award,
   Calendar,
-  DollarSign,
   Clock,
+  DollarSign,
+  Download,
   Filter,
-  Download
+  TrendingDown,
+  TrendingUp,
+  Users
 } from 'lucide-react';
+
+// ─── Helper Functions ────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface CustomerRetentionDashboardProps {
   trips: Trip[];
@@ -55,8 +65,14 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
     }, {} as Record<string, any>);
 
     return Object.entries(customerStats).map(([customerName, stats]: [string, any]) => {
-      const lastTripDate = Math.max(...stats.trips.map((t: Trip) => new Date(t.endDate).getTime()));
-      const daysSinceLastTrip = Math.floor((Date.now() - lastTripDate) / (1000 * 60 * 60 * 24));
+      // Fix: Check if trips array is not empty before calculating lastTripDate
+      const lastTripDateTimestamp = stats.trips.length > 0 
+        ? Math.max(...stats.trips.map((t: Trip) => new Date(t.endDate).getTime()))
+        : undefined;
+      
+      const daysSinceLastTrip = lastTripDateTimestamp 
+        ? Math.floor((Date.now() - lastTripDateTimestamp) / (1000 * 60 * 60 * 24))
+        : 999; // Set high value for customers with no trips
       
       const averagePaymentDays = stats.paidTrips > 0 ? stats.totalPaymentDays / stats.paidTrips : 0;
       
@@ -83,7 +99,7 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
         currency,
         averagePaymentDays,
         paymentScore,
-        lastTripDate: new Date(lastTripDate).toISOString().split('T')[0],
+        lastTripDate: lastTripDateTimestamp ? new Date(lastTripDateTimestamp).toISOString().split('T')[0] : '',
         riskLevel,
         isAtRisk,
         isProfitable,
@@ -140,7 +156,8 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
     
     csvContent += "Customer Name,Total Trips,Total Revenue,Currency,Average Payment Days,Payment Score,Last Trip Date,Days Since Last Trip,Risk Level,Client Type,Is At Risk,Is Profitable,Is Top Client\n";
     filteredCustomers.forEach(customer => {
-      csvContent += `"${customer.customerName}",${customer.totalTrips},${customer.totalRevenue},${customer.currency},${customer.averagePaymentDays.toFixed(1)},${customer.paymentScore.toFixed(1)},${formatDate(customer.lastTripDate)},${customer.daysSinceLastTrip},${customer.riskLevel.toUpperCase()},${customer.clientType === 'internal' ? 'Internal' : 'External'},${customer.isAtRisk ? 'Yes' : 'No'},${customer.isProfitable ? 'Yes' : 'No'},${customer.isTopClient ? 'Yes' : 'No'}\n`;
+      const lastTripDisplay = customer.lastTripDate ? formatDate(customer.lastTripDate) : 'No trips';
+      csvContent += `"${customer.customerName}",${customer.totalTrips},${customer.totalRevenue},${customer.currency},${customer.averagePaymentDays.toFixed(1)},${customer.paymentScore.toFixed(1)},${lastTripDisplay},${customer.daysSinceLastTrip},${customer.riskLevel.toUpperCase()},${customer.clientType === 'internal' ? 'Internal' : 'External'},${customer.isAtRisk ? 'Yes' : 'No'},${customer.isProfitable ? 'Yes' : 'No'},${customer.isTopClient ? 'Yes' : 'No'}\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
@@ -337,7 +354,7 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
                     <div>
                       <p className="font-medium text-gray-900">{customer.customerName}</p>
                       <p className="text-sm text-gray-600">
-                        Last trip: {formatDate(customer.lastTripDate)}
+                        Last trip: {customer.lastTripDate ? formatDate(customer.lastTripDate) : 'No trips'}
                       </p>
                     </div>
                     <div className="text-right">
@@ -439,7 +456,7 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
                           </span>
                         </td>
                         <td className="py-3 text-sm text-gray-900 text-center">
-                          {formatDate(customer.lastTripDate)}
+                          {customer.lastTripDate ? formatDate(customer.lastTripDate) : 'No trips'}
                           <div className="text-xs text-gray-500">
                             ({customer.daysSinceLastTrip} days ago)
                           </div>
@@ -452,7 +469,7 @@ const CustomerRetentionDashboard: React.FC<CustomerRetentionDashboardProps> = ({
                         <td className="py-3 text-center">
                           <div className="flex justify-center space-x-1">
                             {customer.isProfitable && (
-                              <span className="inline-flex items-center px-1 py-1 rounded text-xs bg-green-100 text-green-800\" title="Profitable">
+                              <span className="inline-flex items-center px-1 py-1 rounded text-xs bg-green-100 text-green-800" title="Profitable">
                                 <DollarSign className="w-3 h-3" />
                               </span>
                             )}

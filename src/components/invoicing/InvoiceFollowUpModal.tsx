@@ -1,25 +1,38 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, TextArea, Select } from '../ui/FormElements';
+import { Input, Select, Textarea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { Save, X, Phone, Calendar, User } from 'lucide-react';
+
+// ─── Utils ───────────────────────────────────────────────────────
 import { formatCurrency, formatDate } from '../../utils/helpers';
+
 
 interface InvoiceFollowUpModalProps {
   isOpen: boolean;
   trip: Trip;
   onClose: () => void;
-  onAddFollowUp: (tripId: string, followUpData: {
-    followUpDate: string;
-    contactMethod: 'call' | 'email' | 'whatsapp' | 'in_person' | 'sms';
-    responsibleStaff: string;
-    responseSummary: string;
-    nextFollowUpDate?: string;
-    status: 'pending' | 'completed' | 'escalated';
-    priority: 'low' | 'medium' | 'high' | 'urgent';
-    outcome: 'no_response' | 'promised_payment' | 'dispute' | 'payment_received' | 'partial_payment';
-  }) => void;
+  onAddFollowUp: (
+    tripId: string, 
+    followUpData: {
+      followUpDate: string;
+      contactMethod: 'call' | 'email' | 'whatsapp' | 'in_person' | 'sms';
+      responsibleStaff: string;
+      responseSummary: string;
+      nextFollowUpDate?: string;
+      status: 'pending' | 'completed' | 'escalated';
+      priority: 'low' | 'medium' | 'high' | 'urgent';
+      outcome: 'no_response' | 'promised_payment' | 'dispute' | 'payment_received' | 'partial_payment';
+    }
+  ) => void;
 }
 
 const InvoiceFollowUpModal: React.FC<InvoiceFollowUpModalProps> = ({
@@ -38,6 +51,7 @@ const InvoiceFollowUpModal: React.FC<InvoiceFollowUpModalProps> = ({
     priority: 'medium' as 'low' | 'medium' | 'high' | 'urgent',
     outcome: 'no_response' as 'no_response' | 'promised_payment' | 'dispute' | 'payment_received' | 'partial_payment'
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleChange = (field: string, value: string) => {
@@ -49,7 +63,7 @@ const InvoiceFollowUpModal: React.FC<InvoiceFollowUpModalProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.followUpDate) {
       newErrors.followUpDate = 'Follow-up date is required';
     }
@@ -104,7 +118,12 @@ const InvoiceFollowUpModal: React.FC<InvoiceFollowUpModalProps> = ({
             </div>
             <div>
               <p><strong>Due Date:</strong> {formatDate(trip.invoiceDueDate!)}</p>
-              <p><strong>Aging:</strong> <span className={agingDays > 30 ? 'text-red-600 font-bold' : agingDays > 20 ? 'text-orange-600 font-bold' : 'text-green-600'}>{agingDays} days</span></p>
+              <p>
+                <strong>Aging:</strong> 
+                <span className={agingDays > 30 ? 'text-red-600 font-bold' : agingDays > 20 ? 'text-orange-600 font-bold' : 'text-green-600'}>
+                  {agingDays} days
+                </span>
+              </p>
               <p><strong>Status:</strong> {trip.paymentStatus.toUpperCase()}</p>
             </div>
           </div>

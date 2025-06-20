@@ -1,11 +1,31 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { CARReport, DriverBehaviorEvent, RESPONSIBLE_PERSONS } from '../../types';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
-import { Save, X, AlertTriangle, FileText, Calendar, User, FileUp } from 'lucide-react';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Save,
+  X,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  User,
+  FileUp
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatDate } from '../../utils/helpers';
+
 
 interface CARReportFormProps {
   isOpen: boolean;
@@ -75,28 +95,28 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
     if (existingReport) {
       // Populate form with existing report data
       setFormData({
-        responsibleReporter: existingReport.responsibleReporter,
-        responsiblePerson: existingReport.responsiblePerson,
-        dateOfIncident: existingReport.dateOfIncident,
-        dateDue: existingReport.dateDue,
-        clientReport: existingReport.clientReport,
-        severity: existingReport.severity,
-        problemIdentification: existingReport.problemIdentification,
-        causeAnalysisPeople: existingReport.causeAnalysisPeople,
-        causeAnalysisMaterials: existingReport.causeAnalysisMaterials,
-        causeAnalysisEquipment: existingReport.causeAnalysisEquipment,
-        causeAnalysisMethods: existingReport.causeAnalysisMethods,
-        causeAnalysisMetrics: existingReport.causeAnalysisMetrics,
-        causeAnalysisEnvironment: existingReport.causeAnalysisEnvironment,
-        rootCauseAnalysis: existingReport.rootCauseAnalysis,
-        correctiveActions: existingReport.correctiveActions,
-        preventativeActionsImmediate: existingReport.preventativeActionsImmediate,
-        preventativeActionsLongTerm: existingReport.preventativeActionsLongTerm,
-        financialImpact: existingReport.financialImpact,
-        generalComments: existingReport.generalComments,
-        status: existingReport.status
+        responsibleReporter: existingReport.responsibleReporter || '',
+        responsiblePerson: existingReport.responsiblePerson || '',
+        dateOfIncident: existingReport.dateOfIncident || '',
+        dateDue: existingReport.dateDue || '',
+        clientReport: existingReport.clientReport || '',
+        severity: existingReport.severity || 'medium',
+        problemIdentification: existingReport.problemIdentification || '',
+        causeAnalysisPeople: existingReport.causeAnalysisPeople || '',
+        causeAnalysisMaterials: existingReport.causeAnalysisMaterials || '',
+        causeAnalysisEquipment: existingReport.causeAnalysisEquipment || '',
+        causeAnalysisMethods: existingReport.causeAnalysisMethods || '',
+        causeAnalysisMetrics: existingReport.causeAnalysisMetrics || '',
+        causeAnalysisEnvironment: existingReport.causeAnalysisEnvironment || '',
+        rootCauseAnalysis: existingReport.rootCauseAnalysis || '',
+        correctiveActions: existingReport.correctiveActions || '',
+        preventativeActionsImmediate: existingReport.preventativeActionsImmediate || '',
+        preventativeActionsLongTerm: existingReport.preventativeActionsLongTerm || '',
+        financialImpact: existingReport.financialImpact || '',
+        generalComments: existingReport.generalComments || '',
+        status: existingReport.status || 'draft'
       });
-      setReportNumber(existingReport.reportNumber);
+      setReportNumber(existingReport.reportNumber || '');
     } else if (linkedEvent) {
       // Populate form with linked event data
       const dueDate = new Date();
@@ -104,12 +124,12 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
       
       setFormData(prev => ({
         ...prev,
-        responsiblePerson: linkedEvent.driverName,
-        dateOfIncident: linkedEvent.eventDate,
+        responsiblePerson: linkedEvent.driverName || '',
+        dateOfIncident: linkedEvent.eventDate || linkedEvent.date || '',
         dateDue: dueDate.toISOString().split('T')[0],
         severity: linkedEvent.severity === 'critical' ? 'high' : 
                  linkedEvent.severity === 'high' ? 'medium' : 'low',
-        problemIdentification: linkedEvent.description,
+        problemIdentification: linkedEvent.description || '',
       }));
     }
   }, [existingReport, linkedEvent, isOpen]);
@@ -176,7 +196,19 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
       preventativeActionsLongTerm: formData.preventativeActionsLongTerm,
       financialImpact: formData.financialImpact,
       generalComments: formData.generalComments,
-      status: formData.status
+      status: formData.status,
+      attachments: [],
+      driverName: linkedEvent?.driverName || '',
+      fleetNumber: linkedEvent?.fleetNumber || '',
+      incidentDate: formData.dateOfIncident,
+      incidentTime: linkedEvent?.eventTime || '00:00',
+      location: linkedEvent?.location || '',
+      incidentType: 'accident',
+      description: formData.problemIdentification,
+      injuriesReported: false,
+      policeInvolved: false,
+      actionsTaken: formData.correctiveActions,
+      followUpRequired: true
     };
     
     if (existingReport) {
@@ -235,7 +267,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <Select
             label="Responsible Reporter *"
             value={formData.responsibleReporter}
-            onChange={(e) => handleChange('responsibleReporter', e.target.value)}
+            onChange={(value) => handleChange('responsibleReporter', value)}
             options={[
               { label: 'Select reporter...', value: '' },
               ...RESPONSIBLE_PERSONS.map(person => ({ label: person, value: person }))
@@ -246,7 +278,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <Select
             label="Responsible Person *"
             value={formData.responsiblePerson}
-            onChange={(e) => handleChange('responsiblePerson', e.target.value)}
+            onChange={(value) => handleChange('responsiblePerson', value)}
             options={[
               { label: 'Select responsible person...', value: '' },
               ...RESPONSIBLE_PERSONS.map(person => ({ label: person, value: person }))
@@ -258,7 +290,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
               <p className="text-sm font-medium text-purple-800">Reference:</p>
               <p className="text-sm text-purple-700">
-                Driver Event: {linkedEvent.eventType} - {formatDate(linkedEvent.eventDate)}
+                Driver Event: {linkedEvent.eventType} - {formatDate(linkedEvent.eventDate || linkedEvent.date)}
               </p>
             </div>
           )}
@@ -267,7 +299,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             label="Date of Incident *"
             type="date"
             value={formData.dateOfIncident}
-            onChange={(e) => handleChange('dateOfIncident', e.target.value)}
+            onChange={(value) => handleChange('dateOfIncident', value)}
             error={errors.dateOfIncident}
           />
           
@@ -275,14 +307,14 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             label="Date Due *"
             type="date"
             value={formData.dateDue}
-            onChange={(e) => handleChange('dateDue', e.target.value)}
+            onChange={(value) => handleChange('dateDue', value)}
             error={errors.dateDue}
           />
           
           <Select
             label="Severity *"
             value={formData.severity}
-            onChange={(e) => handleChange('severity', e.target.value)}
+            onChange={(value) => handleChange('severity', value)}
             options={[
               { label: 'High', value: 'high' },
               { label: 'Medium', value: 'medium' },
@@ -296,7 +328,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="CLIENT'S REPORT OF NON-CONFORMANCE *"
             value={formData.clientReport}
-            onChange={(e) => handleChange('clientReport', e.target.value)}
+            onChange={(value) => handleChange('clientReport', value)}
             placeholder="Describe the non-conformance from the client's perspective..."
             rows={4}
             error={errors.clientReport}
@@ -308,7 +340,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="PROBLEM IDENTIFICATION *"
             value={formData.problemIdentification}
-            onChange={(e) => handleChange('problemIdentification', e.target.value)}
+            onChange={(value) => handleChange('problemIdentification', value)}
             placeholder="Describe the problem in detail..."
             rows={4}
             error={errors.problemIdentification}
@@ -323,7 +355,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <TextArea
               label="1. People (Manpower)"
               value={formData.causeAnalysisPeople}
-              onChange={(e) => handleChange('causeAnalysisPeople', e.target.value)}
+              onChange={(value) => handleChange('causeAnalysisPeople', value)}
               placeholder="Analyze people-related causes..."
               rows={2}
             />
@@ -331,7 +363,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <TextArea
               label="2. Materials"
               value={formData.causeAnalysisMaterials}
-              onChange={(e) => handleChange('causeAnalysisMaterials', e.target.value)}
+              onChange={(value) => handleChange('causeAnalysisMaterials', value)}
               placeholder="Analyze material-related causes..."
               rows={2}
             />
@@ -339,7 +371,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <TextArea
               label="3. Equipment"
               value={formData.causeAnalysisEquipment}
-              onChange={(e) => handleChange('causeAnalysisEquipment', e.target.value)}
+              onChange={(value) => handleChange('causeAnalysisEquipment', value)}
               placeholder="Analyze equipment-related causes..."
               rows={2}
             />
@@ -347,7 +379,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <TextArea
               label="4. Methods / Systems / Processes / Procedures"
               value={formData.causeAnalysisMethods}
-              onChange={(e) => handleChange('causeAnalysisMethods', e.target.value)}
+              onChange={(value) => handleChange('causeAnalysisMethods', value)}
               placeholder="Analyze method-related causes..."
               rows={2}
             />
@@ -355,7 +387,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <TextArea
               label="5. Metrics / Measurement (KPIs)"
               value={formData.causeAnalysisMetrics}
-              onChange={(e) => handleChange('causeAnalysisMetrics', e.target.value)}
+              onChange={(value) => handleChange('causeAnalysisMetrics', value)}
               placeholder="Analyze measurement-related causes..."
               rows={2}
             />
@@ -363,7 +395,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <TextArea
               label="6. Operating Environment"
               value={formData.causeAnalysisEnvironment}
-              onChange={(e) => handleChange('causeAnalysisEnvironment', e.target.value)}
+              onChange={(value) => handleChange('causeAnalysisEnvironment', value)}
               placeholder="Analyze environment-related causes..."
               rows={2}
             />
@@ -375,7 +407,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="ROOT CAUSE ANALYSIS OF NON-CONFORMANCE (5 WHY'S)"
             value={formData.rootCauseAnalysis}
-            onChange={(e) => handleChange('rootCauseAnalysis', e.target.value)}
+            onChange={(value) => handleChange('rootCauseAnalysis', value)}
             placeholder="Apply the 5 Why's technique to identify the root cause..."
             rows={4}
           />
@@ -386,7 +418,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="CORRECTIVE ACTIONS"
             value={formData.correctiveActions}
-            onChange={(e) => handleChange('correctiveActions', e.target.value)}
+            onChange={(value) => handleChange('correctiveActions', value)}
             placeholder="List corrective actions to address the immediate issue..."
             rows={3}
           />
@@ -394,7 +426,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="PREVENTATIVE ACTIONS (Immediate Actions)"
             value={formData.preventativeActionsImmediate}
-            onChange={(e) => handleChange('preventativeActionsImmediate', e.target.value)}
+            onChange={(value) => handleChange('preventativeActionsImmediate', value)}
             placeholder="List immediate preventative actions..."
             rows={3}
           />
@@ -402,7 +434,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="PREVENTATIVE ACTIONS (Medium / Long Term)"
             value={formData.preventativeActionsLongTerm}
-            onChange={(e) => handleChange('preventativeActionsLongTerm', e.target.value)}
+            onChange={(value) => handleChange('preventativeActionsLongTerm', value)}
             placeholder="List medium and long-term preventative actions..."
             rows={3}
           />
@@ -413,7 +445,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="FINANCIAL IMPACT"
             value={formData.financialImpact}
-            onChange={(e) => handleChange('financialImpact', e.target.value)}
+            onChange={(value) => handleChange('financialImpact', value)}
             placeholder="Describe the financial impact of the non-conformance..."
             rows={3}
           />
@@ -421,7 +453,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <TextArea
             label="GENERAL COMMENTS"
             value={formData.generalComments}
-            onChange={(e) => handleChange('generalComments', e.target.value)}
+            onChange={(value) => handleChange('generalComments', value)}
             placeholder="Add any additional comments or notes..."
             rows={3}
           />
@@ -432,7 +464,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
           <Select
             label="Report Status"
             value={formData.status}
-            onChange={(e) => handleChange('status', e.target.value)}
+            onChange={(value) => handleChange('status', value)}
             options={[
               { label: 'Draft', value: 'draft' },
               { label: 'Submitted', value: 'submitted' },

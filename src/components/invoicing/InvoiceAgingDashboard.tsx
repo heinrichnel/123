@@ -1,11 +1,22 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useMemo } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip, InvoiceAging, AGING_THRESHOLDS, FOLLOW_UP_THRESHOLDS } from '../../types';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
+
+// ─── Modals ──────────────────────────────────────────────────────
 import InvoiceFollowUpModal from './InvoiceFollowUpModal';
 import PaymentUpdateModal from './PaymentUpdateModal';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { 
   DollarSign,
   Filter,
@@ -16,7 +27,10 @@ import {
   MessageSquare,
   CreditCard
 } from 'lucide-react';
+
+// ─── Utils ───────────────────────────────────────────────────────
 import { formatCurrency, formatDate, formatDateTime } from '../../utils/helpers';
+
 
 interface InvoiceAgingDashboardProps {
   trips: Trip[];
@@ -38,6 +52,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
 
+  // Prepare invoice data from trips
   const invoiceData = useMemo(() => {
     return trips
       .filter(trip => trip.status === 'invoiced' || trip.status === 'paid')
@@ -76,6 +91,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
       });
   }, [trips]);
 
+  // Apply filters to invoice data
   const filteredInvoices = useMemo(() => {
     return invoiceData.filter(invoice => {
       if (filters.currency && invoice.currency !== filters.currency) return false;
@@ -86,6 +102,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
     });
   }, [invoiceData, filters]);
 
+  // Sort invoices with overdue first and descending aging days
   const sortedInvoices = useMemo(() => {
     return [...filteredInvoices].sort((a, b) => {
       // Overdue first, then by aging days descending
@@ -95,6 +112,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
     });
   }, [filteredInvoices]);
 
+  // Summarize aging by currency and category
   const agingSummary = useMemo(() => {
     const summary = {
       ZAR: { current: 0, warning: 0, critical: 0, overdue: 0, total: 0 },
@@ -109,6 +127,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
     return summary;
   }, [filteredInvoices]);
 
+  // Identify invoices needing immediate follow-up
   const alertsNeeded = useMemo(() => {
     return filteredInvoices.filter(invoice => {
       const threshold = FOLLOW_UP_THRESHOLDS[invoice.currency];
@@ -116,6 +135,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
     });
   }, [filteredInvoices]);
 
+  // Add a follow-up record
   const handleAddFollowUp = (tripId: string, followUpData: {
     followUpDate: string;
     contactMethod: 'call' | 'email' | 'whatsapp' | 'in_person' | 'sms';
@@ -365,7 +385,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Select
               label="Currency"
               value={filters.currency}
-              onChange={(e) => handleFilterChange('currency', e.target.value)}
+              onChange={value => handleFilterChange('currency', value)}
               options={[
                 { label: 'All Currencies', value: '' },
                 { label: 'ZAR (R)', value: 'ZAR' },
@@ -375,7 +395,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Select
               label="Payment Status"
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={value => handleFilterChange('status', value)}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Unpaid', value: 'unpaid' },
@@ -386,7 +406,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Select
               label="Aging Category"
               value={filters.agingCategory}
-              onChange={(e) => handleFilterChange('agingCategory', e.target.value)}
+              onChange={value => handleFilterChange('agingCategory', value)}
               options={[
                 { label: 'All Categories', value: '' },
                 { label: 'Current', value: 'current' },
@@ -398,7 +418,7 @@ const InvoiceAgingDashboard: React.FC<InvoiceAgingDashboardProps> = ({
             <Input
               label="Customer"
               value={filters.customer}
-              onChange={(e) => handleFilterChange('customer', e.target.value)}
+              onChange={value => handleFilterChange('customer', value)}
               placeholder="Search customer..."
             />
           </div>

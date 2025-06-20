@@ -1,26 +1,36 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import { 
-  FileSpreadsheet, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  DollarSign,
-  Filter,
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
   Building,
-  Users,
-  Calendar
+  Calendar,
+  DollarSign,
+  FileSpreadsheet,
+  Filter,
+  TrendingDown,
+  TrendingUp,
+  Users
 } from 'lucide-react';
-import { 
-  formatDate, 
-  formatCurrency, 
+
+// ─── Helper Functions ────────────────────────────────────────────
+import {
+  formatDate,
+  formatCurrency,
+  calculateTotalCosts,
   generateCurrencyFleetReport,
-  downloadCurrencyFleetReport,
-  calculateTotalCosts
+  downloadCurrencyFleetReport
 } from '../../utils/helpers';
+
 
 interface CurrencyFleetReportProps {
   trips: Trip[];
@@ -146,7 +156,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                     {formatCurrency(report.netProfit, currency)}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {report.profitMargin.toFixed(1)}% margin
+                    {typeof report.profitMargin === 'number' ? report.profitMargin.toFixed(1) : '0.0'}% margin
                   </p>
                 </div>
               </div>
@@ -165,7 +175,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                     {formatCurrency(report.internalRevenue, currency)} revenue
                   </p>
                   <p className="text-xs text-gray-400">
-                    {report.internalProfitMargin.toFixed(1)}% margin
+                    {typeof report.internalProfitMargin === 'number' ? report.internalProfitMargin.toFixed(1) : '0.0'}% margin
                   </p>
                 </div>
                 
@@ -181,7 +191,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                     {formatCurrency(report.externalRevenue, currency)} revenue
                   </p>
                   <p className="text-xs text-gray-400">
-                    {report.externalProfitMargin.toFixed(1)}% margin
+                    {typeof report.externalProfitMargin === 'number' ? report.externalProfitMargin.toFixed(1) : '0.0'}% margin
                   </p>
                 </div>
               </div>
@@ -197,7 +207,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                   <p className="text-sm text-gray-500 mb-1">Trips with Flags</p>
                   <p className="text-2xl font-bold text-yellow-600">{report.tripsWithInvestigations}</p>
                   <p className="text-xs text-gray-400">
-                    {report.investigationRate.toFixed(1)}% of trips
+                    {typeof report.investigationRate === 'number' ? report.investigationRate.toFixed(1) : '0.0'}% of trips
                   </p>
                 </div>
                 
@@ -205,7 +215,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                   <p className="text-sm text-gray-500 mb-1">Total Flags</p>
                   <p className="text-2xl font-bold text-red-600">{report.totalFlags}</p>
                   <p className="text-xs text-gray-400">
-                    Avg: {report.avgFlagsPerTrip.toFixed(1)}/trip
+                    Avg: {report.avgFlagsPerTrip !== undefined ? report.avgFlagsPerTrip.toFixed(1) : '0.0'}/trip
                   </p>
                 </div>
                 
@@ -219,7 +229,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 
                 <div className="text-center p-4 bg-green-50 rounded-lg">
                   <p className="text-sm text-gray-500 mb-1">Avg Resolution</p>
-                  <p className="text-2xl font-bold text-green-600">{report.avgResolutionTime.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-green-600">{typeof report.avgResolutionTime === 'number' ? report.avgResolutionTime.toFixed(1) : '0.0'}</p>
                   <p className="text-xs text-gray-400">days</p>
                 </div>
               </div>
@@ -230,7 +240,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
           <Card>
             <CardHeader title={`${currency} Driver Performance`} />
             <CardContent>
-              {Object.keys(report.driverStats).length > 0 ? (
+              {report.driverStats && Object.keys(report.driverStats).length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -264,8 +274,8 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                               <td className={`py-3 text-sm font-medium text-right ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                 {formatCurrency(netProfit, currency)}
                               </td>
-                              <td className={`py-3 text-sm text-right ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {profitMargin.toFixed(1)}%
+                              <td className={`py-3 text-sm text-right ${profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}> 
+                                {typeof profitMargin === 'number' ? profitMargin.toFixed(1) : '0.0'}%
                               </td>
                               <td className="py-3 text-sm text-right">
                                 {stats.flags > 0 ? (
@@ -322,18 +332,18 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 label="Start Date"
                 type="date"
                 value={filters.startDate}
-                onChange={(e) => handleFilterChange('startDate', e.target.value)}
+                onChange={(value) => handleFilterChange('startDate', value)}
               />
               <Input
                 label="End Date"
                 type="date"
                 value={filters.endDate}
-                onChange={(e) => handleFilterChange('endDate', e.target.value)}
+                onChange={(value) => handleFilterChange('endDate', value)}
               />
               <Select
                 label="Client Type"
                 value={filters.clientType}
-                onChange={(e) => handleFilterChange('clientType', e.target.value)}
+                onChange={(value) => handleFilterChange('clientType', value)}
                 options={[
                   { label: 'All Client Types', value: '' },
                   { label: 'Internal Clients', value: 'internal' },
@@ -343,7 +353,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
               <Select
                 label="Driver"
                 value={filters.driver}
-                onChange={(e) => handleFilterChange('driver', e.target.value)}
+                onChange={(value) => handleFilterChange('driver', value)}
                 options={[
                   { label: 'All Drivers', value: '' },
                   ...uniqueDrivers.map(d => ({ label: d, value: d }))
@@ -381,7 +391,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 {filteredTrips.filter(t => t.clientType === 'internal').length}
               </p>
               <p className="text-xs text-gray-400">
-                {((filteredTrips.filter(t => t.clientType === 'internal').length / filteredTrips.length) * 100).toFixed(1)}% of trips
+                {((filteredTrips.filter(t => t.clientType === 'internal').length / (filteredTrips.length || 1)) * 100).toFixed(1)}% of trips
               </p>
             </div>
             
@@ -394,7 +404,7 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 {filteredTrips.filter(t => t.clientType === 'external').length}
               </p>
               <p className="text-xs text-gray-400">
-                {((filteredTrips.filter(t => t.clientType === 'external').length / filteredTrips.length) * 100).toFixed(1)}% of trips
+                {((filteredTrips.filter(t => t.clientType === 'external').length / (filteredTrips.length || 1)) * 100).toFixed(1)}% of trips
               </p>
             </div>
             
@@ -404,10 +414,10 @@ const CurrencyFleetReport: React.FC<CurrencyFleetReportProps> = ({ trips }) => {
                 <p className="text-sm text-gray-500">Flagged Trips</p>
               </div>
               <p className="text-xl font-bold text-amber-600">
-                {filteredTrips.filter(t => t.costs.some(c => c.isFlagged)).length}
+                {filteredTrips.filter(t => t.costs && t.costs.some(c => c.isFlagged)).length}
               </p>
               <p className="text-xs text-gray-400">
-                {((filteredTrips.filter(t => t.costs.some(c => c.isFlagged)).length / filteredTrips.length) * 100).toFixed(1)}% of trips
+                {((filteredTrips.filter(t => t.costs && t.costs.some(c => c.isFlagged)).length / (filteredTrips.length || 1)) * 100).toFixed(1)}% of trips
               </p>
             </div>
           </div>

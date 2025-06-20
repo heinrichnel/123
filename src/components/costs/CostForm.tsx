@@ -1,8 +1,23 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
-import { CostEntry, COST_CATEGORIES } from '../../types';
-import { Input, TextArea, FileUpload, Select } from '../ui/FormElements';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { CostEntry, COST_CATEGORIES } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
-import { Save, X, Upload, Flag, AlertTriangle, Calculator } from 'lucide-react';
+import { Input, Select, TextArea } from '../ui/FormElements';
+import FileUpload from '../ui/FileUpload';
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Calculator,
+  Flag,
+  Save,
+  Upload,
+  X
+} from 'lucide-react';
+
 
 interface CostFormProps {
   tripId: string;
@@ -45,8 +60,8 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
       });
       
       // Set available subcategories for existing cost
-      if (cost.category && COST_CATEGORIES[cost.category as keyof typeof COST_CATEGORIES]) {
-        setAvailableSubCategories(COST_CATEGORIES[cost.category as keyof typeof COST_CATEGORIES]);
+      if (cost.category && COST_CATEGORIES[cost.category]) {
+        setAvailableSubCategories(COST_CATEGORIES[cost.category]);
       }
     } else {
       // Set today's date as default for new cost entries
@@ -62,7 +77,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
     
     // Update subcategories when category changes
     if (field === 'category' && typeof value === 'string') {
-      const subCategories = COST_CATEGORIES[value as keyof typeof COST_CATEGORIES] || [];
+      const subCategories = COST_CATEGORIES[value] || [];
       setAvailableSubCategories(subCategories);
       setFormData(prev => ({ ...prev, subCategory: '' })); // Reset subcategory
     }
@@ -96,14 +111,14 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
     // Document attachment validation - MANDATORY REQUIREMENT
     const hasFiles = selectedFiles && selectedFiles.length > 0;
     const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
-    const hasNoDocumentReason = formData.noDocumentReason.trim().length > 0;
+    const hasNoDocumentReason = String(formData.noDocumentReason ?? '').trim().length > 0;
 
     if (!cost && !hasFiles && !hasNoDocumentReason) {
       newErrors.documents = 'Either attach a receipt/document OR provide a reason for missing documentation';
     }
 
     // Manual flag validation
-    if (formData.isFlagged && !formData.flagReason.trim()) {
+    if (formData.isFlagged && !String(formData.flagReason ?? '').trim()) {
       newErrors.flagReason = 'Flag reason is required when manually flagging a cost entry';
     }
 
@@ -113,51 +128,53 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      // Determine if item should be flagged
-      const hasFiles = selectedFiles && selectedFiles.length > 0;
-      const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
-      const hasDocumentation = hasFiles || hasExistingAttachments;
-      
-      // Auto-flag conditions
-      const highRiskCategories = ['Non-Value-Added Costs', 'Border Costs'];
-      const isHighRisk = highRiskCategories.includes(formData.category);
-      const missingDocumentation = !hasDocumentation && formData.noDocumentReason.trim();
-      
-      // Determine if should be flagged
-      const shouldFlag = formData.isFlagged || isHighRisk || missingDocumentation;
-      
-      // Determine flag reason
-      let flagReason = '';
-      if (formData.isFlagged && formData.flagReason.trim()) {
-        flagReason = formData.flagReason.trim();
-      } else if (isHighRisk) {
-        flagReason = `High-risk category: ${formData.category} - ${formData.subCategory} requires review`;
-      } else if (missingDocumentation) {
-        flagReason = `Missing documentation: ${formData.noDocumentReason.trim()}`;
-      }
+    if (!validateForm()) return;
 
-      const costData = {
-        tripId,
-        category: formData.category,
-        subCategory: formData.subCategory,
-        amount: Number(formData.amount),
-        currency: formData.currency,
-        referenceNumber: formData.referenceNumber.trim(),
-        date: formData.date,
-        notes: formData.notes.trim(),
-        isFlagged: shouldFlag,
-        flagReason: flagReason || undefined,
-        noDocumentReason: formData.noDocumentReason.trim() || undefined,
-        investigationStatus: shouldFlag ? 'pending' as const : undefined,
-        flaggedAt: shouldFlag ? new Date().toISOString() : undefined,
-        flaggedBy: shouldFlag ? 'Current User' : undefined, // In real app, use actual user
-        isSystemGenerated: false
-      };
-      
-      // Pass files to the submit handler
-      onSubmit(costData, selectedFiles || undefined);
+    // Determine if item should be flagged
+    const hasFiles = selectedFiles && selectedFiles.length > 0;
+    const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
+    const hasDocumentation = hasFiles || hasExistingAttachments;
+    
+    // Auto-flag conditions
+    const highRiskCategories = ['Non-Value-Added Costs', 'Border Costs'];
+    const isHighRisk = highRiskCategories.includes(formData.category);
+    const missingDocumentation = !hasDocumentation && formData.noDocumentReason.trim();
+    
+    // Determine if should be flagged
+    const shouldFlag = formData.isFlagged || isHighRisk || missingDocumentation;
+    
+    // Determine flag reason
+    let flagReason = '';
+    if (formData.isFlagged && String(formData.flagReason ?? '').trim()) {
+      flagReason = String(formData.flagReason ?? '').trim();
+    } else if (isHighRisk) {
+      flagReason = `High-risk category: ${formData.category} - ${formData.subCategory} requires review`;
+    } else if (missingDocumentation) {
+      flagReason = `Missing documentation: ${String(formData.noDocumentReason ?? '').trim()}`;
     }
+
+    const costData = {
+      tripId,
+      category: formData.category,
+      subCategory: formData.subCategory,
+      amount: Number(formData.amount),
+      currency: formData.currency,
+      referenceNumber: String(formData.referenceNumber ?? '').trim(),
+      date: formData.date,
+      notes: String(formData.notes ?? '').trim() || undefined,
+      isFlagged: shouldFlag,
+      flagReason: flagReason || undefined,
+      noDocumentReason: String(formData.noDocumentReason ?? '').trim() || undefined,
+      investigationStatus: shouldFlag ? 'pending' as const : undefined,
+      flaggedAt: shouldFlag ? new Date().toISOString() : undefined,
+      flaggedBy: shouldFlag ? 'Current User' : undefined, // In real app, use actual user
+      isSystemGenerated: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Pass files to the submit handler
+    onSubmit(costData, selectedFiles || undefined);
   };
 
   const getCurrencySymbol = (currency: 'USD' | 'ZAR') => {
@@ -232,7 +249,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
         <Select
           label="Currency *"
           value={formData.currency}
-          onChange={(e) => handleChange('currency', e.target.value)}
+          onChange={(value) => handleChange('currency', value)}
           options={[
             { label: 'ZAR (R)', value: 'ZAR' },
             { label: 'USD ($)', value: 'USD' }
@@ -246,7 +263,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
           step="0.01"
           min="0.01"
           value={formData.amount}
-          onChange={(e) => handleChange('amount', e.target.value)}
+          onChange={(value) => handleChange('amount', value)}
           placeholder="0.00"
           error={errors.amount}
         />
@@ -254,7 +271,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
         <Input
           label="Reference Number *"
           value={formData.referenceNumber}
-          onChange={(e) => handleChange('referenceNumber', e.target.value)}
+          onChange={(value) => handleChange('referenceNumber', value)}
           placeholder="e.g., INV-123456, RECEIPT-001"
           error={errors.referenceNumber}
         />
@@ -263,15 +280,15 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
           label="Date *"
           type="date"
           value={formData.date}
-          onChange={(e) => handleChange('date', e.target.value)}
+          onChange={(value) => handleChange('date', value)}
           error={errors.date}
         />
       </div>
 
       <TextArea
         label="Notes (Optional)"
-        value={formData.notes}
-        onChange={(e) => handleChange('notes', e.target.value)}
+        value={formData.notes || ''}
+        onChange={(value) => handleChange('notes', value)}
         placeholder="Additional notes about this cost entry..."
         rows={3}
       />
@@ -341,7 +358,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             <TextArea
               label="Reason for Missing Documentation *"
               value={formData.noDocumentReason}
-              onChange={(e) => handleChange('noDocumentReason', e.target.value)}
+              onChange={(value) => handleChange('noDocumentReason', value)}
               placeholder="Explain why no receipt/document is available (e.g., 'Receipt lost during trip', 'Digital payment - no physical receipt', 'Emergency expense - receipt not provided')..."
               rows={3}
             />
@@ -375,7 +392,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
             <TextArea
               label="Flag Reason *"
               value={formData.flagReason}
-              onChange={(e) => handleChange('flagReason', e.target.value)}
+              onChange={(value) => handleChange('flagReason', value)}
               placeholder="Explain why this cost is being flagged (e.g., 'Amount seems excessive', 'Unusual expense for this route', 'Requires management approval')..."
               rows={2}
               error={errors.flagReason}

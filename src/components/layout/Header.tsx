@@ -1,8 +1,38 @@
+// ─── React ───────────────────────────────────────────────────────
 import React from 'react';
-import { Truck, Plus, Flag, CheckCircle, Activity, FileText, BarChart3, Settings, Target, Users, Calendar, DollarSign, Clock, TrendingDown, Upload, Fuel, Wifi, WifiOff, Database, User as UserRound, ClipboardList, Shield } from 'lucide-react';
-import Button from '../ui/Button';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Activity,
+  BarChart3,
+  Calendar,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  DollarSign,
+  FileText,
+  Flag,
+  Fuel,
+  Plus,
+  Settings,
+  Shield,
+  Target,
+  TrendingDown,
+  Truck,
+  Upload,
+  Users,
+  Wifi,
+  WifiOff,
+  User as UserRound // Alias to avoid name conflict
+} from 'lucide-react';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
+import Button from '../ui/Button';
 import SyncIndicator from '../ui/SyncIndicator';
+
 
 interface HeaderProps {
   currentView: string;
@@ -20,14 +50,13 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) =
     { id: 'completed-trips', label: 'Completed Trips', icon: CheckCircle },
     { id: 'flags', label: 'Flags & Investigations', icon: Flag },
     { id: 'reports', label: 'Reports & Exports', icon: BarChart3 },
-    { id: 'system-costs', label: 'System Costs', icon: Settings },
+    { id: 'system-costs', label: 'Indirect Costs', icon: Settings },
     { id: 'invoice-aging', label: 'Invoice Aging', icon: Clock },
     { id: 'customer-retention', label: 'Customer Retention', icon: Users },
     { id: 'missed-loads', label: 'Missed Loads', icon: TrendingDown },
     { id: 'diesel-dashboard', label: 'Diesel Dashboard', icon: Fuel },
     { id: 'driver-behavior', label: 'Driver Behavior', icon: Shield },
-    { id: 'action-log', label: 'Action Log', icon: ClipboardList },
-    { id: 'admin', label: 'Admin', icon: Database }
+    { id: 'action-log', label: 'Action Log', icon: ClipboardList }
   ];
 
   return (

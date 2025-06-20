@@ -1,22 +1,48 @@
+// ─── React ───────────────────────────────────────────────────────
 import React from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
-import { Download, FileSpreadsheet, Calendar, User, Truck, MapPin, DollarSign, TrendingUp, AlertTriangle, FileX } from 'lucide-react';
-import { 
-  formatDate, 
-  formatCurrency, 
-  generateReport, 
-  downloadTripPDF, 
-  downloadTripExcel,
-  calculateKPIs
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  AlertTriangle,
+  Calendar,
+  DollarSign,
+  Download,
+  FileSpreadsheet,
+  FileX,
+  MapPin,
+  Truck,
+  TrendingUp,
+  User
+} from 'lucide-react';
+
+// ─── Helper Functions ────────────────────────────────────────────
+import {
+  formatDate,
+  formatCurrency,
+  calculateKPIs,
+  generateReport,
+  downloadTripPDF,
+  downloadTripExcel
 } from '../../utils/helpers';
+
 
 interface TripReportProps {
   trip: Trip;
 }
 
 const TripReport: React.FC<TripReportProps> = ({ trip }) => {
+  // Ensure trip has costs array to prevent errors
+  if (!trip.costs) {
+    trip.costs = [];
+  }
+  
   const report = generateReport(trip);
   const kpis = calculateKPIs(trip);
 
@@ -31,14 +57,14 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => downloadTripExcel(trip.id)}
+                onClick={() => downloadTripExcel(trip)}
                 icon={<FileSpreadsheet className="w-4 h-4" />}
               >
                 Excel
               </Button>
               <Button
                 size="sm"
-                onClick={() => downloadTripPDF(trip.id)}
+                onClick={() => downloadTripPDF(trip)}
                 icon={<Download className="w-4 h-4" />}
               >
                 PDF Report
@@ -103,37 +129,30 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
             )}
           </div>
 
-          {trip.description && (
+          {trip.tripDescription && (
             <div className="mb-4">
               <p className="text-sm text-gray-500">Description</p>
-              <p className="text-gray-900">{trip.description}</p>
+              <p className="text-gray-900">{trip.tripDescription}</p>
             </div>
           )}
 
           {/* Investigation Alert */}
-          {trip.hasInvestigation && (
+          {trip.investigationNotes && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-3">
                 <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-yellow-800">Under Investigation</h4>
-                  {trip.investigationDate && (
-                    <p className="text-sm text-yellow-700">
-                      Flagged on: {formatDate(trip.investigationDate)}
-                    </p>
-                  )}
-                  {trip.investigationNotes && (
-                    <p className="text-sm text-yellow-700 mt-1">
-                      {trip.investigationNotes}
-                    </p>
-                  )}
+                  <p className="text-sm text-yellow-700 mt-1">
+                    {trip.investigationNotes}
+                  </p>
                 </div>
               </div>
             </div>
           )}
 
           {/* Missing Receipts Alert */}
-          {report.missingReceipts.length > 0 && (
+          {report?.missingReceipts?.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
               <div className="flex items-start space-x-3">
                 <FileX className="w-5 h-5 text-red-600 mt-0.5" />
@@ -179,7 +198,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
               <p className="text-2xl font-bold text-red-600">
                 {formatCurrency(kpis.totalExpenses, kpis.currency)}
               </p>
-              <p className="text-xs text-gray-400">{trip.costs.length} entries</p>
+              <p className="text-xs text-gray-400">{trip.costs?.length || 0} entries</p>
             </div>
             
             <div className={`text-center p-4 rounded-lg ${kpis.netProfit >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
@@ -188,7 +207,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
                 {formatCurrency(kpis.netProfit, kpis.currency)}
               </p>
               <p className="text-xs text-gray-400">
-                {kpis.profitMargin.toFixed(1)}% margin
+                {typeof kpis.profitMargin === 'number' ? kpis.profitMargin.toFixed(1) : '0.0'}% margin
               </p>
             </div>
             
@@ -209,7 +228,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
       <Card>
         <CardHeader title="Cost Breakdown by Category" />
         <CardContent>
-          {report.costBreakdown.length > 0 ? (
+          {report?.costBreakdown?.length > 0 ? (
             <div className="space-y-3">
               {report.costBreakdown.map((item, index) => (
                 <div key={index} className="flex justify-between items-center py-3 border-b border-gray-200">
@@ -221,7 +240,7 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
                     <div>
                       <span className="font-medium text-gray-900">{item.category}</span>
                       <span className="ml-2 text-sm text-gray-500">
-                        ({item.percentage.toFixed(1)}%)
+                        ({typeof item.percentage === 'number' ? item.percentage.toFixed(1) : '0.0'}%)
                       </span>
                     </div>
                   </div>
@@ -238,58 +257,48 @@ const TripReport: React.FC<TripReportProps> = ({ trip }) => {
       </Card>
 
       {/* Detailed Cost Entries */}
-      {trip.costs.length > 0 && (
+      {trip.costs && trip.costs.length > 0 && (
         <Card>
           <CardHeader title="Detailed Cost Entries" />
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 text-sm font-medium text-gray-500">Date</th>
-                    <th className="text-left py-3 text-sm font-medium text-gray-500">Category</th>
-                    <th className="text-left py-3 text-sm font-medium text-gray-500">Reference</th>
-                    <th className="text-left py-3 text-sm font-medium text-gray-500">Notes</th>
-                    <th className="text-left py-3 text-sm font-medium text-gray-500">Attachments</th>
-                    <th className="text-right py-3 text-sm font-medium text-gray-500">Amount ({kpis.currency})</th>
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2">Category</th>
+                    <th className="px-4 py-2">Sub-Category</th>
+                    <th className="px-4 py-2">Amount</th>
+                    <th className="px-4 py-2">Currency</th>
+                    <th className="px-4 py-2">Date</th>
+                    <th className="px-4 py-2">Attachments</th>
+                    <th className="px-4 py-2">Type</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {trip.costs.map((cost) => (
-                    <tr key={cost.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 text-sm text-gray-900">{formatDate(cost.date)}</td>
-                      <td className="py-3 text-sm text-gray-900">{cost.category}</td>
-                      <td className="py-3 text-sm text-gray-600">{cost.referenceNumber || '-'}</td>
-                      <td className="py-3 text-sm text-gray-600 max-w-xs truncate">
-                        {cost.notes || '-'}
+                  {trip.costs.map(cost => (
+                    <tr key={cost.id} className="border-b border-gray-200">
+                      <td className="px-4 py-2">{cost.category}</td>
+                      <td className="px-4 py-2">{cost.subCategory}</td>
+                      <td className="px-4 py-2">{formatCurrency(cost.amount, cost.currency)}</td>
+                      <td className="px-4 py-2">{cost.currency}</td>
+                      <td className="px-4 py-2">{formatDate(cost.date)}</td>
+                      <td className="px-4 py-2">
+                        {cost.attachments?.length || 0}
                       </td>
-                      <td className="py-3 text-sm">
-                        {cost.attachments && cost.attachments.length > 0 ? (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
-                            {cost.attachments.length} file(s)
+                      <td className="px-4 py-2">
+                        {cost.isSystemGenerated ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            System
                           </span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800">
-                            Missing
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Manual
                           </span>
                         )}
-                      </td>
-                      <td className="py-3 text-sm font-medium text-gray-900 text-right">
-                        {formatCurrency(cost.amount, kpis.currency)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-300 bg-gray-50">
-                    <td colSpan={5} className="py-3 text-sm font-medium text-gray-900">
-                      Total Expenses
-                    </td>
-                    <td className="py-3 text-sm font-bold text-gray-900 text-right">
-                      {formatCurrency(report.totalCosts, kpis.currency)}
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           </CardContent>

@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
+// ─── React & Context ─────────────────────────────────────────────
+import React, { useState, useEffect } from 'react';
+import { useAppContext } from '../../context/AppContext';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { Trip, DRIVERS, FUEL_STATIONS, FLEET_NUMBERS, DieselConsumptionRecord, FLEETS_WITH_PROBES } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { 
   Save, 
   X, 
@@ -10,10 +19,13 @@ import {
   AlertTriangle,
   Fuel,
   Link,
-  Database
+  Building,
+  Clock
 } from 'lucide-react';
-import { FLEET_NUMBERS, DRIVERS, TRUCKS_WITH_PROBES } from '../../types';
-import { useAppContext } from '../../context/AppContext';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatDate } from '../../utils/helpers';
+
 
 interface ManualDieselEntryModalProps {
   isOpen: boolean;
@@ -24,7 +36,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
   isOpen,
   onClose
 }) => {
-  const { addDieselRecord, trips, connectionStatus } = useAppContext();
+  const { addDieselRecord, trips, dieselRecords } = useAppContext();
   
   const [formData, setFormData] = useState({
     fleetNumber: '',
@@ -38,15 +50,14 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     driverName: '',
     notes: '',
     tripId: '', // Link to trip
-    currency: 'ZAR' as 'USD' | 'ZAR',
-    probeReading: '' // NEW: Probe reading field
+    currency: 'ZAR' as 'USD' | 'ZAR', // Add currency field with default value
+    isReeferUnit: false, // Add flag for reefer units
+    linkedHorseId: '', // For reefer units
+    hoursOperated: '' // For reefer units - hours of operation
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [autoCalculate, setAutoCalculate] = useState(true);
-
-  // Check if selected fleet has a probe
-  const hasProbe = TRUCKS_WITH_PROBES.includes(formData.fleetNumber);
 
   // Get available trips for the selected fleet
   const availableTrips = trips.filter(trip => 
@@ -54,7 +65,14 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     trip.status === 'active'
   );
 
-  const handleChange = (field: string, value: string) => {
+  // Get available horses for reefer units
+  const availableHorses = formData.isReeferUnit ? 
+    dieselRecords.filter(record => 
+      !record.isReeferUnit && 
+      ['4H', '6H', '21H', '22H', '23H', '24H', '26H', '28H', '29H', '30H', '31H', '32H', '33H', 'UD'].includes(record.fleetNumber)
+    ) : [];
+
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Clear errors
@@ -63,7 +81,7 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     }
 
     // Auto-calculate when relevant fields change
-    if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost'].includes(field)) {
+    if (autoCalculate && ['litresFilled', 'costPerLitre', 'totalCost', 'hoursOperated'].includes(field) && typeof value === 'string') {
       autoCalculateFields(field, value);
     }
   };
@@ -93,44 +111,43 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
+    
     if (!formData.fleetNumber) newErrors.fleetNumber = 'Fleet number is required';
     if (!formData.date) newErrors.date = 'Date is required';
-    if (!formData.kmReading) newErrors.kmReading = 'KM reading is required';
     if (!formData.litresFilled) newErrors.litresFilled = 'Litres filled is required';
     if (!formData.totalCost) newErrors.totalCost = 'Total cost is required';
     if (!formData.fuelStation) newErrors.fuelStation = 'Fuel station is required';
     if (!formData.driverName) newErrors.driverName = 'Driver name is required';
+    if (!formData.currency) newErrors.currency = 'Currency is required';
 
     // Validate numbers
-    if (formData.kmReading && (isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0)) {
-      newErrors.kmReading = 'Must be a valid positive number';
-    }
-    if (formData.previousKmReading && (isNaN(Number(formData.previousKmReading)) || Number(formData.previousKmReading) < 0)) {
-      newErrors.previousKmReading = 'Must be a valid number';
-    }
     if (formData.litresFilled && (isNaN(Number(formData.litresFilled)) || Number(formData.litresFilled) <= 0)) {
       newErrors.litresFilled = 'Must be a valid positive number';
     }
     if (formData.totalCost && (isNaN(Number(formData.totalCost)) || Number(formData.totalCost) <= 0)) {
       newErrors.totalCost = 'Must be a valid positive number';
     }
-
-    // Validate KM readings
-    if (formData.kmReading && formData.previousKmReading) {
-      const current = Number(formData.kmReading);
-      const previous = Number(formData.previousKmReading);
-      if (current <= previous) {
-        newErrors.kmReading = 'Current KM must be greater than previous KM';
+    
+    // For reefer units, validate hours operated
+    if (formData.isReeferUnit) {
+      if (!formData.hoursOperated) {
+        newErrors.hoursOperated = 'Hours operated is required for reefer units';
+      } else if (isNaN(Number(formData.hoursOperated)) || Number(formData.hoursOperated) <= 0) {
+        newErrors.hoursOperated = 'Hours operated must be a positive number';
       }
-    }
-
-    // Validate probe reading if truck has probe
-    if (hasProbe) {
-      if (!formData.probeReading) {
-        newErrors.probeReading = 'Probe reading is required for this truck';
-      } else if (isNaN(Number(formData.probeReading)) || Number(formData.probeReading) < 0) {
-        newErrors.probeReading = 'Must be a valid number';
+    } else {
+      // For regular units, validate KM reading
+      if (!formData.kmReading || isNaN(Number(formData.kmReading)) || Number(formData.kmReading) <= 0) {
+        newErrors.kmReading = 'KM reading must be a valid positive number';
+      }
+      
+      // Validate KM readings
+      if (formData.kmReading && formData.previousKmReading) {
+        const current = Number(formData.kmReading);
+        const previous = Number(formData.previousKmReading);
+        if (current <= previous) {
+          newErrors.kmReading = 'Current KM must be greater than previous KM';
+        }
       }
     }
 
@@ -146,72 +163,99 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     const litresFilled = Number(formData.litresFilled);
     const totalCost = Number(formData.totalCost);
     const costPerLitre = formData.costPerLitre ? Number(formData.costPerLitre) : totalCost / litresFilled;
-    const probeReading = formData.probeReading ? Number(formData.probeReading) : undefined;
+    const hoursOperated = formData.hoursOperated ? Number(formData.hoursOperated) : undefined;
 
     // Calculate derived values
-    const distanceTravelled = previousKmReading ? kmReading - previousKmReading : undefined;
-    const kmPerLitre = distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
+    const distanceTravelled = !formData.isReeferUnit && previousKmReading !== undefined ? kmReading - previousKmReading : undefined;
+    const kmPerLitre = !formData.isReeferUnit && distanceTravelled && litresFilled > 0 ? distanceTravelled / litresFilled : undefined;
 
-    // Calculate probe discrepancy if applicable
-    const probeDiscrepancy = probeReading && litresFilled ? litresFilled - probeReading : undefined;
-    const probeVerified = probeReading !== undefined;
+    // Create a unique ID for the diesel record
+    const newId = `diesel-${Date.now()}`;
 
-    const recordData = {
+    // Prepare the record data
+    const recordData: DieselConsumptionRecord = {
+      id: newId,
       fleetNumber: formData.fleetNumber,
       date: formData.date,
-      kmReading,
+      kmReading: formData.isReeferUnit ? 0 : kmReading,
       litresFilled,
       costPerLitre,
       totalCost,
-      fuelStation: formData.fuelStation.trim(),
+      fuelStation: String(formData.fuelStation ?? '').trim(),
       driverName: formData.driverName,
-      notes: formData.notes.trim(),
-      previousKmReading,
+      notes: String(formData.notes ?? '').trim(),
+      previousKmReading: formData.isReeferUnit ? undefined : previousKmReading,
       distanceTravelled,
       kmPerLitre,
-      tripId: formData.tripId || undefined, // Link to trip
       currency: formData.currency,
-      hasProbe,
-      probeReading,
-      probeDiscrepancy,
-      probeVerified
+      isReeferUnit: formData.isReeferUnit,
+      hoursOperated
     };
-
-    addDieselRecord(recordData);
     
-    // Prepare alert message
-    let alertMessage = `Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\nKM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\nCost: ${formData.currency === 'USD' ? '$' : 'R'}${totalCost.toFixed(2)}\n\n${formData.tripId ? 'Linked to trip for cost allocation.' : 'No trip linkage - standalone record.'}`;
-    
-    // Add probe verification info if applicable
-    if (hasProbe && probeDiscrepancy !== undefined) {
-      const discrepancyAbs = Math.abs(probeDiscrepancy);
-      if (discrepancyAbs > 50) {
-        alertMessage += `\n\n⚠️ WARNING: Large probe discrepancy detected (${discrepancyAbs.toFixed(1)}L).\nThis has been flagged for investigation.`;
-      } else {
-        alertMessage += `\n\nProbe verification: ${discrepancyAbs.toFixed(1)}L difference (within acceptable range).`;
-      }
+    // Add trip ID for regular diesel or linked horse ID for reefer units
+    if (!formData.isReeferUnit && formData.tripId && typeof formData.tripId === 'string' && formData.tripId.trim() !== '') {
+      recordData.tripId = formData.tripId;
+    } else if (formData.isReeferUnit && formData.linkedHorseId && typeof formData.linkedHorseId === 'string' && formData.linkedHorseId.trim() !== '') {
+      recordData.linkedHorseId = formData.linkedHorseId;
     }
-    
-    alert(alertMessage);
-    
-    // Reset form
-    setFormData({
-      fleetNumber: '',
-      date: new Date().toISOString().split('T')[0],
-      kmReading: '',
-      previousKmReading: '',
-      litresFilled: '',
-      costPerLitre: '',
-      totalCost: '',
-      fuelStation: '',
-      driverName: '',
-      notes: '',
-      tripId: '',
-      currency: 'ZAR',
-      probeReading: ''
-    });
-    setErrors({});
-    onClose();
+
+    try {
+      addDieselRecord(recordData);
+      
+      // Prepare success message
+      let successMessage = `Diesel record added successfully!\n\nFleet: ${formData.fleetNumber}\n`;
+      
+      if (formData.isReeferUnit) {
+        successMessage += `Reefer Unit\n`;
+        successMessage += `Hours Operated: ${hoursOperated} hours\n`;
+        successMessage += `Consumption Rate: ${(litresFilled / (hoursOperated || 1)).toFixed(2)} L/hr\n`;
+        
+        if (formData.linkedHorseId) {
+          const horseRecord = dieselRecords.find(r => r.id === formData.linkedHorseId);
+          successMessage += `Linked to Horse: ${horseRecord?.fleetNumber || formData.linkedHorseId}\n`;
+          
+          // If the horse is linked to a trip, mention that costs will be allocated
+          if (horseRecord?.tripId) {
+            const trip = trips.find(t => t.id === horseRecord.tripId);
+            successMessage += `Cost will be allocated to trip: ${trip?.route || horseRecord.tripId}\n`;
+          }
+        }
+      } else {
+        successMessage += `KM/L: ${kmPerLitre?.toFixed(2) || 'N/A'}\n`;
+        if (formData.tripId) {
+          const trip = trips.find(t => t.id === formData.tripId);
+          successMessage += `Linked to Trip: ${trip?.route || formData.tripId}\n`;
+          successMessage += `Cost will be allocated to trip expenses\n`;
+        }
+      }
+      
+      successMessage += `Cost: ${formData.currency === 'USD' ? '$' : 'R'}${totalCost.toFixed(2)}\n`;
+      
+      alert(successMessage);
+      
+      // Reset form
+      setFormData({
+        fleetNumber: '',
+        date: new Date().toISOString().split('T')[0],
+        kmReading: '',
+        previousKmReading: '',
+        litresFilled: '',
+        costPerLitre: '',
+        totalCost: '',
+        fuelStation: '',
+        driverName: '',
+        notes: '',
+        tripId: '',
+        currency: 'ZAR',
+        isReeferUnit: false,
+        linkedHorseId: '',
+        hoursOperated: ''
+      });
+      setErrors({});
+      onClose();
+    } catch (err: any) {
+      alert('Failed to add diesel record. Please check all fields and try again.\n' + (err?.message || ''));
+    }
   };
 
   const calculateDistance = () => {
@@ -228,18 +272,26 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
     return distance > 0 && litres > 0 ? distance / litres : 0;
   };
 
-  // Calculate probe discrepancy
-  const calculateProbeDiscrepancy = () => {
-    if (!hasProbe || !formData.probeReading || !formData.litresFilled) return null;
-    
-    const probeReading = Number(formData.probeReading);
-    const litresFilled = Number(formData.litresFilled);
-    
-    return litresFilled - probeReading;
+  const calculateLitresPerHour = () => {
+    const litres = Number(formData.litresFilled) || 0;
+    const hours = Number(formData.hoursOperated) || 0;
+    return hours > 0 ? litres / hours : 0;
   };
 
-  const probeDiscrepancy = calculateProbeDiscrepancy();
-  const hasLargeDiscrepancy = probeDiscrepancy !== null && Math.abs(probeDiscrepancy) > 50;
+  // Check if the selected fleet is a reefer unit
+  const isReeferUnit = ['4F', '5F', '6F', '7F', '8F'].includes(formData.fleetNumber);
+  
+  // Check if the selected fleet has a probe
+  const hasProbe = FLEETS_WITH_PROBES.includes(formData.fleetNumber);
+
+  // Update isReeferUnit when fleet number changes
+  useEffect(() => {
+    if (['4F', '5F', '6F', '7F', '8F'].includes(formData.fleetNumber)) {
+      setFormData(prev => ({ ...prev, isReeferUnit: true }));
+    } else {
+      setFormData(prev => ({ ...prev, isReeferUnit: false }));
+    }
+  }, [formData.fleetNumber]);
 
   return (
     <Modal
@@ -249,21 +301,6 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
       maxWidth="lg"
     >
       <div className="space-y-6">
-        {/* Connection Status Warning */}
-        {connectionStatus !== 'connected' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <div className="flex items-start space-x-3">
-              <Database className="w-5 h-5 text-amber-600 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-medium text-amber-800">Working Offline</h4>
-                <p className="text-sm text-amber-700 mt-1">
-                  You're currently working offline. This diesel record will be stored locally and synced when your connection is restored.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Header Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <div className="flex items-start space-x-3">
@@ -293,16 +330,31 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </label>
         </div>
 
+        {/* Reefer Unit Toggle */}
+        <div className="flex items-center space-x-3">
+          <input
+            type="checkbox"
+            id="isReeferUnit"
+            checked={formData.isReeferUnit}
+            onChange={(e) => handleChange('isReeferUnit', e.target.checked)}
+            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <label htmlFor="isReeferUnit" className="flex items-center text-sm font-medium text-gray-700">
+            <Building className="w-4 h-4 mr-2" />
+            This is a refrigeration trailer (4F, 5F, 6F, 7F, 8F)
+          </label>
+        </div>
+
         {/* Form Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
             label="Fleet Number *"
             value={formData.fleetNumber}
-            onChange={(e) => handleChange('fleetNumber', e.target.value)}
+            onChange={val => handleChange('fleetNumber', val)}
             options={[
               { label: 'Select fleet...', value: '' },
               ...FLEET_NUMBERS.map(f => ({ 
-                label: `${f}${TRUCKS_WITH_PROBES.includes(f) ? ' (Has Probe)' : ''}`, 
+                label: `${f}${FLEETS_WITH_PROBES.includes(f) ? ' (Probe)' : ['4F', '5F', '6F', '7F', '8F'].includes(f) ? ' (Reefer)' : ''}`, 
                 value: f 
               }))
             ]}
@@ -313,31 +365,46 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             label="Date *"
             type="date"
             value={formData.date}
-            onChange={(e) => handleChange('date', e.target.value)}
+            onChange={val => handleChange('date', val)}
             error={errors.date}
           />
 
-          <Input
-            label="Current KM Reading *"
-            type="number"
-            step="1"
-            min="0"
-            value={formData.kmReading}
-            onChange={(e) => handleChange('kmReading', e.target.value)}
-            placeholder="125000"
-            error={errors.kmReading}
-          />
+          {!formData.isReeferUnit ? (
+            <>
+              <Input
+                label="Current KM Reading *"
+                type="number"
+                step="1"
+                min="0"
+                value={formData.kmReading}
+                onChange={val => handleChange('kmReading', val)}
+                placeholder="125000"
+                error={errors.kmReading}
+              />
 
-          <Input
-            label="Previous KM Reading"
-            type="number"
-            step="1"
-            min="0"
-            value={formData.previousKmReading}
-            onChange={(e) => handleChange('previousKmReading', e.target.value)}
-            placeholder="123560"
-            error={errors.previousKmReading}
-          />
+              <Input
+                label="Previous KM Reading"
+                type="number"
+                step="1"
+                min="0"
+                value={formData.previousKmReading}
+                onChange={val => handleChange('previousKmReading', val)}
+                placeholder="123560"
+                error={errors.previousKmReading}
+              />
+            </>
+          ) : (
+            <Input
+              label="Hours Operated *"
+              type="number"
+              step="0.1"
+              min="0.1"
+              value={formData.hoursOperated}
+              onChange={val => handleChange('hoursOperated', val)}
+              placeholder="5.5"
+              error={errors.hoursOperated}
+            />
+          )}
 
           <Input
             label="Litres Filled *"
@@ -345,69 +412,61 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             step="0.1"
             min="0.1"
             value={formData.litresFilled}
-            onChange={(e) => handleChange('litresFilled', e.target.value)}
+            onChange={val => handleChange('litresFilled', val)}
             placeholder="450"
             error={errors.litresFilled}
           />
 
-          {/* NEW: Probe Reading field for trucks with probes */}
-          {hasProbe && (
-            <Input
-              label="Probe Reading (Litres) *"
-              type="number"
-              step="0.1"
-              min="0"
-              value={formData.probeReading}
-              onChange={(e) => handleChange('probeReading', e.target.value)}
-              placeholder="e.g., 445.5"
-              error={errors.probeReading}
-            />
-          )}
-
-          <Select
-            label="Currency *"
-            value={formData.currency}
-            onChange={(e) => handleChange('currency', e.target.value)}
-            options={[
-              { label: 'ZAR (R)', value: 'ZAR' },
-              { label: 'USD ($)', value: 'USD' }
-            ]}
-          />
-
           <Input
-            label={`Cost per Litre (${formData.currency === 'USD' ? '$' : 'R'})`}
+            label="Cost per Litre"
             type="number"
             step="0.01"
             min="0"
             value={formData.costPerLitre}
-            onChange={(e) => handleChange('costPerLitre', e.target.value)}
+            onChange={val => handleChange('costPerLitre', val)}
             placeholder="18.50"
             error={errors.costPerLitre}
           />
 
-          <Input
-            label={`Total Cost (${formData.currency === 'USD' ? '$' : 'R'}) *`}
-            type="number"
-            step="0.01"
-            min="0.01"
-            value={formData.totalCost}
-            onChange={(e) => handleChange('totalCost', e.target.value)}
-            placeholder="8325.00"
-            error={errors.totalCost}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <Select
+              label="Currency *"
+              value={formData.currency}
+              onChange={val => handleChange('currency', val)}
+              options={[
+                { label: 'ZAR (R)', value: 'ZAR' },
+                { label: 'USD ($)', value: 'USD' }
+              ]}
+              error={errors.currency}
+            />
+            
+            <Input
+              label="Total Cost *"
+              type="number"
+              step="0.01"
+              min="0.01"
+              value={formData.totalCost}
+              onChange={val => handleChange('totalCost', val)}
+              placeholder="8325.00"
+              error={errors.totalCost}
+            />
+          </div>
 
-          <Input
+          <Select
             label="Fuel Station *"
             value={formData.fuelStation}
-            onChange={(e) => handleChange('fuelStation', e.target.value)}
-            placeholder="RAM Petroleum Harare"
+            onChange={val => handleChange('fuelStation', val)}
+            options={[
+              { label: 'Select fuel station...', value: '' },
+              ...FUEL_STATIONS.map(station => ({ label: station, value: station }))
+            ]}
             error={errors.fuelStation}
           />
 
           <Select
             label="Driver *"
             value={formData.driverName}
-            onChange={(e) => handleChange('driverName', e.target.value)}
+            onChange={val => handleChange('driverName', val)}
             options={[
               { label: 'Select driver...', value: '' },
               ...DRIVERS.map(d => ({ label: d, value: d }))
@@ -415,32 +474,52 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
             error={errors.driverName}
           />
 
-          {/* Trip Linkage */}
-          <Select
-            label="Link to Trip (Optional)"
-            value={formData.tripId}
-            onChange={(e) => handleChange('tripId', e.target.value)}
-            options={[
-              { label: 'No trip linkage', value: '' },
-              ...availableTrips.map(trip => ({ 
-                label: `${trip.route} (${trip.startDate} - ${trip.endDate})`, 
-                value: trip.id 
-              }))
-            ]}
-            disabled={!formData.fleetNumber}
-          />
+          {!formData.isReeferUnit ? (
+            <Select
+              label="Link to Trip (Optional)"
+              value={formData.tripId}
+              onChange={val => handleChange('tripId', val)}
+              options={[
+                { label: 'No trip linkage', value: '' },
+                ...availableTrips.map(trip => ({ 
+                  label: `${trip.route} (${formatDate(trip.startDate)} - ${formatDate(trip.endDate)})`, 
+                  value: trip.id 
+                }))
+              ]}
+              disabled={!formData.fleetNumber}
+            />
+          ) : (
+            <Select
+              label="Link to Horse (Optional)"
+              value={formData.linkedHorseId}
+              onChange={val => handleChange('linkedHorseId', val)}
+              options={[
+                { label: 'No horse linkage', value: '' },
+                ...availableHorses.map(horse => {
+                  const tripInfo = horse.tripId ? 
+                    ` - ${trips.find(t => t.id === horse.tripId)?.route || 'Unknown Trip'}` : 
+                    ' - No active trip';
+                  return { 
+                    label: `${horse.fleetNumber} (${horse.driverName})${tripInfo}`, 
+                    value: horse.id 
+                  };
+                })
+              ]}
+              disabled={!formData.fleetNumber}
+            />
+          )}
         </div>
 
         <TextArea
           label="Notes"
           value={formData.notes}
-          onChange={(e) => handleChange('notes', e.target.value)}
+          onChange={val => handleChange('notes', val)}
           placeholder="Additional notes about this fuel entry..."
           rows={3}
         />
 
         {/* Calculation Preview */}
-        {(formData.kmReading && formData.previousKmReading && formData.litresFilled) && (
+        {!formData.isReeferUnit && (formData.kmReading && formData.previousKmReading && formData.litresFilled) && (
           <div className="bg-green-50 border border-green-200 rounded-md p-4">
             <h4 className="text-sm font-medium text-green-800 mb-2">Calculated Metrics</h4>
             <div className="grid grid-cols-3 gap-4 text-sm">
@@ -462,51 +541,71 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
-        {/* Probe Verification Preview */}
-        {hasProbe && formData.probeReading && formData.litresFilled && (
-          <div className={`border rounded-md p-4 ${hasLargeDiscrepancy ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-            <h4 className={`text-sm font-medium mb-2 ${hasLargeDiscrepancy ? 'text-red-800' : 'text-green-800'}`}>
-              Probe Verification
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        {/* Reefer Unit Calculation Preview */}
+        {formData.isReeferUnit && formData.litresFilled && formData.hoursOperated && (
+          <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
+            <h4 className="text-sm font-medium text-purple-800 mb-2">Reefer Unit Metrics</h4>
+            <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
-                <p className={hasLargeDiscrepancy ? 'text-red-600' : 'text-green-600'}>Filled Amount</p>
-                <p className="font-bold">{Number(formData.litresFilled).toFixed(1)}L</p>
+                <p className="text-purple-600">Hours Operated</p>
+                <p className="font-bold text-purple-800">{Number(formData.hoursOperated).toFixed(1)} hours</p>
               </div>
               <div>
-                <p className={hasLargeDiscrepancy ? 'text-red-600' : 'text-green-600'}>Probe Reading</p>
-                <p className="font-bold">{Number(formData.probeReading).toFixed(1)}L</p>
+                <p className="text-purple-600">Consumption Rate</p>
+                <p className="font-bold text-purple-800">{calculateLitresPerHour().toFixed(2)} L/hr</p>
               </div>
               <div>
-                <p className={hasLargeDiscrepancy ? 'text-red-600' : 'text-green-600'}>Discrepancy</p>
-                <p className={`font-bold ${hasLargeDiscrepancy ? 'text-red-800' : 'text-green-800'}`}>
-                  {probeDiscrepancy !== null ? Math.abs(probeDiscrepancy).toFixed(1) : '0'}L
+                <p className="text-purple-600">Cost per Hour</p>
+                <p className="font-bold text-purple-800">
+                  {formData.currency === 'USD' ? '$' : 'R'}{Number(formData.hoursOperated) > 0 ? (Number(formData.totalCost) / Number(formData.hoursOperated)).toFixed(2) : '0.00'}
                 </p>
               </div>
             </div>
-            
-            {hasLargeDiscrepancy && (
-              <div className="mt-3 flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
-                <p className="text-sm text-red-700">
-                  <strong>WARNING:</strong> Large discrepancy detected between filled amount and probe reading. 
-                  This will be flagged for investigation.
+          </div>
+        )}
+
+        {/* Reefer Unit Info */}
+        {formData.isReeferUnit && (
+          <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
+            <div className="flex items-start space-x-3">
+              <Clock className="w-5 h-5 text-purple-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-purple-800">Refrigeration Trailer Information</h4>
+                <p className="text-sm text-purple-700 mt-1">
+                  Refrigeration trailers are measured in litres per hour instead of kilometers per litre.
+                  Please enter the number of hours the reefer unit was operated.
                 </p>
               </div>
-            )}
+            </div>
           </div>
         )}
 
         {/* Trip Linkage Info */}
         {formData.tripId && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="flex items-start space-x-3">
+              <Link className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="text-sm font-medium text-blue-800">Trip Cost Allocation</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  This diesel cost will be automatically allocated to the selected trip for accurate profitability tracking.
+                  The cost will appear in the trip's expense breakdown.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Horse Linkage Info */}
+        {formData.isReeferUnit && formData.linkedHorseId && (
           <div className="bg-purple-50 border border-purple-200 rounded-md p-4">
             <div className="flex items-start space-x-3">
               <Link className="w-5 h-5 text-purple-600 mt-0.5" />
               <div>
-                <h4 className="text-sm font-medium text-purple-800">Trip Cost Allocation</h4>
+                <h4 className="text-sm font-medium text-purple-800">Horse Linkage</h4>
                 <p className="text-sm text-purple-700 mt-1">
-                  This diesel cost will be automatically allocated to the selected trip for accurate profitability tracking.
-                  The cost will appear in the trip's expense breakdown.
+                  This reefer diesel cost will be linked to the selected horse. If the horse is linked to a trip,
+                  the cost will be automatically allocated to that trip.
                 </p>
               </div>
             </div>
@@ -530,8 +629,8 @@ const ManualDieselEntryModal: React.FC<ManualDieselEntryModalProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3 pt-4 border-t">
+        {/* Actions */}
+        <div className="flex justify-end space-x-3 pt-6 border-t">
           <Button
             variant="outline"
             onClick={onClose}

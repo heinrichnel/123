@@ -1,9 +1,15 @@
+// ─── React & Context ─────────────────────────────────────────────
 import React, { useState } from 'react';
+import { useAppContext } from '../../context/AppContext';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { useAppContext } from '../../context/AppContext';
 import { Input } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
 import { Upload, X, AlertTriangle, Wifi, WifiOff } from 'lucide-react';
+
 
 interface LoadImportModalProps {
   isOpen: boolean;
@@ -74,7 +80,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
         description: row.description || ''
       }));
 
-      importTripsFromCSV(trips);
+      await importTripsFromCSV(trips);
       alert(`Successfully imported ${trips.length} trips from CSV file.${connectionStatus !== 'connected' ? '\n\nData will be synced when your connection is restored.' : ''}`);
       onClose();
     } catch (error) {
@@ -143,7 +149,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
             <input
               type="file"
               accept=".csv"
-              onChange={handleFileChange}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFileChange(e)}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 
                 file:rounded-md file:border-0 file:text-sm file:font-medium 
                 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100

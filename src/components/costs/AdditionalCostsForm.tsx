@@ -1,10 +1,20 @@
+// ─── React & State ───────────────────────────────────────────────
 import React, { useState } from 'react';
-import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types';
-import { Input, Select, TextArea, FileUpload } from '../ui/FormElements';
+
+// ─── Types ───────────────────────────────────────────────────────
+import { AdditionalCost, ADDITIONAL_COST_TYPES } from '../../types/index';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader } from '../ui/Card';
-import { Plus, X, DollarSign, Upload } from 'lucide-react';
+import { Input, Select, TextArea } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import { DollarSign, Plus, Upload, X } from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
 import { formatCurrency } from '../../utils/helpers';
+
 
 interface AdditionalCostsFormProps {
   tripId: string;
@@ -191,10 +201,10 @@ const AdditionalCostsForm: React.FC<AdditionalCostsFormProps> = ({
               </div>
 
               <TextArea
-                label="Notes"
-                value={formData.notes}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                placeholder="Additional details about this cost..."
+                label="Notes (Optional)"
+                value={formData.notes || ''}
+                onChange={e => handleChange('notes', typeof e === 'string' ? e : e.target?.value || '')}
+                placeholder="Additional notes about this cost..."
                 rows={3}
               />
 

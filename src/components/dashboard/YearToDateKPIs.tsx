@@ -1,26 +1,36 @@
-import React, { useState, useMemo } from 'react';
+// ─── React & State ───────────────────────────────────────────────
+import React, { useState, useMemo, useEffect } from 'react';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { Trip } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
-import { Input } from '../ui/FormElements';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Navigation, 
-  BarChart3, 
-  Calendar,
-  Edit,
-  Save,
-  X,
-  AlertTriangle,
-  Target,
-  Award,
-  Activity,
-  Download
-} from 'lucide-react';
-import { formatCurrency, calculateTotalCosts } from '../../utils/helpers';
 import Modal from '../ui/Modal';
+import { Input } from '../ui/FormElements';
+
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  Activity,
+  AlertTriangle,
+  Award,
+  BarChart3,
+  Calendar,
+  DollarSign,
+  Download,
+  Edit,
+  Navigation,
+  Save,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  X
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatCurrency, calculateTotalCosts } from '../../utils/helpers';
+
 
 interface YTDMetrics {
   year: number;
@@ -50,6 +60,7 @@ interface WeeklyMetrics {
   cpk: number;
   tripCount: number;
   profitMargin: number;
+  currency: 'ZAR' | 'USD';
 }
 
 interface YearToDateKPIsProps {
@@ -62,17 +73,17 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
   const [formData, setFormData] = useState<Partial<YTDMetrics>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Current YTD data - will be updated monthly on 15th
+  // Current YTD data - updated manually monthly
   const [ytdData, setYtdData] = useState<Record<number, YTDMetrics>>({
     2025: {
       year: 2025,
       totalKms: 358013,
       ipk: 2.03,
       operationalCpk: 1.80,
-      revenue: 726150.00,
-      ebit: 114342.00,
-      ebitMargin: 15.70,
-      netProfit: 79552.00,
+      revenue: 726150.0,
+      ebit: 114342.0,
+      ebitMargin: 15.7,
+      netProfit: 79552.0,
       netProfitMargin: 11.0,
       roe: 19.0,
       roic: 32.0,
@@ -84,10 +95,10 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       totalKms: 279360,
       ipk: 2.06,
       operationalCpk: 2.11,
-      revenue: 611387.00,
-      ebit: 46998.00,
-      ebitMargin: 7.70,
-      netProfit: 4780.00,
+      revenue: 611387.0,
+      ebit: 46998.0,
+      ebitMargin: 7.7,
+      netProfit: 4780.0,
       netProfitMargin: 1.0,
       roe: 1.0,
       roic: 9.0,
@@ -96,30 +107,49 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
     }
   });
 
+  // Load YTD data from localStorage on component mount
+  useEffect(() => {
+    const savedYtdData = localStorage.getItem('ytdData');
+    if (savedYtdData) {
+      try {
+        const parsedData = JSON.parse(savedYtdData);
+        setYtdData(parsedData);
+      } catch (error) {
+        console.error('Error parsing saved YTD data:', error);
+      }
+    }
+  }, []);
+
+  // Save YTD data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ytdData', JSON.stringify(ytdData));
+  }, [ytdData]);
+
   // Calculate weekly metrics from completed trips
   const weeklyMetrics = useMemo(() => {
-    const completedTrips = trips.filter(trip => 
+    const completedTrips = trips.filter(trip =>
       trip.status === 'completed' || trip.status === 'invoiced' || trip.status === 'paid'
     );
 
-    // Group trips by week based on offloading date (or end date if no offloading date)
     const weeklyData: Record<string, WeeklyMetrics> = {};
 
     completedTrips.forEach(trip => {
-      // Use finalOffloadDateTime, actualOffloadDateTime, or endDate as trigger
+      // Use offload dates or endDate as fallback
       const offloadDate = trip.finalOffloadDateTime || trip.actualOffloadDateTime || trip.endDate;
+      if (!offloadDate) return;
+
       const date = new Date(offloadDate);
-      
-      // Get Monday of the week
+
+      // Monday of the week (ISO week starts Monday)
       const monday = new Date(date);
-      monday.setDate(date.getDate() - date.getDay() + 1);
-      
-      // Get Sunday of the week
+      monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+
+      // Sunday of the week
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
-      
-      const weekKey = `${monday.getFullYear()}-W${getWeekNumber(monday)}`;
-      
+
+      const weekKey = `${monday.getFullYear()}-W${getWeekNumber(monday)}-${trip.revenueCurrency}`;
+
       if (!weeklyData[weekKey]) {
         weeklyData[weekKey] = {
           weekNumber: getWeekNumber(monday),
@@ -132,7 +162,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
           ipk: 0,
           cpk: 0,
           tripCount: 0,
-          profitMargin: 0
+          profitMargin: 0,
+          currency: trip.revenueCurrency
         };
       }
 
@@ -143,34 +174,36 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
 
       week.totalRevenue += trip.baseRevenue;
       week.totalCosts += totalTripCosts;
-      week.grossProfit += (trip.baseRevenue - totalTripCosts);
+      week.grossProfit += trip.baseRevenue - totalTripCosts;
       week.totalKilometers += trip.distanceKm || 0;
       week.tripCount += 1;
     });
 
-    // Calculate IPK, CPK, and profit margin for each week
+    // Calculate IPK, CPK, and Profit Margin
     Object.values(weeklyData).forEach(week => {
       week.ipk = week.totalKilometers > 0 ? week.totalRevenue / week.totalKilometers : 0;
       week.cpk = week.totalKilometers > 0 ? week.totalCosts / week.totalKilometers : 0;
       week.profitMargin = week.totalRevenue > 0 ? (week.grossProfit / week.totalRevenue) * 100 : 0;
     });
 
-    return Object.values(weeklyData).sort((a, b) => 
+    return Object.values(weeklyData).sort((a, b) =>
       new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime()
     );
   }, [trips]);
 
-  // Helper function to get week number
+  // Helper: ISO Week Number calculation
   function getWeekNumber(date: Date): number {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+    const target = new Date(date.valueOf());
+    const dayNum = (date.getDay() + 6) % 7;
+    target.setDate(target.getDate() - dayNum + 3);
+    const firstThursday = new Date(target.getFullYear(), 0, 4);
+    const diff = target.getTime() - firstThursday.getTime();
+    return 1 + Math.round(diff / (7 * 24 * 60 * 60 * 1000));
   }
 
   const current2025 = ytdData[2025];
   const previous2024 = ytdData[2024];
 
-  // Calculate year-over-year changes
   const calculateChange = (current: number, previous: number) => {
     if (previous === 0) return { value: 0, percentage: 0 };
     const change = current - previous;
@@ -203,7 +236,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.totalKms || formData.totalKms <= 0) {
       newErrors.totalKms = 'Total KMs must be greater than 0';
     }
@@ -236,6 +269,12 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       [editingYear]: updatedData
     }));
 
+    // Save to localStorage for persistence
+    localStorage.setItem('ytdData', JSON.stringify({
+      ...ytdData,
+      [editingYear]: updatedData
+    }));
+
     setShowEditModal(false);
     setEditingYear(null);
     setFormData({});
@@ -256,14 +295,14 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
     csvContent += "WEEKLY REVENUE REPORTING - AUTOMATED CYCLE\n";
     csvContent += `Generated on,${new Date().toLocaleDateString()}\n`;
     csvContent += "Based on completed trips using offloading dates\n\n";
-    
-    csvContent += "Week Number,Week Start,Week End,Trip Count,Total Revenue,Total Costs,Gross Profit,Profit Margin %,Total KM,IPK,CPK\n";
+
+    csvContent += "Week Number,Week Start,Week End,Trip Count,Total Revenue,Currency,Total Costs,Gross Profit,Profit Margin %,Total KM,IPK,CPK\n";
     weeklyMetrics.forEach(week => {
-      csvContent += `${week.weekNumber},"${week.weekStart}","${week.weekEnd}",${week.tripCount},${week.totalRevenue.toFixed(2)},${week.totalCosts.toFixed(2)},${week.grossProfit.toFixed(2)},${week.profitMargin.toFixed(2)},${week.totalKilometers},${week.ipk.toFixed(3)},${week.cpk.toFixed(3)}\n`;
+      csvContent += `${week.weekNumber},"${week.weekStart}","${week.weekEnd}",${week.tripCount},${week.totalRevenue.toFixed(2)},${week.currency},${week.totalCosts.toFixed(2)},${week.grossProfit.toFixed(2)},${week.profitMargin.toFixed(2)},${week.totalKilometers},${week.ipk.toFixed(3)},${week.cpk.toFixed(3)}\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.setAttribute("href", encodedUri);
     link.setAttribute("download", `weekly-revenue-report-${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
@@ -271,11 +310,11 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
     document.body.removeChild(link);
   };
 
-  const MetricCard = ({ 
-    title, 
-    current, 
-    previous, 
-    change, 
+  const MetricCard = ({
+    title,
+    current,
+    previous,
+    change,
     format = 'number',
     suffix = '',
     icon: Icon,
@@ -303,7 +342,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
 
     const isPositive = change.percentage > 0;
     const isNegative = change.percentage < 0;
-    
+
     // For operational costs, negative change is good (cost reduction)
     const isGoodChange = title.includes('Operational') ? isNegative : isPositive;
 
@@ -312,7 +351,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
-              <div className={`p-2 rounded-lg bg-gray-50`}>
+              <div className="p-2 rounded-lg bg-gray-50">
                 <Icon className={`w-6 h-6 ${colorClass}`} />
               </div>
               <h3 className="text-sm font-medium text-gray-600">{title}</h3>
@@ -324,7 +363,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
             <div>
               <div className="flex items-baseline space-x-2">
                 <span className="text-2xl font-bold text-gray-900">
-                  {formatValue(current)}{suffix}
+                  {formatValue(current)}
+                  {suffix}
                 </span>
                 <span className="text-sm text-gray-500">2025 YTD</span>
               </div>
@@ -334,7 +374,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
             <div>
               <div className="flex items-baseline space-x-2">
                 <span className="text-lg font-medium text-gray-600">
-                  {formatValue(previous)}{suffix}
+                  {formatValue(previous)}
+                  {suffix}
                 </span>
                 <span className="text-sm text-gray-500">2024 YTD</span>
               </div>
@@ -350,7 +391,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                     <TrendingDown className="w-4 h-4 text-red-600" />
                   )}
                   <span className={`text-sm font-medium ${isGoodChange ? 'text-green-600' : 'text-red-600'}`}>
-                    {change.percentage > 0 ? '+' : ''}{change.percentage.toFixed(1)}%
+                    {change.percentage > 0 ? '+' : ''}
+                    {change.percentage.toFixed(1)}%
                   </span>
                   <span className="text-xs text-gray-500">vs 2024</span>
                 </>
@@ -368,23 +410,16 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">YTD KPIs</h1>
-          <p className="text-lg text-gray-600 mt-2">Mtanauska Transport Performance Dashboard</p>
+          <p className="text-lg text-gray-600 mt-2">Matanuska Transport Performance Dashboard</p>
           <p className="text-sm text-gray-500 mt-1">
             Last updated: {new Date(current2025.lastUpdated).toLocaleDateString()} by {current2025.updatedBy}
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button
-            variant="outline"
-            onClick={() => handleEdit(2024)}
-            icon={<Edit className="w-4 h-4" />}
-          >
+          <Button variant="outline" onClick={() => handleEdit(2024)} icon={<Edit className="w-4 h-4" />}>
             Edit 2024 Data
           </Button>
-          <Button
-            onClick={() => handleEdit(2025)}
-            icon={<Edit className="w-4 h-4" />}
-          >
+          <Button onClick={() => handleEdit(2025)} icon={<Edit className="w-4 h-4" />}>
             Edit 2025 Data
           </Button>
         </div>
@@ -403,7 +438,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
         </div>
       </div>
 
-      {/* Key Performance Indicators */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <MetricCard
           title="Total Kilometers"
@@ -510,8 +545,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
 
       {/* Weekly Revenue Reporting */}
       <Card>
-        <CardHeader 
-          title="Automated Weekly Revenue Reporting" 
+        <CardHeader
+          title="Automated Weekly Revenue Reporting"
           subtitle="Fixed weekly cycle (Monday to Sunday) based on trip offloading dates"
           action={
             <Button
@@ -546,6 +581,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                     <th className="text-left py-3 text-sm font-medium text-gray-500">Period</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Trips</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Revenue</th>
+                    <th className="text-center py-3 text-sm font-medium text-gray-500">Currency</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Costs</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Gross Profit</th>
                     <th className="text-right py-3 text-sm font-medium text-gray-500">Margin %</th>
@@ -555,36 +591,19 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {weeklyMetrics.slice(0, 12).map((week, index) => (
-                    <tr key={`${week.weekStart}-${week.weekNumber}`} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 text-sm font-medium text-gray-900">
-                        Week {week.weekNumber}
-                      </td>
-                      <td className="py-3 text-sm text-gray-900">
-                        {new Date(week.weekStart).toLocaleDateString()} - {new Date(week.weekEnd).toLocaleDateString()}
-                      </td>
+                  {weeklyMetrics.slice(0, 6).map((week, index) => (
+                    <tr key={`${week.weekStart}-${week.weekNumber}-${week.currency}`} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 text-sm font-medium text-gray-900">Week {week.weekNumber}</td>
+                      <td className="py-3 text-sm text-gray-900">{new Date(week.weekStart).toLocaleDateString()} - {new Date(week.weekEnd).toLocaleDateString()}</td>
                       <td className="py-3 text-sm text-gray-900 text-right">{week.tripCount}</td>
-                      <td className="py-3 text-sm font-medium text-green-600 text-right">
-                        {formatCurrency(week.totalRevenue, 'ZAR')}
-                      </td>
-                      <td className="py-3 text-sm font-medium text-red-600 text-right">
-                        {formatCurrency(week.totalCosts, 'ZAR')}
-                      </td>
-                      <td className={`py-3 text-sm font-medium text-right ${week.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {formatCurrency(week.grossProfit, 'ZAR')}
-                      </td>
-                      <td className={`py-3 text-sm font-medium text-right ${week.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {week.profitMargin.toFixed(1)}%
-                      </td>
-                      <td className="py-3 text-sm text-gray-900 text-right">
-                        {week.totalKilometers.toLocaleString()}
-                      </td>
-                      <td className="py-3 text-sm text-gray-900 text-right">
-                        {formatCurrency(week.ipk, 'ZAR')}
-                      </td>
-                      <td className="py-3 text-sm text-gray-900 text-right">
-                        {formatCurrency(week.cpk, 'ZAR')}
-                      </td>
+                      <td className="py-3 text-sm font-medium text-green-600 text-right">{formatCurrency(week.totalRevenue, week.currency)}</td>
+                      <td className="py-3 text-sm text-gray-900 text-center">{week.currency}</td>
+                      <td className="py-3 text-sm font-medium text-red-600 text-right">{formatCurrency(week.totalCosts, week.currency)}</td>
+                      <td className={`py-3 text-sm font-medium text-right ${week.grossProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(week.grossProfit, week.currency)}</td>
+                      <td className={`py-3 text-sm font-medium text-right ${week.profitMargin >= 0 ? 'text-green-600' : 'text-red-600'}`}>{week.profitMargin.toFixed(1)}%</td>
+                      <td className="py-3 text-sm text-gray-900 text-right">{week.totalKilometers.toLocaleString()}</td>
+                      <td className="py-3 text-sm text-gray-900 text-right">{formatCurrency(week.ipk, week.currency)}</td>
+                      <td className="py-3 text-sm text-gray-900 text-right">{formatCurrency(week.cpk, week.currency)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -594,9 +613,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
             <div className="text-center py-8">
               <Calendar className="mx-auto h-10 w-10 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No completed trips yet</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Weekly metrics will appear here once trips are completed and offloaded.
-              </p>
+              <p className="mt-1 text-sm text-gray-500">Weekly metrics will appear here once trips are completed and offloaded.</p>
             </div>
           )}
         </CardContent>
@@ -614,12 +631,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <span className="text-sm font-medium text-gray-700">Distance Coverage</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-purple-600">
-                      +{kmsChange.value.toLocaleString()} km
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      {kmsChange.percentage.toFixed(1)}% increase
-                    </p>
+                    <span className="text-lg font-bold text-purple-600">+{kmsChange.value.toLocaleString()} km</span>
+                    <p className="text-xs text-gray-500">{kmsChange.percentage.toFixed(1)}% increase</p>
                   </div>
                 </div>
 
@@ -627,7 +640,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                   <span className="text-sm font-medium text-gray-700">Cost Efficiency</span>
                   <div className="text-right">
                     <span className={`text-lg font-bold ${cpkChange.percentage < 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {cpkChange.percentage > 0 ? '+' : ''}{formatCurrency(cpkChange.value, 'USD')}
+                      {cpkChange.percentage > 0 ? '+' : ''}
+                      {formatCurrency(cpkChange.value, 'USD')}
                     </span>
                     <p className="text-xs text-gray-500">
                       {cpkChange.percentage.toFixed(1)}% {cpkChange.percentage < 0 ? 'improvement' : 'increase'}
@@ -639,7 +653,8 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                   <span className="text-sm font-medium text-gray-700">Revenue per KM</span>
                   <div className="text-right">
                     <span className={`text-lg font-bold ${ipkChange.percentage > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {ipkChange.percentage > 0 ? '+' : ''}{formatCurrency(ipkChange.value, 'USD')}
+                      {ipkChange.percentage > 0 ? '+' : ''}
+                      {formatCurrency(ipkChange.value, 'USD')}
                     </span>
                     <p className="text-xs text-gray-500">
                       {ipkChange.percentage.toFixed(1)}% {ipkChange.percentage > 0 ? 'increase' : 'decrease'}
@@ -656,36 +671,24 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
                   <span className="text-sm font-medium text-gray-700">Revenue Growth</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-green-600">
-                      +{formatCurrency(revenueChange.value, 'USD')}
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      {revenueChange.percentage.toFixed(1)}% increase
-                    </p>
+                    <span className="text-lg font-bold text-green-600">+{formatCurrency(revenueChange.value, 'USD')}</span>
+                    <p className="text-xs text-gray-500">{revenueChange.percentage.toFixed(1)}% increase</p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                   <span className="text-sm font-medium text-gray-700">EBIT Improvement</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-blue-600">
-                      +{formatCurrency(ebitChange.value, 'USD')}
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      {ebitChange.percentage.toFixed(1)}% increase
-                    </p>
+                    <span className="text-lg font-bold text-blue-600">+{formatCurrency(ebitChange.value, 'USD')}</span>
+                    <p className="text-xs text-gray-500">{ebitChange.percentage.toFixed(1)}% increase</p>
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
                   <span className="text-sm font-medium text-gray-700">Net Profit Growth</span>
                   <div className="text-right">
-                    <span className="text-lg font-bold text-purple-600">
-                      +{formatCurrency(netProfitChange.value, 'USD')}
-                    </span>
-                    <p className="text-xs text-gray-500">
-                      {netProfitChange.percentage.toFixed(0)}% increase
-                    </p>
+                    <span className="text-lg font-bold text-purple-600">+{formatCurrency(netProfitChange.value, 'USD')}</span>
+                    <p className="text-xs text-gray-500">{netProfitChange.percentage.toFixed(0)}% increase</p>
                   </div>
                 </div>
               </div>
@@ -720,8 +723,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 <div>
                   <h4 className="text-sm font-medium text-amber-800">Monthly Update - {editingYear}</h4>
                   <p className="text-sm text-amber-700 mt-1">
-                    Update YTD metrics for strategic reporting. These values are independent of trip-based calculations 
-                    and should be updated monthly on the 15th based on comprehensive financial analysis.
+                    Update YTD metrics for strategic reporting. These values are independent of trip-based calculations and should be updated monthly on the 15th based on comprehensive financial analysis.
                   </p>
                 </div>
               </div>
@@ -733,7 +735,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="1"
                 value={formData.totalKms?.toString() || ''}
-                onChange={(e) => handleChange('totalKms', e.target.value)}
+                onChange={value => handleChange('totalKms', value)}
                 error={errors.totalKms}
               />
 
@@ -742,7 +744,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ipk?.toString() || ''}
-                onChange={(e) => handleChange('ipk', e.target.value)}
+                onChange={value => handleChange('ipk', value)}
                 error={errors.ipk}
               />
 
@@ -751,7 +753,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.operationalCpk?.toString() || ''}
-                onChange={(e) => handleChange('operationalCpk', e.target.value)}
+                onChange={value => handleChange('operationalCpk', value)}
                 error={errors.operationalCpk}
               />
 
@@ -760,7 +762,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.revenue?.toString() || ''}
-                onChange={(e) => handleChange('revenue', e.target.value)}
+                onChange={value => handleChange('revenue', value)}
                 error={errors.revenue}
               />
 
@@ -769,7 +771,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ebit?.toString() || ''}
-                onChange={(e) => handleChange('ebit', e.target.value)}
+                onChange={value => handleChange('ebit', value)}
               />
 
               <Input
@@ -777,7 +779,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.ebitMargin?.toString() || ''}
-                onChange={(e) => handleChange('ebitMargin', e.target.value)}
+                onChange={value => handleChange('ebitMargin', value)}
               />
 
               <Input
@@ -785,7 +787,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.netProfit?.toString() || ''}
-                onChange={(e) => handleChange('netProfit', e.target.value)}
+                onChange={value => handleChange('netProfit', value)}
               />
 
               <Input
@@ -793,7 +795,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.netProfitMargin?.toString() || ''}
-                onChange={(e) => handleChange('netProfitMargin', e.target.value)}
+                onChange={value => handleChange('netProfitMargin', value)}
               />
 
               <Input
@@ -801,7 +803,7 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.roe?.toString() || ''}
-                onChange={(e) => handleChange('roe', e.target.value)}
+                onChange={value => handleChange('roe', value)}
               />
 
               <Input
@@ -809,24 +811,13 @@ const YearToDateKPIs: React.FC<YearToDateKPIsProps> = ({ trips }) => {
                 type="number"
                 step="0.01"
                 value={formData.roic?.toString() || ''}
-                onChange={(e) => handleChange('roic', e.target.value)}
+                onChange={value => handleChange('roic', value)}
               />
             </div>
 
             <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                icon={<X className="w-4 h-4" />}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSave}
-                icon={<Save className="w-4 h-4" />}
-              >
-                Save {editingYear} Metrics
-              </Button>
+              <Button variant="outline" onClick={handleClose} icon={<X className="w-4 h-4" />}>Cancel</Button>
+              <Button onClick={handleSave} icon={<Save className="w-4 h-4" />}>Save {editingYear} Metrics</Button>
             </div>
           </div>
         )}

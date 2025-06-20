@@ -1,30 +1,44 @@
+// ─── React ───────────────────────────────────────────────────────
 import React, { useState } from 'react';
+
+// ─── Context ─────────────────────────────────────────────────────
 import { useAppContext } from '../../context/AppContext';
+
+// ─── Types ───────────────────────────────────────────────────────
 import { CARReport } from '../../types';
+
+// ─── UI Components ───────────────────────────────────────────────
 import Card, { CardContent, CardHeader } from '../ui/Card';
 import Button from '../ui/Button';
 import { Input, Select } from '../ui/FormElements';
-import { 
-  FileText, 
-  Plus, 
-  Filter, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Download, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  Calendar, 
-  User, 
-  FileUp 
-} from 'lucide-react';
-import { formatDate } from '../../utils/helpers';
+
+// ─── Custom Components ───────────────────────────────────────────
 import CARReportForm from './CARReportForm';
 import CARReportDetails from './CARReportDetails';
 
+// ─── Icons ───────────────────────────────────────────────────────
+import {
+  FileText,
+  Plus,
+  Filter,
+  Eye,
+  Edit,
+  Trash2,
+  Download,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Calendar,
+  User,
+  FileUp
+} from 'lucide-react';
+
+// ─── Utilities ───────────────────────────────────────────────────
+import { formatDate } from '../../utils/helpers';
+
+
 const CARReportList: React.FC = () => {
-  const { carReports, deleteCARReport } = useAppContext();
+  const { carReports = [], deleteCARReport } = useAppContext();
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
@@ -41,8 +55,8 @@ const CARReportList: React.FC = () => {
     if (filters.status && report.status !== filters.status) return false;
     if (filters.severity && report.severity !== filters.severity) return false;
     if (filters.responsiblePerson && report.responsiblePerson !== filters.responsiblePerson) return false;
-    if (filters.dateRange.start && report.dateOfIncident < filters.dateRange.start) return false;
-    if (filters.dateRange.end && report.dateOfIncident > filters.dateRange.end) return false;
+    if (filters.dateRange.start && report.incidentDate < filters.dateRange.start) return false;
+    if (filters.dateRange.end && report.incidentDate > filters.dateRange.end) return false;
     return true;
   });
   
@@ -103,7 +117,7 @@ const CARReportList: React.FC = () => {
   };
   
   // Get status badge class
-  const getStatusBadgeClass = (status: string) => {
+  const getStatusClass = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'in_progress': return 'bg-blue-100 text-blue-800';
@@ -113,7 +127,7 @@ const CARReportList: React.FC = () => {
   };
   
   // Get severity badge class
-  const getSeverityBadgeClass = (severity: string) => {
+  const getSeverityClass = (severity: string) => {
     switch (severity) {
       case 'high': return 'bg-red-100 text-red-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
@@ -242,7 +256,7 @@ const CARReportList: React.FC = () => {
             <Select
               label="Status"
               value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
+              onChange={(value) => handleFilterChange('status', value)}
               options={[
                 { label: 'All Statuses', value: '' },
                 { label: 'Draft', value: 'draft' },
@@ -255,7 +269,7 @@ const CARReportList: React.FC = () => {
             <Select
               label="Severity"
               value={filters.severity}
-              onChange={(e) => handleFilterChange('severity', e.target.value)}
+              onChange={(value) => handleFilterChange('severity', value)}
               options={[
                 { label: 'All Severities', value: '' },
                 { label: 'High', value: 'high' },
@@ -267,7 +281,7 @@ const CARReportList: React.FC = () => {
             <Select
               label="Responsible Person"
               value={filters.responsiblePerson}
-              onChange={(e) => handleFilterChange('responsiblePerson', e.target.value)}
+              onChange={(value) => handleFilterChange('responsiblePerson', value)}
               options={[
                 { label: 'All Persons', value: '' },
                 ...uniqueResponsiblePersons.map(person => ({ label: person, value: person }))
@@ -279,13 +293,13 @@ const CARReportList: React.FC = () => {
                 label="From Date"
                 type="date"
                 value={filters.dateRange.start}
-                onChange={(e) => handleFilterChange('dateRange.start', e.target.value)}
+                onChange={(value) => handleFilterChange('dateRange.start', value)}
               />
               <Input
                 label="To Date"
                 type="date"
                 value={filters.dateRange.end}
-                onChange={(e) => handleFilterChange('dateRange.end', e.target.value)}
+                onChange={(value) => handleFilterChange('dateRange.end', value)}
               />
             </div>
           </div>
@@ -352,11 +366,11 @@ const CARReportList: React.FC = () => {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h3 className="text-lg font-medium text-gray-900">CAR-{report.reportNumber}</h3>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(report.status)}`}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(report.status)}`}>
                             {report.status === 'in_progress' ? 'In Progress' : 
                              report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityBadgeClass(report.severity)}`}>
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getSeverityClass(report.severity)}`}>
                             {report.severity.toUpperCase()} Severity
                           </span>
                           {isOverdue && (
@@ -378,7 +392,7 @@ const CARReportList: React.FC = () => {
                             <Calendar className="w-4 h-4 text-gray-400" />
                             <div>
                               <p className="text-sm text-gray-500">Incident Date</p>
-                              <p className="font-medium">{formatDate(report.dateOfIncident)}</p>
+                              <p className="font-medium">{formatDate(report.incidentDate)}</p>
                             </div>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -394,7 +408,7 @@ const CARReportList: React.FC = () => {
                         
                         <div className="mb-3">
                           <p className="text-sm text-gray-500">Problem</p>
-                          <p className="text-sm line-clamp-2">{report.problemIdentification}</p>
+                          <p className="text-sm line-clamp-2">{report.description || report.problemIdentification}</p>
                         </div>
                         
                         {report.completedAt && (
