@@ -108,6 +108,46 @@ function parseDate(dateStr: string): string {
   }
 }
 
+// Track processed row IDs to avoid duplicates
+const processedRowIds = new Set<number>();
+
+// Load processed row IDs from database
+async function loadProcessedRowIds() {
+  try {
+    const { data, error } = await supabase
+      .from("processed_driver_events")
+      .select("row_id");
+    
+    if (error) {
+      console.error("Error loading processed row IDs:", error);
+      return;
+    }
+    
+    if (data) {
+      data.forEach(item => processedRowIds.add(item.row_id));
+    }
+    
+    console.log(`Loaded ${processedRowIds.size} processed row IDs`);
+  } catch (error) {
+    console.error("Error loading processed row IDs:", error);
+  }
+}
+
+// Save a processed row ID to the database
+async function saveProcessedRowId(rowId: number) {
+  try {
+    const { error } = await supabase
+      .from("processed_driver_events")
+      .insert({ row_id: rowId });
+    
+    if (error) {
+      console.error("Error saving processed row ID:", error);
+    }
+  } catch (error) {
+    console.error("Error saving processed row ID:", error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -118,6 +158,11 @@ serve(async (req) => {
   }
 
   try {
+    // Load processed row IDs on first request
+    if (processedRowIds.size === 0) {
+      await loadProcessedRowIds();
+    }
+    
     // For GET requests, return the latest events
     if (req.method === "GET") {
       // Get the latest driver behavior events from the database
@@ -158,6 +203,19 @@ serve(async (req) => {
 
     console.log("Received driver behavior event:", JSON.stringify(data));
 
+    // Check if this row has already been processed
+    const rowId = data.rowId || -1;
+    if (rowId > 0 && processedRowIds.has(rowId)) {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: "Event already processed",
+        alreadyProcessed: true
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Process the data from the "Data" sheet format
     // The data comes in the format specified with columns A-L
     const driverEvent = processEventFromDataSheet(data);
@@ -187,6 +245,12 @@ serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Mark this row as processed
+    if (rowId > 0) {
+      processedRowIds.add(rowId);
+      await saveProcessedRowId(rowId);
     }
 
     // Log the webhook event
@@ -266,7 +330,8 @@ function processEventFromDataSheet(eventData: any) {
       action_taken: "",
       points: points,
       date: new Date().toISOString(),
-      resolved: false
+      resolved: false,
+      row_id: eventData.rowId || -1
     };
     
     return driverEvent;

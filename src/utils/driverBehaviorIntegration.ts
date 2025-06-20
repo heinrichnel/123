@@ -69,6 +69,9 @@ export const eventRules: Record<string, { severity: string; points: number }> = 
 
 export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking"];
 
+// Store processed event fingerprints to avoid duplicates
+const processedEvents = new Set<string>();
+
 // -------------------- Utility Functions --------------------
 export function parseDate(dateStr: string): string {
   if (!dateStr) return new Date().toISOString().split('T')[0];
@@ -96,16 +99,52 @@ export function parseDate(dateStr: string): string {
   }
 }
 
+// Generate a unique fingerprint for an event to avoid duplicates
+function generateEventFingerprint(event: any): string {
+  const fields = [
+    event.driverName || '',
+    event.fleetNumber || '',
+    event.eventDate || '',
+    event.eventTime || '',
+    event.eventType || '',
+    event.description || ''
+  ];
+  return fields.join('|');
+}
+
+// Check if we've already processed this event
+function isEventProcessed(event: any): boolean {
+  const fingerprint = generateEventFingerprint(event);
+  if (processedEvents.has(fingerprint)) {
+    return true;
+  }
+  
+  // Add to processed events
+  processedEvents.add(fingerprint);
+  
+  // Limit the size of the set to prevent memory leaks
+  if (processedEvents.size > 1000) {
+    // Remove the oldest entries (first 200)
+    const iterator = processedEvents.values();
+    for (let i = 0; i < 200; i++) {
+      processedEvents.delete(iterator.next().value);
+    }
+  }
+  
+  return false;
+}
+
 // -------------------- Main Function --------------------
 export async function fetchAndSaveDriverEvents() {
   try {
-    // Create a proxy URL to avoid CORS issues
-    // This is a workaround since we can't directly access the Google Apps Script URL due to CORS
-    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent("https://script.google.com/macros/s/AKfycbwwQKS1kTxxPJuI1b_wAFL7lzgJ3sTVL1hx7OKNu2el8_DmW_V--owrq2tOUKHm9vsYRQ/exec")}`;
+    // Use a timestamp parameter to avoid caching
+    const timestamp = Date.now();
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbwwQKS1kTxxPJuI1b_wAFL7lzgJ3sTVL1hx7OKNu2el8_DmW_V--owrq2tOUKHm9vsYRQ/exec";
+    const url = `${scriptUrl}?t=${timestamp}`;
     
-    console.log("Fetching driver events from proxy:", proxyUrl);
+    console.log("Fetching driver events from:", url);
     
-    const response = await fetch(proxyUrl, {
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -129,12 +168,21 @@ export async function fetchAndSaveDriverEvents() {
     // Handle both single event and array of events
     const events = Array.isArray(data) ? data : [data];
     
+    // Track how many new events we processed
+    let newEventsCount = 0;
+    
     // Process each event
     for (const eventData of events) {
       // Skip ignored event types
       const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
       if (IGNORED_EVENTS.includes(rawEventType)) {
         console.log("Ignored event type:", rawEventType);
+        continue;
+      }
+      
+      // Skip if we've already processed this event
+      if (isEventProcessed(eventData)) {
+        console.log("Skipping already processed event:", eventData.eventType, eventData.driverName);
         continue;
       }
 
@@ -144,60 +192,15 @@ export async function fetchAndSaveDriverEvents() {
       if (processedEvent) {
         // Save to Firestore
         await addDriverBehaviorEvent(processedEvent);
-        console.log("Driver event saved:", processedEvent);
+        console.log("New driver event saved:", processedEvent);
+        newEventsCount++;
       }
     }
     
-    return events.length;
+    console.log(`Processed ${newEventsCount} new driver events out of ${events.length} total events`);
+    return newEventsCount;
   } catch (error) {
     console.error("Error fetching and saving driver events:", error);
-    
-    // Fallback to direct fetch if proxy fails
-    try {
-      console.log("Attempting direct fetch as fallback...");
-      return await fetchDirectAndSaveDriverEvents();
-    } catch (fallbackError) {
-      console.error("Fallback fetch also failed:", fallbackError);
-      return null;
-    }
-  }
-}
-
-// Fallback function that tries to fetch directly
-async function fetchDirectAndSaveDriverEvents() {
-  try {
-    // Mock data based on the expected format from the Google Sheet
-    // This is a fallback when we can't fetch from the actual source
-    const mockData = [
-      {
-        reportedAt: new Date().toISOString(),
-        description: "Simulated event from fallback",
-        driverName: "Taurayi Vherenaisi",
-        eventDate: new Date().toISOString().split('T')[0],
-        eventTime: "12:30",
-        eventType: "Harsh Acceleration",
-        fleetNumber: "24H",
-        location: "Simulated Location",
-        severity: "High",
-        status: "Pending",
-        points: 10
-      }
-    ];
-    
-    // Process the mock data
-    for (const eventData of mockData) {
-      const processedEvent = processEventFromDataSheet(eventData);
-      
-      if (processedEvent) {
-        // Save to Firestore
-        await addDriverBehaviorEvent(processedEvent);
-        console.log("Mock driver event saved:", processedEvent);
-      }
-    }
-    
-    return mockData.length;
-  } catch (error) {
-    console.error("Error in fallback fetch:", error);
     return null;
   }
 }

@@ -1,6 +1,7 @@
 /**
  * This script should be added to your Google Sheet via Extensions > Apps Script
  * It will automatically send webhooks when driver behavior events are added to the Data sheet
+ * and provide a web app endpoint for fetching the latest events
  */
 
 function onEdit(e) {
@@ -57,7 +58,8 @@ function onEdit(e) {
     location: location || "",
     severity: severity || "medium",
     status: status || "pending",
-    points: points || 0
+    points: points || 0,
+    rowId: row // Include the row ID to help with deduplication
   };
   
   // Send the webhook
@@ -98,7 +100,8 @@ function testWebhook() {
     location: "View on Map",
     severity: "High",
     status: "Pending",
-    points: 10
+    points: 10,
+    rowId: -1 // Test row ID
   };
   
   sendWebhook(payload);
@@ -170,7 +173,8 @@ function sendAllDriverEvents() {
       location: location || "",
       severity: severity || "medium",
       status: status || "pending",
-      points: points || 0
+      points: points || 0,
+      rowId: row
     };
     
     sendWebhook(payload);
@@ -187,6 +191,10 @@ function sendAllDriverEvents() {
  * This can be published as a web app to be accessed by the client application
  */
 function doGet(e) {
+  // Get the last processed row from Properties Service
+  const userProperties = PropertiesService.getUserProperties();
+  const lastProcessedRow = parseInt(userProperties.getProperty('lastProcessedRow') || '0');
+  
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
   if (!sheet) {
     return ContentService.createTextOutput(JSON.stringify({ error: "Data sheet not found" }))
@@ -199,14 +207,21 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   
-  // Get the last 10 rows (or fewer if there aren't that many)
-  const startRow = Math.max(2, lastRow - 9); // Get up to 10 rows
+  // Only get rows that haven't been processed yet
+  const startRow = Math.max(2, lastProcessedRow + 1);
+  
+  // If there are no new rows, return empty array
+  if (startRow > lastRow) {
+    return ContentService.createTextOutput(JSON.stringify([]))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
   const numRows = lastRow - startRow + 1;
   
   const range = sheet.getRange(startRow, 1, numRows, 11);
   const values = range.getValues();
   
-  const events = values.map(row => ({
+  const events = values.map((row, index) => ({
     reportedAt: row[0] || new Date().toISOString(),
     description: row[1] || "",
     driverName: row[2] || "Unknown",
@@ -217,7 +232,8 @@ function doGet(e) {
     location: row[7] || "",
     severity: row[8] || "medium",
     status: row[9] || "pending",
-    points: row[10] || 0
+    points: row[10] || 0,
+    rowId: startRow + index
   }));
   
   // Filter out ignored event types
@@ -226,6 +242,30 @@ function doGet(e) {
     !ignoredEvents.includes((event.eventType || "").toString().trim().toLowerCase())
   );
   
+  // Update the last processed row
+  if (numRows > 0) {
+    userProperties.setProperty('lastProcessedRow', lastRow.toString());
+  }
+  
   return ContentService.createTextOutput(JSON.stringify(filteredEvents))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Reset the last processed row (for testing)
+ */
+function resetLastProcessedRow() {
+  const userProperties = PropertiesService.getUserProperties();
+  userProperties.setProperty('lastProcessedRow', '1'); // Reset to just the header row
+  Logger.log("Last processed row reset to 1");
+}
+
+/**
+ * Get the current last processed row (for debugging)
+ */
+function getLastProcessedRow() {
+  const userProperties = PropertiesService.getUserProperties();
+  const lastProcessedRow = userProperties.getProperty('lastProcessedRow') || '0';
+  Logger.log("Last processed row: " + lastProcessedRow);
+  return lastProcessedRow;
 }
