@@ -141,8 +141,19 @@ export const listenToGoogleSheetChanges = () => {
 // Export the addDriverBehaviorEvent function for the integration
 export const addDriverBehaviorEvent = async (eventData: any) => {
   try {
-    const result = await addDriverBehaviorEventToFirebase(eventData);
-    return result;
+    // Generate a unique ID for the event
+    const eventId = `EVENT-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Add the ID to the event data
+    const eventWithId = {
+      ...eventData,
+      id: eventId
+    };
+    
+    // Add to Firestore
+    await setDoc(doc(driverBehaviorCollection, eventId), eventWithId);
+    
+    return eventId;
   } catch (error) {
     console.error("Error adding driver behavior event:", error);
     throw error;

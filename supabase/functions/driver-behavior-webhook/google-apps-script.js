@@ -181,3 +181,51 @@ function sendAllDriverEvents() {
   
   Logger.log(`Processed ${lastRow - 1} driver events`);
 }
+
+/**
+ * Function to create a simple API endpoint that returns the latest driver events
+ * This can be published as a web app to be accessed by the client application
+ */
+function doGet(e) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({ error: "Data sheet not found" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    return ContentService.createTextOutput(JSON.stringify([]))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // Get the last 10 rows (or fewer if there aren't that many)
+  const startRow = Math.max(2, lastRow - 9); // Get up to 10 rows
+  const numRows = lastRow - startRow + 1;
+  
+  const range = sheet.getRange(startRow, 1, numRows, 11);
+  const values = range.getValues();
+  
+  const events = values.map(row => ({
+    reportedAt: row[0] || new Date().toISOString(),
+    description: row[1] || "",
+    driverName: row[2] || "Unknown",
+    eventDate: row[3] || new Date().toISOString().split('T')[0],
+    eventTime: row[4] || "00:00",
+    eventType: row[5] || "other",
+    fleetNumber: row[6] || "Unknown",
+    location: row[7] || "",
+    severity: row[8] || "medium",
+    status: row[9] || "pending",
+    points: row[10] || 0
+  }));
+  
+  // Filter out ignored event types
+  const ignoredEvents = ["jolt", "acc_on", "acc_off", "smoking"];
+  const filteredEvents = events.filter(event => 
+    !ignoredEvents.includes((event.eventType || "").toString().trim().toLowerCase())
+  );
+  
+  return ContentService.createTextOutput(JSON.stringify(filteredEvents))
+    .setMimeType(ContentService.MimeType.JSON);
+}

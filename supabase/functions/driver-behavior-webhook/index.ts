@@ -88,9 +88,12 @@ function parseDate(dateStr: string): string {
   try {
     // Check if the date is in YYYY/MM/DD format
     if (dateStr.includes('/')) {
-      const [year, month, day] = dateStr.split('/');
-      // Convert to YYYY-MM-DD format
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const [year, month, day] = parts;
+        // Convert to YYYY-MM-DD format
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
     }
     
     // If it's already in YYYY-MM-DD format or another format
@@ -115,6 +118,25 @@ serve(async (req) => {
   }
 
   try {
+    // For GET requests, return the latest events
+    if (req.method === "GET") {
+      // Get the latest driver behavior events from the database
+      const { data, error } = await supabase
+        .from("driver_behavior_events")
+        .select("*")
+        .order("reported_at", { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        throw new Error(`Error fetching events: ${error.message}`);
+      }
+      
+      return new Response(JSON.stringify(data), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Only allow POST requests for webhook data
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
@@ -205,6 +227,28 @@ function processEventFromDataSheet(eventData: any) {
       return null;
     }
     
+    // Map the event type to our standardized types
+    let mappedEventType = "other";
+    const normalizedEventType = rawEventType.replace(/\s+/g, '_').toLowerCase();
+    
+    // Try to find a matching event type
+    for (const [key, value] of Object.entries(eventTypeMap)) {
+      if (normalizedEventType.includes(key)) {
+        mappedEventType = value;
+        break;
+      }
+    }
+    
+    // Get severity and points from rules or from the data
+    let severity = (eventData.severity || "medium").toLowerCase();
+    let points = parseInt(eventData.points) || 0;
+    
+    // If we have rules for this event type, use them
+    if (eventRules[mappedEventType]) {
+      severity = eventRules[mappedEventType].severity;
+      points = eventRules[mappedEventType].points;
+    }
+    
     // Create driver behavior event object
     const driverEvent = {
       id: `EVENT-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -212,15 +256,15 @@ function processEventFromDataSheet(eventData: any) {
       fleet_number: eventData.fleetNumber || "Unknown",
       event_date: parseDate(eventData.eventDate),
       event_time: eventData.eventTime || "00:00",
-      event_type: eventData.eventType?.toLowerCase() || "other",
+      event_type: mappedEventType,
       description: eventData.description || `${eventData.eventType} event detected for ${eventData.driverName}`,
       location: eventData.location || "",
-      severity: (eventData.severity || "medium").toLowerCase(),
+      severity: severity,
       reported_by: "Google Sheets Integration",
       reported_at: new Date().toISOString(),
       status: "pending",
       action_taken: "",
-      points: parseInt(eventData.points) || 0,
+      points: points,
       date: new Date().toISOString(),
       resolved: false
     };
