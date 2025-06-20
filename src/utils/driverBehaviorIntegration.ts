@@ -122,62 +122,74 @@ export async function fetchAndSaveDriverEventToFirestore() {
     const data = await response.json();
     console.log("Received data:", data);
 
-    // --- Raw event type extraction & filtering ---
-    const rawEventType = (data.eventType || data["Event Type"] || "").toString().trim().toLowerCase();
-    if (IGNORED_EVENTS.includes(rawEventType)) {
-      console.log("Ignored event type:", rawEventType);
+    // Check if we have a valid response with data
+    if (!data || (Array.isArray(data) && data.length === 0)) {
+      console.log("No new driver events to process");
       return null;
     }
 
-    // --- Event Type Mapping ---
-    const mappedEventType =
-      eventTypeMap[rawEventType] ||
-      eventTypeMap[rawEventType.replace(/_/g, ' ')] ||
-      "other";
-
-    // --- Serial Number/Fleet/Driver Mapping ---
-    const serialNumber = data.serialNumber || data["Serial Number"] || "";
-    const fleetNumber = fleetMap[serialNumber] || "Unknown";
-    const driverName = driverMap[fleetNumber] || "Unknown";
-
-    // --- Event Time Parsing ---
-    const eventTimeRaw = data.eventTime || data["Event Time"] || "";
-    const { date: eventDate, time: eventTime } = splitDateTime(eventTimeRaw);
-
-    // --- Location Parsing ---
-    const latitude = data.latitude || data["Latitude"] || "";
-    const longitude = data.longitude || data["Longitude"] || "";
-    const location = `${latitude}, ${longitude}`;
-
-    // --- Event Rules for Severity/Points ---
-    const rules = eventRules[mappedEventType] || { severity: "medium", points: 0 };
-
-    // --- Final Event Object Construction ---
-    const driverEvent: Omit<DriverBehaviorEvent, 'id'> = {
-      driverName,
-      fleetNumber,
-      eventDate: eventDate || new Date().toISOString().split('T')[0],
-      eventTime: eventTime || new Date().toTimeString().split(' ')[0].substring(0, 5),
-      eventType: mappedEventType as any,
-      description: `${mappedEventType.replace(/_/g, ' ')} event detected for ${fleetNumber}`,
-      location,
-      severity: rules.severity as any,
-      reportedBy: "Google Sheets Integration",
-      reportedAt: new Date().toISOString(),
-      status: "pending" as any,
-      actionTaken: "",
-      points: rules.points,
-      serialNumber,
-      latitude,
-      longitude,
-      date: new Date().toISOString()
-    };
-
-    // --- Write to Firestore ---
-    await addDriverBehaviorEvent(driverEvent);
-    console.log("Driver event saved:", driverEvent);
+    // Handle both single event and array of events
+    const events = Array.isArray(data) ? data : [data];
     
-    return driverEvent;
+    // Process each event
+    for (const eventData of events) {
+      // --- Raw event type extraction & filtering ---
+      const rawEventType = (eventData.eventType || eventData["Event Type"] || "").toString().trim().toLowerCase();
+      if (IGNORED_EVENTS.includes(rawEventType)) {
+        console.log("Ignored event type:", rawEventType);
+        continue;
+      }
+
+      // --- Event Type Mapping ---
+      const mappedEventType =
+        eventTypeMap[rawEventType] ||
+        eventTypeMap[rawEventType.replace(/_/g, ' ')] ||
+        "other";
+
+      // --- Serial Number/Fleet/Driver Mapping ---
+      const serialNumber = eventData.serialNumber || eventData["Serial Number"] || "";
+      const fleetNumber = fleetMap[serialNumber] || "Unknown";
+      const driverName = driverMap[fleetNumber] || "Unknown";
+
+      // --- Event Time Parsing ---
+      const eventTimeRaw = eventData.eventTime || eventData["Event Time"] || "";
+      const { date: eventDate, time: eventTime } = splitDateTime(eventTimeRaw);
+
+      // --- Location Parsing ---
+      const latitude = eventData.latitude || eventData["Latitude"] || "";
+      const longitude = eventData.longitude || eventData["Longitude"] || "";
+      const location = `${latitude}, ${longitude}`;
+
+      // --- Event Rules for Severity/Points ---
+      const rules = eventRules[mappedEventType] || { severity: "medium", points: 0 };
+
+      // --- Final Event Object Construction ---
+      const driverEvent: Omit<DriverBehaviorEvent, 'id'> = {
+        driverName,
+        fleetNumber,
+        eventDate: eventDate || new Date().toISOString().split('T')[0],
+        eventTime: eventTime || new Date().toTimeString().split(' ')[0].substring(0, 5),
+        eventType: mappedEventType as any,
+        description: `${mappedEventType.replace(/_/g, ' ')} event detected for ${fleetNumber}`,
+        location,
+        severity: rules.severity as any,
+        reportedBy: "Google Sheets Integration",
+        reportedAt: new Date().toISOString(),
+        status: "pending" as any,
+        actionTaken: "",
+        points: rules.points,
+        serialNumber,
+        latitude,
+        longitude,
+        date: new Date().toISOString()
+      };
+
+      // --- Write to Firestore ---
+      await addDriverBehaviorEvent(driverEvent);
+      console.log("Driver event saved:", driverEvent);
+    }
+    
+    return events.length;
   } catch (error) {
     console.error("Error fetching and saving driver event:", error);
     return null;

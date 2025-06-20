@@ -44,8 +44,8 @@ const eventTypeMap: Record<string, string> = {
   "lane_weaving": "lane_weaving",
   "distracted_driver_beep": "distracted",
   "distracted": "distracted",
-  "passenger": "passenger",
   "tailgating": "tailgating",
+  "passenger": "passenger",
   "obstruction": "obstruction",
   "wrong_pin_code": "wrong_pin_code",
   "violent_left_turn": "violent_left_turn",
@@ -170,8 +170,8 @@ serve(async (req) => {
 
     // --- Serial Number/Fleet/Driver Mapping ---
     const serialNumber = data.serialNumber || data["Serial Number"] || "";
-    const fleetNumber = fleetMap[serialNumber] || "Unknown";
-    const driverName = driverMap[fleetNumber] || "Unknown";
+    const fleetNumber = fleetMap[serialNumber] || data.fleetNumber || "Unknown";
+    const driverName = driverMap[fleetNumber] || data.driverName || "Unknown";
 
     // --- Event Time Parsing ---
     const eventTimeRaw = data.eventTime || data["Event Time"] || "";
