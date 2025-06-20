@@ -42,6 +42,15 @@ function onEdit(e) {
   const status = sheet.getRange(row, 10).getValue();        // Column J - status
   const points = sheet.getRange(row, 11).getValue();        // Column K - points
   
+  // Check if this row has already been processed (Column L)
+  const resultCell = sheet.getRange(row, 12);
+  const resultValue = resultCell.getValue();
+  
+  if (resultValue && resultValue !== "") {
+    Logger.log(`Row ${row} already processed with result: ${resultValue}`);
+    return;
+  }
+  
   // Skip rows with missing essential data
   if (!fleetNumber || !driverName) {
     Logger.log("Skipping row with missing essential data");
@@ -65,7 +74,27 @@ function onEdit(e) {
   };
   
   // Send the webhook
-  sendWebhook(payload);
+  const response = sendWebhook(payload);
+  
+  // Update the result cell (Column L)
+  if (response && response.success) {
+    // Get the next sequence number
+    const lastRow = sheet.getLastRow();
+    let nextSequence = 1;
+    
+    for (let i = 2; i <= lastRow; i++) {
+      const seqValue = sheet.getRange(i, 12).getValue();
+      if (seqValue && !isNaN(parseInt(seqValue))) {
+        nextSequence = Math.max(nextSequence, parseInt(seqValue) + 1);
+      }
+    }
+    
+    resultCell.setValue(nextSequence);
+    Logger.log(`Row ${row} processed successfully with sequence number ${nextSequence}`);
+  } else {
+    resultCell.setValue("Error");
+    Logger.log(`Error processing row ${row}: ${JSON.stringify(response)}`);
+  }
 }
 
 function sendWebhook(payload) {
@@ -75,14 +104,23 @@ function sendWebhook(payload) {
   const options = {
     method: "post",
     contentType: "application/json",
-    payload: JSON.stringify(payload)
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
   };
   
   try {
     const response = UrlFetchApp.fetch(webhookUrl, options);
-    Logger.log("Webhook response: " + response.getContentText());
+    const responseText = response.getContentText();
+    Logger.log("Webhook response: " + responseText);
+    
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      return { success: false, error: "Invalid JSON response" };
+    }
   } catch (error) {
     Logger.log("Error sending webhook: " + error.toString());
+    return { success: false, error: error.toString() };
   }
 }
 
@@ -106,7 +144,8 @@ function testWebhook() {
     rowId: -1 // Test row ID
   };
   
-  sendWebhook(payload);
+  const response = sendWebhook(payload);
+  Logger.log("Test webhook response: " + JSON.stringify(response));
 }
 
 /**
@@ -118,13 +157,13 @@ function onOpen() {
   ui.createMenu('Driver Events')
     .addItem('Test Webhook Connection', 'testWebhook')
     .addItem('Send All Driver Events', 'sendAllDriverEvents')
-    .addItem('Reset Last Processed Row', 'resetLastProcessedRow')
-    .addItem('Get Last Processed Row', 'getLastProcessedRow')
+    .addItem('Reset Sequence Numbers', 'resetSequenceNumbers')
     .addToUi();
 }
 
 /**
  * Send all rows from the Data sheet where eventType is not UNKNOWN
+ * and the result column (L) is empty
  */
 function sendAllDriverEvents() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
@@ -144,8 +183,26 @@ function sendAllDriverEvents() {
   let processedCount = 0;
   let skippedCount = 0;
   
+  // Find the highest sequence number
+  let highestSequence = 0;
+  for (let i = 2; i <= lastRow; i++) {
+    const seqValue = sheet.getRange(i, 12).getValue();
+    if (seqValue && !isNaN(parseInt(seqValue))) {
+      highestSequence = Math.max(highestSequence, parseInt(seqValue));
+    }
+  }
+  
+  let nextSequence = highestSequence + 1;
+  
   // Process each row
   for (let row = 2; row <= lastRow; row++) {
+    // Check if this row has already been processed (Column L)
+    const resultValue = sheet.getRange(row, 12).getValue();
+    if (resultValue && resultValue !== "") {
+      skippedCount++;
+      continue;
+    }
+    
     // Check if eventType is UNKNOWN
     const eventType = sheet.getRange(row, 6).getValue();
     if (!eventType || eventType === "UNKNOWN") {
@@ -186,14 +243,45 @@ function sendAllDriverEvents() {
       rowId: row
     };
     
-    sendWebhook(payload);
-    processedCount++;
+    const response = sendWebhook(payload);
+    
+    // Update the result cell (Column L)
+    if (response && response.success) {
+      sheet.getRange(row, 12).setValue(nextSequence++);
+      processedCount++;
+    } else {
+      sheet.getRange(row, 12).setValue("Error");
+      Logger.log(`Error processing row ${row}: ${JSON.stringify(response)}`);
+    }
     
     // Add a small delay to avoid rate limiting
     Utilities.sleep(1000);
   }
   
-  Logger.log(`Processed ${processedCount} driver events, skipped ${skippedCount} events with UNKNOWN type`);
+  Logger.log(`Processed ${processedCount} driver events, skipped ${skippedCount} events`);
+}
+
+/**
+ * Reset all sequence numbers in column L
+ */
+function resetSequenceNumbers() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
+  if (!sheet) {
+    Logger.log("Data sheet not found");
+    return;
+  }
+  
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    Logger.log("No data in Data sheet");
+    return;
+  }
+  
+  // Clear all sequence numbers
+  const range = sheet.getRange(2, 12, lastRow - 1, 1);
+  range.clearContent();
+  
+  Logger.log("Sequence numbers reset");
 }
 
 /**
@@ -201,10 +289,6 @@ function sendAllDriverEvents() {
  * This can be published as a web app to be accessed by the client application
  */
 function doGet(e) {
-  // Get the last processed row from Properties Service
-  const userProperties = PropertiesService.getUserProperties();
-  const lastProcessedRow = parseInt(userProperties.getProperty('lastProcessedRow') || '0');
-  
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
   if (!sheet) {
     return ContentService.createTextOutput(JSON.stringify({ error: "Data sheet not found" }))
@@ -217,68 +301,41 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   
-  // Only get rows that haven't been processed yet
-  const startRow = Math.max(2, lastProcessedRow + 1);
-  
-  // If there are no new rows, return empty array
-  if (startRow > lastRow) {
-    return ContentService.createTextOutput(JSON.stringify([]))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  const numRows = lastRow - startRow + 1;
-  
-  const range = sheet.getRange(startRow, 1, numRows, 11);
+  // Get all rows
+  const range = sheet.getRange(2, 1, lastRow - 1, 12);
   const values = range.getValues();
   
-  const events = values.map((row, index) => {
-    const eventType = row[5]; // Column F - eventType
-    
-    // Skip rows where eventType is UNKNOWN
-    if (!eventType || eventType === "UNKNOWN") {
-      return null;
-    }
-    
-    return {
-      reportedAt: row[0] || new Date().toISOString(),
-      description: row[1] || "",
-      driverName: row[2] || "Unknown",
-      eventDate: row[3] || new Date().toISOString().split('T')[0],
-      eventTime: row[4] || "00:00",
-      eventType: eventType,
-      fleetNumber: row[6] || "Unknown",
-      location: row[7] || "",
-      severity: row[8] || "medium",
-      status: row[9] || "pending",
-      points: row[10] || 0,
-      rowId: startRow + index
-    };
-  }).filter(event => event !== null); // Remove null entries (UNKNOWN events)
-  
-  // Update the last processed row
-  if (numRows > 0) {
-    userProperties.setProperty('lastProcessedRow', lastRow.toString());
-  }
+  // Filter out rows where:
+  // 1. eventType (column 5, index 5) is UNKNOWN
+  // 2. Result column (column 11, index 11) is empty (not processed yet)
+  const events = values
+    .map((row, index) => {
+      const eventType = row[5]; // Column F - eventType
+      const resultValue = row[11]; // Column L - Result
+      
+      // Skip rows where eventType is UNKNOWN or result is empty
+      if (!eventType || eventType === "UNKNOWN" || !resultValue) {
+        return null;
+      }
+      
+      return {
+        reportedAt: row[0] || new Date().toISOString(),
+        description: row[1] || "",
+        driverName: row[2] || "Unknown",
+        eventDate: row[3] || new Date().toISOString().split('T')[0],
+        eventTime: row[4] || "00:00",
+        eventType: eventType,
+        fleetNumber: row[6] || "Unknown",
+        location: row[7] || "",
+        severity: row[8] || "medium",
+        status: row[9] || "pending",
+        points: row[10] || 0,
+        resultNumber: resultValue,
+        rowId: index + 2
+      };
+    })
+    .filter(event => event !== null); // Remove null entries
   
   return ContentService.createTextOutput(JSON.stringify(events))
     .setMimeType(ContentService.MimeType.JSON);
-}
-
-/**
- * Reset the last processed row (for testing)
- */
-function resetLastProcessedRow() {
-  const userProperties = PropertiesService.getUserProperties();
-  userProperties.setProperty('lastProcessedRow', '1'); // Reset to just the header row
-  Logger.log("Last processed row reset to 1");
-}
-
-/**
- * Get the current last processed row (for debugging)
- */
-function getLastProcessedRow() {
-  const userProperties = PropertiesService.getUserProperties();
-  const lastProcessedRow = userProperties.getProperty('lastProcessedRow') || '0';
-  Logger.log("Last processed row: " + lastProcessedRow);
-  return lastProcessedRow;
 }

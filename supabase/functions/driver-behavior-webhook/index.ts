@@ -350,7 +350,10 @@ function processEventFromDataSheet(eventData: any) {
       points: points,
       date: new Date().toISOString(),
       resolved: false,
-      row_id: eventData.rowId || -1
+      row_id: eventData.rowId || -1,
+      serial_number: eventData.serialNumber,
+      latitude: eventData.latitude,
+      longitude: eventData.longitude
     };
     
     return driverEvent;

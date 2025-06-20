@@ -72,6 +72,9 @@ export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking", "unknown"
 // Store processed event fingerprints to avoid duplicates
 const processedEvents = new Set<string>();
 
+// Store processed row IDs to avoid duplicates
+const processedRowIds = new Set<number>();
+
 // -------------------- Utility Functions --------------------
 export function parseDate(dateStr: string): string {
   if (!dateStr) return new Date().toISOString().split('T')[0];
@@ -114,20 +117,41 @@ function generateEventFingerprint(event: any): string {
 
 // Check if we've already processed this event
 function isEventProcessed(event: any): boolean {
+  // Check by row ID first if available
+  if (event.rowId && event.rowId > 0) {
+    if (processedRowIds.has(event.rowId)) {
+      console.log(`Event already processed by row ID: ${event.rowId}`);
+      return true;
+    }
+    
+    // Add to processed row IDs
+    processedRowIds.add(event.rowId);
+  }
+  
+  // Also check by fingerprint as a backup
   const fingerprint = generateEventFingerprint(event);
   if (processedEvents.has(fingerprint)) {
+    console.log(`Event already processed by fingerprint: ${fingerprint}`);
     return true;
   }
   
   // Add to processed events
   processedEvents.add(fingerprint);
   
-  // Limit the size of the set to prevent memory leaks
+  // Limit the size of the sets to prevent memory leaks
   if (processedEvents.size > 1000) {
     // Remove the oldest entries (first 200)
     const iterator = processedEvents.values();
     for (let i = 0; i < 200; i++) {
       processedEvents.delete(iterator.next().value);
+    }
+  }
+  
+  if (processedRowIds.size > 1000) {
+    // Remove the oldest entries (first 200)
+    const iterator = processedRowIds.values();
+    for (let i = 0; i < 200; i++) {
+      processedRowIds.delete(iterator.next().value);
     }
   }
   
@@ -139,7 +163,7 @@ export async function fetchAndSaveDriverEvents() {
   try {
     // Use a timestamp parameter to avoid caching
     const timestamp = Date.now();
-    const scriptUrl = "https://script.google.com/macros/s/AKfycbwwQKS1kTxxPJuI1b_wAFL7lzgJ3sTVL1hx7OKNu2el8_DmW_V--owrq2tOUKHm9vsYRQ/exec";
+    const scriptUrl = "https://script.google.com/macros/s/AKfycbw5_oPDd7wVIEOxf9rY6wKqUN1aNFuVqGrPl83Z2YKygZiHftyUxU-_sV4Wu_vY1h1vSg/exec";
     const url = `${scriptUrl}?t=${timestamp}`;
     
     console.log("Fetching driver events from:", url);
@@ -265,7 +289,10 @@ function processEventFromDataSheet(eventData: any): Omit<DriverBehaviorEvent, 'i
       actionTaken: "",
       points: points,
       date: new Date().toISOString(),
-      resolved: false
+      resolved: false,
+      serialNumber: eventData.serialNumber,
+      latitude: eventData.latitude,
+      longitude: eventData.longitude
     };
     
     return driverEvent;
