@@ -70,39 +70,26 @@ export const eventRules: Record<string, { severity: string; points: number }> = 
 export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking"];
 
 // -------------------- Utility Functions --------------------
-export function splitDateTime(dateTimeStr: string): { date: string, time: string } {
-  if (!dateTimeStr) return { date: "", time: "" };
+export function parseDate(dateStr: string): string {
+  if (!dateStr) return new Date().toISOString().split('T')[0];
   
   try {
-    // Handle different date formats
-    // Format: DD/MM/YY HH:mm:SS
-    if (dateTimeStr.includes('/')) {
-      const [datePart, timePart] = dateTimeStr.split(' ');
-      if (!datePart || !timePart) return { date: "", time: "" };
-      
-      const [day, month, year] = datePart.split('/');
+    // Check if the date is in YYYY/MM/DD format
+    if (dateStr.includes('/')) {
+      const [year, month, day] = dateStr.split('/');
       // Convert to YYYY-MM-DD format
-      const formattedDate = `20${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      const formattedTime = timePart.substring(0, 5); // Extract HH:mm
-      
-      return {
-        date: formattedDate,
-        time: formattedTime
-      };
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
     
-    // Format: YYYY-MM-DD HH:mm:SS or other formats with dash
-    const [date, time] = dateTimeStr.split(' ');
-    return {
-      date: date || new Date().toISOString().split('T')[0],
-      time: time ? time.substring(0, 5) : ""
-    };
+    // If it's already in YYYY-MM-DD format or another format
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      return new Date().toISOString().split('T')[0];
+    }
+    return date.toISOString().split('T')[0];
   } catch (error) {
-    console.error("Error splitting date time:", error);
-    return { 
-      date: new Date().toISOString().split('T')[0], 
-      time: new Date().toTimeString().split(' ')[0].substring(0, 5) 
-    };
+    console.error("Error parsing date:", error);
+    return new Date().toISOString().split('T')[0];
   }
 }
 
@@ -133,58 +120,32 @@ export async function fetchAndSaveDriverEventToFirestore() {
     
     // Process each event
     for (const eventData of events) {
-      // --- Raw event type extraction & filtering ---
-      const rawEventType = (eventData.eventType || eventData["Event Type"] || "").toString().trim().toLowerCase();
-      if (IGNORED_EVENTS.includes(rawEventType)) {
-        console.log("Ignored event type:", rawEventType);
+      // Skip ignored event types
+      if (IGNORED_EVENTS.includes(eventData.eventType?.toLowerCase())) {
+        console.log("Ignored event type:", eventData.eventType);
         continue;
       }
 
-      // --- Event Type Mapping ---
-      const mappedEventType =
-        eventTypeMap[rawEventType] ||
-        eventTypeMap[rawEventType.replace(/_/g, ' ')] ||
-        "other";
-
-      // --- Serial Number/Fleet/Driver Mapping ---
-      const serialNumber = eventData.serialNumber || eventData["Serial Number"] || "";
-      const fleetNumber = fleetMap[serialNumber] || "Unknown";
-      const driverName = driverMap[fleetNumber] || "Unknown";
-
-      // --- Event Time Parsing ---
-      const eventTimeRaw = eventData.eventTime || eventData["Event Time"] || "";
-      const { date: eventDate, time: eventTime } = splitDateTime(eventTimeRaw);
-
-      // --- Location Parsing ---
-      const latitude = eventData.latitude || eventData["Latitude"] || "";
-      const longitude = eventData.longitude || eventData["Longitude"] || "";
-      const location = `${latitude}, ${longitude}`;
-
-      // --- Event Rules for Severity/Points ---
-      const rules = eventRules[mappedEventType] || { severity: "medium", points: 0 };
-
-      // --- Final Event Object Construction ---
+      // Create driver behavior event object
       const driverEvent: Omit<DriverBehaviorEvent, 'id'> = {
-        driverName,
-        fleetNumber,
-        eventDate: eventDate || new Date().toISOString().split('T')[0],
-        eventTime: eventTime || new Date().toTimeString().split(' ')[0].substring(0, 5),
-        eventType: mappedEventType as any,
-        description: `${mappedEventType.replace(/_/g, ' ')} event detected for ${fleetNumber}`,
-        location,
-        severity: rules.severity as any,
+        driverName: eventData.driverName || "Unknown",
+        fleetNumber: eventData.fleetNumber || "Unknown",
+        eventDate: parseDate(eventData.eventDate),
+        eventTime: eventData.eventTime || "00:00",
+        eventType: (eventData.eventType?.toLowerCase() || "other") as any,
+        description: eventData.description || `${eventData.eventType} event detected`,
+        location: eventData.location || "",
+        severity: (eventData.severity?.toLowerCase() || "medium") as any,
         reportedBy: "Google Sheets Integration",
         reportedAt: new Date().toISOString(),
         status: "pending" as any,
         actionTaken: "",
-        points: rules.points,
-        serialNumber,
-        latitude,
-        longitude,
-        date: new Date().toISOString()
+        points: eventData.points || 0,
+        date: new Date().toISOString(),
+        resolved: false
       };
 
-      // --- Write to Firestore ---
+      // Save to Firestore
       await addDriverBehaviorEvent(driverEvent);
       console.log("Driver event saved:", driverEvent);
     }

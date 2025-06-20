@@ -17,7 +17,8 @@ import {
   where,
   orderBy,
   limit,
-  setDoc
+  setDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { firebaseApp } from "./firebaseConfig";
 
