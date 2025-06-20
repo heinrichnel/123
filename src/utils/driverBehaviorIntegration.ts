@@ -67,7 +67,7 @@ export const eventRules: Record<string, { severity: string; points: number }> = 
   "accident": { severity: "critical", points: 50 }
 };
 
-export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking"];
+export const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking", "unknown"];
 
 // Store processed event fingerprints to avoid duplicates
 const processedEvents = new Set<string>();
@@ -173,8 +173,15 @@ export async function fetchAndSaveDriverEvents() {
     
     // Process each event
     for (const eventData of events) {
+      // Skip if eventType is UNKNOWN
+      const eventType = (eventData.eventType || "").toString().trim();
+      if (!eventType || eventType.toUpperCase() === "UNKNOWN") {
+        console.log("Skipping UNKNOWN event type");
+        continue;
+      }
+      
       // Skip ignored event types
-      const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
+      const rawEventType = eventType.toLowerCase();
       if (IGNORED_EVENTS.includes(rawEventType)) {
         console.log("Ignored event type:", rawEventType);
         continue;
@@ -208,8 +215,14 @@ export async function fetchAndSaveDriverEvents() {
 // Process event data from the "Data" sheet format
 function processEventFromDataSheet(eventData: any): Omit<DriverBehaviorEvent, 'id'> | null {
   try {
+    // Skip if eventType is UNKNOWN
+    const eventType = (eventData.eventType || "").toString().trim();
+    if (!eventType || eventType.toUpperCase() === "UNKNOWN") {
+      return null;
+    }
+    
     // Skip ignored event types
-    const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
+    const rawEventType = eventType.toLowerCase();
     if (IGNORED_EVENTS.includes(rawEventType)) {
       return null;
     }

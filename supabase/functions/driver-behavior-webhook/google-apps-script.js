@@ -20,13 +20,22 @@ function onEdit(e) {
     return;
   }
   
+  // Get the event type (Column F)
+  const eventType = sheet.getRange(row, 6).getValue();
+  
+  // Only process rows where eventType is not "UNKNOWN"
+  if (!eventType || eventType === "UNKNOWN") {
+    Logger.log("Skipping row with UNKNOWN event type");
+    return;
+  }
+  
   // Get the data from the row based on the specified columns
   const reportedAt = sheet.getRange(row, 1).getValue();     // Column A - reportedAt
   const description = sheet.getRange(row, 2).getValue();    // Column B - description
   const driverName = sheet.getRange(row, 3).getValue();     // Column C - driverName
   const eventDate = sheet.getRange(row, 4).getValue();      // Column D - eventDate
   const eventTime = sheet.getRange(row, 5).getValue();      // Column E - eventTime
-  const eventType = sheet.getRange(row, 6).getValue();      // Column F - eventType
+  // eventType already retrieved above                      // Column F - eventType
   const fleetNumber = sheet.getRange(row, 7).getValue();    // Column G - fleetNumber
   const location = sheet.getRange(row, 8).getValue();       // Column H - location
   const severity = sheet.getRange(row, 9).getValue();       // Column I - severity
@@ -34,15 +43,8 @@ function onEdit(e) {
   const points = sheet.getRange(row, 11).getValue();        // Column K - points
   
   // Skip rows with missing essential data
-  if (!eventType || !fleetNumber || !driverName) {
+  if (!fleetNumber || !driverName) {
     Logger.log("Skipping row with missing essential data");
-    return;
-  }
-  
-  // Skip ignored event types
-  const ignoredEvents = ["jolt", "acc_on", "acc_off", "smoking"];
-  if (ignoredEvents.includes(eventType.toLowerCase())) {
-    Logger.log("Skipping ignored event type: " + eventType);
     return;
   }
   
@@ -95,7 +97,7 @@ function testWebhook() {
     driverName: "Taurayi Vherenaisi",
     eventDate: "2024/06/21",
     eventTime: "00:45",
-    eventType: "Harsh Acceleration",
+    eventType: "Harsh Acceleration", // Not UNKNOWN
     fleetNumber: "24H",
     location: "View on Map",
     severity: "High",
@@ -116,11 +118,13 @@ function onOpen() {
   ui.createMenu('Driver Events')
     .addItem('Test Webhook Connection', 'testWebhook')
     .addItem('Send All Driver Events', 'sendAllDriverEvents')
+    .addItem('Reset Last Processed Row', 'resetLastProcessedRow')
+    .addItem('Get Last Processed Row', 'getLastProcessedRow')
     .addToUi();
 }
 
 /**
- * Send all rows from the Data sheet
+ * Send all rows from the Data sheet where eventType is not UNKNOWN
  */
 function sendAllDriverEvents() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
@@ -137,14 +141,24 @@ function sendAllDriverEvents() {
     return;
   }
   
+  let processedCount = 0;
+  let skippedCount = 0;
+  
   // Process each row
   for (let row = 2; row <= lastRow; row++) {
+    // Check if eventType is UNKNOWN
+    const eventType = sheet.getRange(row, 6).getValue();
+    if (!eventType || eventType === "UNKNOWN") {
+      skippedCount++;
+      continue;
+    }
+    
     const reportedAt = sheet.getRange(row, 1).getValue();     // Column A
     const description = sheet.getRange(row, 2).getValue();    // Column B
     const driverName = sheet.getRange(row, 3).getValue();     // Column C
     const eventDate = sheet.getRange(row, 4).getValue();      // Column D
     const eventTime = sheet.getRange(row, 5).getValue();      // Column E
-    const eventType = sheet.getRange(row, 6).getValue();      // Column F
+    // eventType already retrieved above                      // Column F
     const fleetNumber = sheet.getRange(row, 7).getValue();    // Column G
     const location = sheet.getRange(row, 8).getValue();       // Column H
     const severity = sheet.getRange(row, 9).getValue();       // Column I
@@ -152,13 +166,8 @@ function sendAllDriverEvents() {
     const points = sheet.getRange(row, 11).getValue();        // Column K
     
     // Skip rows with missing essential data
-    if (!eventType || !fleetNumber || !driverName) {
-      continue;
-    }
-    
-    // Skip ignored event types
-    const ignoredEvents = ["jolt", "acc_on", "acc_off", "smoking"];
-    if (ignoredEvents.includes(eventType.toLowerCase())) {
+    if (!fleetNumber || !driverName) {
+      skippedCount++;
       continue;
     }
     
@@ -178,12 +187,13 @@ function sendAllDriverEvents() {
     };
     
     sendWebhook(payload);
+    processedCount++;
     
     // Add a small delay to avoid rate limiting
     Utilities.sleep(1000);
   }
   
-  Logger.log(`Processed ${lastRow - 1} driver events`);
+  Logger.log(`Processed ${processedCount} driver events, skipped ${skippedCount} events with UNKNOWN type`);
 }
 
 /**
@@ -221,33 +231,36 @@ function doGet(e) {
   const range = sheet.getRange(startRow, 1, numRows, 11);
   const values = range.getValues();
   
-  const events = values.map((row, index) => ({
-    reportedAt: row[0] || new Date().toISOString(),
-    description: row[1] || "",
-    driverName: row[2] || "Unknown",
-    eventDate: row[3] || new Date().toISOString().split('T')[0],
-    eventTime: row[4] || "00:00",
-    eventType: row[5] || "other",
-    fleetNumber: row[6] || "Unknown",
-    location: row[7] || "",
-    severity: row[8] || "medium",
-    status: row[9] || "pending",
-    points: row[10] || 0,
-    rowId: startRow + index
-  }));
-  
-  // Filter out ignored event types
-  const ignoredEvents = ["jolt", "acc_on", "acc_off", "smoking"];
-  const filteredEvents = events.filter(event => 
-    !ignoredEvents.includes((event.eventType || "").toString().trim().toLowerCase())
-  );
+  const events = values.map((row, index) => {
+    const eventType = row[5]; // Column F - eventType
+    
+    // Skip rows where eventType is UNKNOWN
+    if (!eventType || eventType === "UNKNOWN") {
+      return null;
+    }
+    
+    return {
+      reportedAt: row[0] || new Date().toISOString(),
+      description: row[1] || "",
+      driverName: row[2] || "Unknown",
+      eventDate: row[3] || new Date().toISOString().split('T')[0],
+      eventTime: row[4] || "00:00",
+      eventType: eventType,
+      fleetNumber: row[6] || "Unknown",
+      location: row[7] || "",
+      severity: row[8] || "medium",
+      status: row[9] || "pending",
+      points: row[10] || 0,
+      rowId: startRow + index
+    };
+  }).filter(event => event !== null); // Remove null entries (UNKNOWN events)
   
   // Update the last processed row
   if (numRows > 0) {
     userProperties.setProperty('lastProcessedRow', lastRow.toString());
   }
   
-  return ContentService.createTextOutput(JSON.stringify(filteredEvents))
+  return ContentService.createTextOutput(JSON.stringify(events))
     .setMimeType(ContentService.MimeType.JSON);
 }
 

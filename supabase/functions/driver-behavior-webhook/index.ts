@@ -79,7 +79,7 @@ const eventRules: Record<string, { severity: string; points: number }> = {
   "accident": { severity: "critical", points: 50 }
 };
 
-const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking"];
+const IGNORED_EVENTS = ["jolt", "acc_on", "acc_off", "smoking", "unknown"];
 
 // Parse date from various formats
 function parseDate(dateStr: string): string {
@@ -216,6 +216,19 @@ serve(async (req) => {
       });
     }
 
+    // Check if eventType is UNKNOWN
+    const eventType = (data.eventType || "").toString().trim();
+    if (!eventType || eventType.toUpperCase() === "UNKNOWN") {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: "Event ignored: UNKNOWN event type",
+        ignored: true
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Process the data from the "Data" sheet format
     // The data comes in the format specified with columns A-L
     const driverEvent = processEventFromDataSheet(data);
@@ -285,8 +298,14 @@ serve(async (req) => {
 // Process event data from the "Data" sheet format
 function processEventFromDataSheet(eventData: any) {
   try {
+    // Skip if eventType is UNKNOWN
+    const eventType = (eventData.eventType || "").toString().trim();
+    if (!eventType || eventType.toUpperCase() === "UNKNOWN") {
+      return null;
+    }
+    
     // Skip ignored event types
-    const rawEventType = (eventData.eventType || "").toString().trim().toLowerCase();
+    const rawEventType = eventType.toLowerCase();
     if (IGNORED_EVENTS.includes(rawEventType)) {
       return null;
     }
