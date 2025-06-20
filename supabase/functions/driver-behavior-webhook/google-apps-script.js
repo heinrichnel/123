@@ -1,12 +1,12 @@
 /**
  * This script should be added to your Google Sheet via Extensions > Apps Script
- * It will automatically send webhooks when driver behavior events are added to the sheet
+ * It will automatically send webhooks when driver behavior events are added to the Data sheet
  */
 
 function onEdit(e) {
-  // Only trigger on edits to the driver behavior events sheet
+  // Only trigger on edits to the Data sheet
   const sheetName = e.source.getActiveSheet().getName();
-  if (sheetName !== "DriverEvents") {
+  if (sheetName !== "Data") {
     return;
   }
   
@@ -19,20 +19,45 @@ function onEdit(e) {
     return;
   }
   
-  // Get the data from the row
-  const serialNumber = sheet.getRange(row, 1).getValue();
-  const eventType = sheet.getRange(row, 2).getValue();
-  const eventTime = sheet.getRange(row, 3).getValue();
-  const latitude = sheet.getRange(row, 4).getValue();
-  const longitude = sheet.getRange(row, 5).getValue();
+  // Get the data from the row based on the specified columns
+  const reportedAt = sheet.getRange(row, 1).getValue();     // Column A - reportedAt
+  const description = sheet.getRange(row, 2).getValue();    // Column B - description
+  const driverName = sheet.getRange(row, 3).getValue();     // Column C - driverName
+  const eventDate = sheet.getRange(row, 4).getValue();      // Column D - eventDate
+  const eventTime = sheet.getRange(row, 5).getValue();      // Column E - eventTime
+  const eventType = sheet.getRange(row, 6).getValue();      // Column F - eventType
+  const fleetNumber = sheet.getRange(row, 7).getValue();    // Column G - fleetNumber
+  const location = sheet.getRange(row, 8).getValue();       // Column H - location
+  const severity = sheet.getRange(row, 9).getValue();       // Column I - severity
+  const status = sheet.getRange(row, 10).getValue();        // Column J - status
+  const points = sheet.getRange(row, 11).getValue();        // Column K - points
+  
+  // Skip rows with missing essential data
+  if (!eventType || !fleetNumber || !driverName) {
+    Logger.log("Skipping row with missing essential data");
+    return;
+  }
+  
+  // Skip ignored event types
+  const ignoredEvents = ["jolt", "acc_on", "acc_off", "smoking"];
+  if (ignoredEvents.includes(eventType.toLowerCase())) {
+    Logger.log("Skipping ignored event type: " + eventType);
+    return;
+  }
   
   // Prepare the payload
   const payload = {
-    serialNumber: serialNumber,
-    eventType: eventType,
-    eventTime: eventTime,
-    latitude: latitude,
-    longitude: longitude
+    reportedAt: reportedAt || new Date().toISOString(),
+    description: description || "",
+    driverName: driverName || "Unknown",
+    eventDate: eventDate || new Date().toISOString().split('T')[0],
+    eventTime: eventTime || "00:00",
+    eventType: eventType || "other",
+    fleetNumber: fleetNumber || "Unknown",
+    location: location || "",
+    severity: severity || "medium",
+    status: status || "pending",
+    points: points || 0
   };
   
   // Send the webhook
@@ -40,7 +65,7 @@ function onEdit(e) {
 }
 
 function sendWebhook(payload) {
-  // Replace with your Supabase Edge Function URL
+  // Your Supabase Edge Function URL
   const webhookUrl = "https://your-project-ref.supabase.co/functions/v1/driver-behavior-webhook";
   
   const options = {
@@ -63,11 +88,17 @@ function sendWebhook(payload) {
  */
 function testWebhook() {
   const payload = {
-    serialNumber: "357660104031745",
-    eventType: "Harsh Braking",
-    eventTime: "2025-01-15 14:30",
-    latitude: "-17.8252",
-    longitude: "31.0335"
+    reportedAt: "2025/06/20",
+    description: "Possible Harsh Acceleration",
+    driverName: "Taurayi Vherenaisi",
+    eventDate: "2024/06/21",
+    eventTime: "00:45",
+    eventType: "Harsh Acceleration",
+    fleetNumber: "24H",
+    location: "View on Map",
+    severity: "High",
+    status: "Pending",
+    points: 10
   };
   
   sendWebhook(payload);
@@ -86,12 +117,12 @@ function onOpen() {
 }
 
 /**
- * Send all rows from the DriverEvents sheet
+ * Send all rows from the Data sheet
  */
 function sendAllDriverEvents() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("DriverEvents");
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Data");
   if (!sheet) {
-    Logger.log("DriverEvents sheet not found");
+    Logger.log("Data sheet not found");
     return;
   }
   
@@ -99,29 +130,47 @@ function sendAllDriverEvents() {
   
   // Skip if only header row exists
   if (lastRow <= 1) {
-    Logger.log("No data in DriverEvents sheet");
+    Logger.log("No data in Data sheet");
     return;
   }
   
   // Process each row
   for (let row = 2; row <= lastRow; row++) {
-    const serialNumber = sheet.getRange(row, 1).getValue();
-    const eventType = sheet.getRange(row, 2).getValue();
-    const eventTime = sheet.getRange(row, 3).getValue();
-    const latitude = sheet.getRange(row, 4).getValue();
-    const longitude = sheet.getRange(row, 5).getValue();
+    const reportedAt = sheet.getRange(row, 1).getValue();     // Column A
+    const description = sheet.getRange(row, 2).getValue();    // Column B
+    const driverName = sheet.getRange(row, 3).getValue();     // Column C
+    const eventDate = sheet.getRange(row, 4).getValue();      // Column D
+    const eventTime = sheet.getRange(row, 5).getValue();      // Column E
+    const eventType = sheet.getRange(row, 6).getValue();      // Column F
+    const fleetNumber = sheet.getRange(row, 7).getValue();    // Column G
+    const location = sheet.getRange(row, 8).getValue();       // Column H
+    const severity = sheet.getRange(row, 9).getValue();       // Column I
+    const status = sheet.getRange(row, 10).getValue();        // Column J
+    const points = sheet.getRange(row, 11).getValue();        // Column K
     
     // Skip rows with missing essential data
-    if (!serialNumber || !eventType) {
+    if (!eventType || !fleetNumber || !driverName) {
+      continue;
+    }
+    
+    // Skip ignored event types
+    const ignoredEvents = ["jolt", "acc_on", "acc_off", "smoking"];
+    if (ignoredEvents.includes(eventType.toLowerCase())) {
       continue;
     }
     
     const payload = {
-      serialNumber: serialNumber,
-      eventType: eventType,
-      eventTime: eventTime,
-      latitude: latitude,
-      longitude: longitude
+      reportedAt: reportedAt || new Date().toISOString(),
+      description: description || "",
+      driverName: driverName || "Unknown",
+      eventDate: eventDate || new Date().toISOString().split('T')[0],
+      eventTime: eventTime || "00:00",
+      eventType: eventType || "other",
+      fleetNumber: fleetNumber || "Unknown",
+      location: location || "",
+      severity: severity || "medium",
+      status: status || "pending",
+      points: points || 0
     };
     
     sendWebhook(payload);
