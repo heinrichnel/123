@@ -6,7 +6,8 @@ channel = "stable-24_05"
 packages = ["tree"]
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+run = ["sh", "-c", "npm run preview"]
+build = ["sh", "-c", "npm run build"]
 
 [workflows]
 runButton = "Mat123"
