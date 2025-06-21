@@ -11,9 +11,10 @@ interface LoadImportModalProps {
 }
 
 const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) => {
-  const { importTripsFromCSV, connectionStatus } = useAppContext();
+  const { importTripsFromCSV, importTripsFromWebhook, connectionStatus } = useAppContext();
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isWebhookProcessing, setIsWebhookProcessing] = useState(false);
   const [previewData, setPreviewData] = useState<any[]>([]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,6 +86,23 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
     }
   };
 
+  const handleWebhookImport = async () => {
+    setIsWebhookProcessing(true);
+
+    try {
+      const result = await importTripsFromWebhook();
+      alert(`Webhook import completed!\n\nImported: ${result.imported} trips\nSkipped: ${result.skipped} trips${connectionStatus !== 'connected' ? '\n\nData will be synced when your connection is restored.' : ''}`);
+      if (result.imported > 0) {
+        onClose();
+      }
+    } catch (error) {
+      console.error('Failed to import from webhook:', error);
+      alert('Failed to import from webhook. Please check your connection and try again.');
+    } finally {
+      setIsWebhookProcessing(false);
+    }
+  };
+
   const handleClose = () => {
     setCsvFile(null);
     setIsProcessing(false);
@@ -115,6 +133,26 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
             </div>
           </div>
         )}
+
+        {/* Webhook Import Section */}
+        <div className="bg-green-50 border border-green-200 rounded-md p-4">
+          <h4 className="text-sm font-medium text-green-800 mb-2">Import from Google Sheets Webhook</h4>
+          <div className="text-sm text-green-700 space-y-2">
+            <p>Import completed trips directly from your Google Apps Script webhook.</p>
+            <p><strong>Requirements:</strong> Trips must have both SHIPPED and DELIVERED status to be imported.</p>
+            <Button
+              onClick={handleWebhookImport}
+              disabled={isWebhookProcessing}
+              isLoading={isWebhookProcessing}
+              className="mt-2"
+              variant="outline"
+            >
+              {isWebhookProcessing ? 'Importing from Webhook...' : 'Import from Webhook'}
+            </Button>
+          </div>
+        </div>
+
+        <div className="text-center text-gray-500 font-medium">OR</div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
           <h4 className="text-sm font-medium text-blue-800 mb-2">CSV Format Requirements</h4>
@@ -207,18 +245,18 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
           <Button
             variant="outline"
             onClick={handleClose}
-            disabled={isProcessing}
+            disabled={isProcessing || isWebhookProcessing}
             icon={<X className="w-4 h-4" />}
           >
             Cancel
           </Button>
           <Button
             onClick={handleImport}
-            disabled={!csvFile || isProcessing}
+            disabled={!csvFile || isProcessing || isWebhookProcessing}
             isLoading={isProcessing}
             icon={<Upload className="w-4 h-4" />}
           >
-            {isProcessing ? 'Importing...' : 'Import Trips'}
+            {isProcessing ? 'Importing...' : 'Import CSV'}
           </Button>
         </div>
       </div>
