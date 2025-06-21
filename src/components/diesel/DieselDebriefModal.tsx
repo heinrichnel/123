@@ -57,6 +57,7 @@ interface DieselRecord {
   hoursOperated?: number;
 }
 
+<<<<<<< HEAD
 interface DieselNorms {
   fleetNumber: string;
   expectedKmPerLitre: number;
@@ -66,6 +67,15 @@ interface DieselNorms {
   isReeferUnit?: boolean;
   litresPerHour?: number;
 }
+=======
+const DieselImportModal: React.FC<DieselImportModalProps> = ({ isOpen, onClose }) => {
+  const { importDieselFromCSV, connectionStatus } = useAppContext();
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [previewData, setPreviewData] = useState<any[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 interface DieselDebriefModalProps {
   isOpen: boolean;
@@ -409,4 +419,8 @@ const DieselDebriefModal: React.FC<DieselDebriefModalProps> = ({
   );
 };
 
+<<<<<<< HEAD
 export default DieselDebriefModal;
+=======
+export default DieselImportModal;
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89

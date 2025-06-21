@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // ─── React ───────────────────────────────────────────────────────
 import React from 'react';
 
@@ -33,13 +34,22 @@ import { useAppContext } from '../../context/AppContext';
 import Button from '../ui/Button';
 import SyncIndicator from '../ui/SyncIndicator';
 
+=======
+
+import React from 'react';
+import { User, Bell, Settings } from 'lucide-react';
+import Button from '../ui/Button';
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 interface HeaderProps {
-  currentView: string;
-  onNavigate: (view: string) => void;
-  onNewTrip: () => void;
+  title?: string;
+  userName?: string;
+  onProfileClick?: () => void;
+  onNotificationsClick?: () => void;
+  onSettingsClick?: () => void;
 }
 
+<<<<<<< HEAD
 const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) => {
   const { connectionStatus } = useAppContext();
   
@@ -59,79 +69,72 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) =
     { id: 'action-log', label: 'Action Log', icon: ClipboardList }
   ];
 
+=======
+const Header: React.FC<HeaderProps> = ({
+  title = "Transport Management System",
+  userName = "Current User",
+  onProfileClick,
+  onNotificationsClick,
+  onSettingsClick
+}) => {
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
   return (
-    <aside className="fixed inset-y-0 left-0 w-64 border-r border-gray-200 bg-white z-10 flex flex-col h-screen">
-      {/* Logo and Title */}
-      <div className="flex items-center space-x-3 p-4 border-b border-gray-200">
-        <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
-          <Truck className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">TripPro</h1>
-          <p className="text-sm text-gray-500">Mtanauska Transport</p>
-        </div>
-      </div>
+    <header className="bg-white shadow-sm border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo and Title */}
+          <div className="flex items-center">
+            <h1 className="text-xl font-semibold text-gray-900">
+              {title}
+            </h1>
+          </div>
 
-      {/* Connection Status */}
-      {connectionStatus !== 'connected' && (
-        <div className={`mx-2 my-2 px-3 py-2 rounded-md text-xs font-medium flex items-center space-x-2 ${
-          connectionStatus === 'disconnected' 
-            ? 'bg-red-100 text-red-800' 
-            : 'bg-yellow-100 text-yellow-800'
-        }`}>
-          {connectionStatus === 'disconnected' ? (
-            <>
-              <WifiOff className="w-3 h-3" />
-              <span>Offline Mode - Changes will sync when reconnected</span>
-            </>
-          ) : (
-            <>
-              <Wifi className="w-3 h-3" />
-              <span>Reconnecting...</span>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Vertical Nav Items */}
-      <nav className="flex flex-col p-2 space-y-1 overflow-y-auto flex-1">
-        {navItems.map((item) => {
-          const IconComponent = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`flex items-center space-x-3 px-4 py-3 text-sm font-medium rounded-md transition-colors
-                ${currentView === item.id 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
+          {/* User Actions */}
+          <div className="flex items-center space-x-4">
+            {/* Notifications */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onNotificationsClick}
+              icon={<Bell className="w-4 h-4" />}
+              className="relative"
             >
-              <IconComponent className="w-5 h-5" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+              <span className="sr-only">Notifications</span>
+              {/* Notification badge */}
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                3
+              </span>
+            </Button>
 
-      {/* Sync Status */}
-      <div className="px-4 py-2 border-t border-gray-200">
-        <SyncIndicator />
-      </div>
+            {/* Settings */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSettingsClick}
+              icon={<Settings className="w-4 h-4" />}
+            >
+              <span className="sr-only">Settings</span>
+            </Button>
 
-      {/* Action Button */}
-      <div className="p-4 border-t border-gray-200">
-        <Button
-          onClick={onNewTrip}
-          icon={<Plus className="w-4 h-4" />}
-          fullWidth
-          disabled={connectionStatus !== 'connected'}
-          title={connectionStatus !== 'connected' ? 'Connect to add new trips' : 'Add new trip'}
-        >
-          Add Trip
-        </Button>
+            {/* User Profile */}
+            <div className="flex items-center space-x-3">
+              <div className="text-sm">
+                <span className="text-gray-700">Welcome, </span>
+                <span className="font-medium text-gray-900">{userName}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onProfileClick}
+                icon={<User className="w-4 h-4" />}
+              >
+                Profile
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
-    </aside>
+    </header>
   );
 };
 

@@ -1,5 +1,6 @@
 // ─── React & Icons ────────────────────────────────────────────────
 import React, { useState } from 'react';
+<<<<<<< HEAD
 import { Send, X, AlertTriangle, Flag } from 'lucide-react';
 
 // ─── Types & Helpers ──────────────────────────────────────────────
@@ -15,6 +16,20 @@ import FileUpload from '../ui/FileUpload';
 // ─── Feature Components ───────────────────────────────────────────
 import AdditionalCostsForm from '../costs/AdditionalCostsForm';
 
+=======
+import { Trip, AdditionalCost } from '../../types/index';
+import Modal from '../ui/Modalx';
+import Button from '../ui/Buttonx';
+import { Input, TextArea, FileUpload } from '../ui/FormElementsx';
+import AdditionalCostsForm from '../costs/AdditionalCostsFormx';
+import { 
+  Send, 
+  X, 
+  AlertTriangle, 
+  Flag
+} from 'lucide-react';
+import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 interface InvoiceSubmissionModalProps {
   isOpen: boolean;

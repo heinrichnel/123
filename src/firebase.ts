@@ -20,7 +20,11 @@ import {
   setDoc,
   writeBatch,
 } from "firebase/firestore";
+<<<<<<< HEAD
 import { firebaseApp } from "./firebaseConfig";
+=======
+import { firebaseConfig } from "./firebaseConfig.tsx";
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 // Use custom Firestore database ID from .env
 const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || undefined;

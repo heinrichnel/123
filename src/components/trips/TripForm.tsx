@@ -1,5 +1,6 @@
 // ─── React ───────────────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 
 // ─── Types & Constants ───────────────────────────────────────────
 import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES, FLEET_NUMBERS } from '../../types';
@@ -7,6 +8,11 @@ import { Trip, CLIENTS, DRIVERS, CLIENT_TYPES, FLEET_NUMBERS } from '../../types
 // ─── UI Components ───────────────────────────────────────────────
 import { Input, Select, TextArea } from '../ui/FormElements';
 import Button from '../ui/Button';
+=======
+import { Trip, CLIENTS, DRIVERS } from '../../types/index.ts';
+import { Input, Select, TextArea } from '../ui/FormElements.tsx';
+import Button from '../ui/Button.tsx';
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 
 interface TripFormProps {
@@ -16,6 +22,7 @@ interface TripFormProps {
 }
 
 const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
+<<<<<<< HEAD
   const [formData, setFormData] = useState({
     fleetNumber: '',
     clientName: '',
@@ -50,6 +57,29 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         tripDescription: trip.tripDescription || '',
         tripNotes: trip.tripNotes || ''
       });
+=======
+  const [fleetNumber, setFleetNumber] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [driver, setDriver] = useState('');
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
+  const [distanceKm, setDistanceKm] = useState(0);
+  const [baseRevenue, setBaseRevenue] = useState(0);
+  const [revenueCurrency, setRevenueCurrency] = useState<'USD' | 'ZAR'>('ZAR');
+  const [tripNotes, setTripNotes] = useState('');
+
+  useEffect(() => {
+    if (trip) {
+      setFleetNumber(trip.fleetNumber || '');
+      setClientName(trip.clientName || '');
+      setDriver(trip.driver || '');
+      setOrigin(trip.origin || '');
+      setDestination(trip.destination || '');
+      setDistanceKm(trip.distanceKm || 0);
+      setBaseRevenue(trip.baseRevenue || 0);
+      setRevenueCurrency(trip.revenueCurrency || 'ZAR');
+      setTripNotes(trip.tripNotes || '');
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
     }
   }, [trip]);
 
@@ -125,6 +155,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
     if (Object.keys(validationErrors).length > 0) return;
     
     onSubmit({
+<<<<<<< HEAD
       clientType: formData.clientType,
       fleetNumber: formData.fleetNumber,
       clientName: formData.clientName,
@@ -137,6 +168,17 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
       revenueCurrency: formData.revenueCurrency,
       tripDescription: formData.tripDescription,
       tripNotes: formData.tripNotes
+=======
+      fleetNumber,
+      clientName,
+      driver,
+      origin,
+      destination,
+      distanceKm,
+      baseRevenue,
+      revenueCurrency,
+      tripNotes,
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
     });
   };
 
@@ -168,6 +210,7 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
         
         <Select
           label="Client"
+<<<<<<< HEAD
           value={formData.clientName}
           onChange={(value) => handleChange('clientName', value)}
           onBlur={() => handleBlur('clientName')}
@@ -175,6 +218,11 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
             { label: 'Select client...', value: '' }, 
             ...CLIENTS.map(c => ({ label: c, value: c }))
           ]}
+=======
+          value={clientName}
+          onChange={e => setClientName(e.target.value)}
+          options={CLIENTS.map(c => ({ label: c, value: c }))}
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
           required
           error={touched.clientName && errors.clientName}
         />
@@ -255,7 +303,11 @@ const TripForm: React.FC<TripFormProps> = ({ trip, onSubmit, onCancel }) => {
           error={touched.revenueCurrency && errors.revenueCurrency}
         />
       </div>
+<<<<<<< HEAD
       
+=======
+
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
       <TextArea
         label="Trip Notes"
         value={formData.tripNotes}

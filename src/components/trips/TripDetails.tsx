@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // ─── React & State ───────────────────────────────────────────────
 import React, { useState, useEffect } from 'react';
 
@@ -72,6 +73,47 @@ import {
   X
 } from 'lucide-react';
 
+=======
+import React from 'react';
+import { User, Bell, Settings } from 'lucide-react';
+import Button from '../ui/Button.tsx';
+
+interface HeaderProps {
+  title?: string;
+  userName?: string;
+  onProfileClick?: () => void;
+  onNotificationsClick?: () => void;
+  onSettingsClick?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ title, userName, onProfileClick, onNotificationsClick, onSettingsClick }) => {
+  return (
+    <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
+      <h1>{title}</h1>
+      <div className="flex items-center space-x-4">
+        <Button onClick={onProfileClick}><User /></Button>
+        <Button onClick={onNotificationsClick}><Bell /></Button>
+        <Button onClick={onSettingsClick}><Settings /></Button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;import React, { useState } from 'react';
+import { Trip, CostEntry, AdditionalCost } from '../../types/index.js';
+import { useAppContext } from '../../context/AppContext.js';
+import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
+import Button from '../ui/Button.tsx';
+import Modal from '../ui/Modal.tsx';
+import CostForm from '../costs/CostForm.tsx';
+import CostList from '../costs/CostList.tsx';
+import TripReport from '../reports/TripReport.tsx';
+import SystemCostGenerator from '../costs/IndirectCost'; // ✅ CORRECT
+import InvoiceSubmissionModal from './InvoiceSubmissionModal.tsx';
+import TripPlanningForm from '../planning/TripPlanningForm.tsx';
+import { Trash2, Edit, Save, X, AlertTriangle, FileText, FileSpreadsheet, Calendar, DollarSign, Flag, CheckCircle, Eye, Download, Lock, Clock, Navigation, Building, User, MapPin, TrendingUp, TrendingDown, FileUp, FileX, Plus, Upload, Paperclip, Image, History, Bell, Shield, Send, Calculator, ArrowLeft, BarChart3 } from 'lucide-react';
+import { formatCurrency, formatDate, formatDateTime, calculateTotalCosts, getFileIcon, calculateKPIs, getFlaggedCostsCount, getUnresolvedFlagsCount, canCompleteTrip } from '../../utils/helpers.ts';
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 interface TripDetailsProps {
   trip: Trip;

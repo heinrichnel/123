@@ -511,6 +511,7 @@ export const CLIENTS = [
 ];
 
 export const DRIVERS = [
+<<<<<<< HEAD
   "Enock Mukonyerwa",
   "Jonathan Bepete",
   "Lovemore Qochiwe",
@@ -547,6 +548,24 @@ export const FLEET_NUMBERS = [
   "6F",
   "7F",
   "8F"
+=======
+  'John Smith',
+  'Mike Johnson',
+  'David Wilson',
+  'Chris Brown',
+  'Alex Davis',
+  'Robert Miller',
+  'James Garcia',
+  'William Rodriguez',
+  'Michael Martinez',
+  'Daniel Anderson'
+];
+
+export const FLEET_NUMBERS = [
+  'FL001', 'FL002', 'FL003', 'FL004', 'FL005',
+  'FL006', 'FL007', 'FL008', 'FL009', 'FL010',
+  'FL011', 'FL012', 'FL013', 'FL014', 'FL015'
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 ];
 
 export const RESPONSIBLE_PERSONS = [
@@ -660,6 +679,79 @@ export const TRIP_EDIT_REASONS = [
   "Other (specify in comments)"
 ];
 
+<<<<<<< HEAD
+=======
+export interface CostEntry extends CostData {}
+
+export interface AdditionalCost extends CostData {}
+
+export interface FlaggedCost extends CostData {
+  flaggedReason?: string;
+}
+
+export interface MissedLoad {
+  id: string;
+  reason: string;
+  date: string;
+  fleetNumber?: string;
+  driverName?: string;
+}
+
+export interface InvoiceAging {
+  id: string;
+  tripId: string;
+  current: number;
+  warning: number;
+  critical: number;
+  overdue: number;
+  total: number;
+  currency: string;
+  lastFollowUpDate?: string;
+}
+
+export interface DriverBehaviorEvent {
+  id: string;
+  driverName: string;
+  fleetNumber: string;
+  eventDate: string;
+  eventTime: string;
+  eventType: DriverBehaviorEventType;
+  description: string;
+  location?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  reportedBy: string;
+  reportedAt: string;
+  status: 'pending' | 'acknowledged' | 'resolved' | 'disputed';
+  actionTaken?: string;
+  points: number;
+  count?: number; // Column L - used for duplicate prevention
+  date?: string; // Legacy field
+  notes?: string; // Legacy field
+  carReportId?: string;
+}
+
+export type DriverBehaviorEventType = string;
+
+export interface CARReport {
+  id: string;
+  driverName: string;
+  incidentType: string;
+  date: string;
+  description?: string;
+  attachments?: Attachment[];
+}
+
+export interface CustomerPerformance {
+  id: string;
+  clientName: string;
+  retentionRate: number;
+  lostClients: number;
+  gainedClients: number;
+  paymentReceivedDate?: string;
+}
+
+export const AGING_THRESHOLDS = [7, 14, 30, 60];
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 export const TRIP_DELETION_REASONS = [
   "Duplicate",
   "Error",
@@ -838,6 +930,7 @@ export const DEFAULT_SYSTEM_COST_RATES: Record<'USD' | 'ZAR', SystemCostRates> =
     updatedBy: 'System Default',
     effectiveDate: new Date().toISOString(),
   },
+<<<<<<< HEAD
 };
 
 export const DEFAULT_SYSTEM_COST_REMINDER: SystemCostReminder = {
@@ -899,3 +992,6 @@ export const FUEL_STATIONS = [
   'Lemba TS',
   'Polokwane TS'
 ];
+=======
+};
+>>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89

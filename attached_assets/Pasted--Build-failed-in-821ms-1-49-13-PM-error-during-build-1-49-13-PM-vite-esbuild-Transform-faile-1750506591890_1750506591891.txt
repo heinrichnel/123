@@ -1,0 +1,64 @@
+✗ Build failed in 821ms
+1:49:13 PM: error during build:
+1:49:13 PM: [vite:esbuild] Transform failed with 1 error:
+1:49:13 PM: /opt/build/repo/src/components/layout/Header.tsx:1:4: ERROR: Expected ";" but found "code"
+1:49:13 PM: file: /opt/build/repo/src/components/layout/Header.tsx:1:4
+1:49:13 PM: 
+1:49:13 PM: Expected ";" but found "code"
+1:49:13 PM: 1  |  The code adds a user profile component to the header of the application.
+1:49:13 PM:    |      ^
+1:49:13 PM: 2  |  ```
+3  |  
+
+    at failureErrorWithLog (/opt/build/repo/node_modules/esbuild/lib/main.js:1463:15)
+    at /opt/build/repo/node_modules/esbuild/lib/main.js:734:50
+    at responseCallbacks.<computed> (/opt/build/repo/node_modules/esbuild/lib/main.js:601:9)
+    at handleIncomingPacket (/opt/build/repo/node_modules/esbuild/lib/main.js:656:12)
+    at Socket.readFromStdout (/opt/build/repo/node_modules/esbuild/lib/main.js:579:7)
+    at Socket.emit (node:events:524:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at Pipe.onStreamRead (node:internal/stream_base_commons:191:23)
+​
+1:49:13 PM: "build.command" failed                                        
+1:49:13 PM: ────────────────────────────────────────────────────────────────
+1:49:13 PM: ​
+1:49:13 PM:   Error message
+1:49:13 PM:   Command failed with exit code 1: vite build (https://ntl.fyi/exit-code-1)
+1:49:13 PM: ​
+1:49:13 PM:   Error location
+1:49:13 PM:   In build.command from netlify.toml:
+1:49:13 PM:   vite build
+1:49:13 PM: ​
+1:49:13 PM:   Resolved config
+1:49:13 PM:   build:
+1:49:13 PM:     command: vite build
+1:49:13 PM:     commandOrigin: config
+1:49:13 PM:     environment:
+1:49:13 PM:       - NETLIFY_DATABASE_URL
+1:49:13 PM:       - NETLIFY_DATABASE_URL_UNPOOLED
+1:49:13 PM:       - VITE_FIREBASE_API_KEY
+1:49:13 PM:       - VITE_FIREBASE_APP_ID
+1:49:13 PM:       - VITE_FIREBASE_AUTH_DOMAIN
+1:49:13 PM:       - VITE_FIREBASE_DATABASE_ID
+1:49:13 PM:       - VITE_FIREBASE_DATABASE_URL
+1:49:13 PM:       - VITE_FIREBASE_MEASUREMENT_ID
+1:49:13 PM:       - VITE_FIREBASE_MESSAGING_SENDER_ID
+1:49:13 PM:       - VITE_FIREBASE_PROJECT_ID
+1:49:13 PM:       - VITE_FIREBASE_STORAGE_BUCKET
+1:49:13 PM:     publish: /opt/build/repo/dist
+1:49:13 PM:     publishOrigin: config
+1:49:13 PM:   plugins:
+1:49:13 PM:     - inputs: {}
+1:49:13 PM:       origin: config
+1:49:13 PM:       package: '@netlify/plugin-lighthouse'
+1:49:13 PM:     - inputs: {}
+1:49:13 PM:       origin: config
+1:49:13 PM:       package: netlify-plugin-formspree
+1:49:13 PM:     - inputs: {}
+1:49:13 PM:       origin: config
+1:49:13 PM:       package: netlify-plugin-cloudinary
+1:49:14 PM: Build failed due to a user error: Build script returned non-zero exit code: 2
+1:49:14 PM: Failing build: Failed to build site
+1:49:14 PM: Finished processing build request in 40.743s

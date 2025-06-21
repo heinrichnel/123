@@ -1,0 +1,30 @@
+modules = ["nodejs-20", "web"]
+run = "npm run dev"
+
+[nix]
+channel = "stable-24_05"
+packages = ["tree"]
+
+[deployment]
+run = ["sh", "-c", "npm run preview"]
+build = ["sh", "-c", "npm run build"]
+
+[workflows]
+runButton = "Mat123"
+
+[[workflows.workflow]]
+name = "Mat123"
+mode = "sequential"
+author = 43876421
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Mat123"
+
+[[workflows.workflow.tasks]]
+task = "packager.installForLanguage"
+args = "nodejs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "Fix the errors"
