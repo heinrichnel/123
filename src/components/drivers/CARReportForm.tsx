@@ -16,11 +16,7 @@ import { Input, Select, TextArea } from '../ui/FormElements';
 import {
   Save,
   X,
-  AlertTriangle,
-  FileText,
-  Calendar,
-  User,
-  FileUp
+  FileText
 } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
@@ -125,7 +121,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
       setFormData(prev => ({
         ...prev,
         responsiblePerson: linkedEvent.driverName || '',
-        dateOfIncident: linkedEvent.eventDate || linkedEvent.date || '',
+        dateOfIncident: linkedEvent.eventDate || '',
         dateDue: dueDate.toISOString().split('T')[0],
         severity: linkedEvent.severity === 'critical' ? 'high' : 
                  linkedEvent.severity === 'high' ? 'medium' : 'low',
@@ -198,17 +194,6 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
       generalComments: formData.generalComments,
       status: formData.status,
       attachments: [],
-      driverName: linkedEvent?.driverName || '',
-      fleetNumber: linkedEvent?.fleetNumber || '',
-      incidentDate: formData.dateOfIncident,
-      incidentTime: linkedEvent?.eventTime || '00:00',
-      location: linkedEvent?.location || '',
-      incidentType: 'accident',
-      description: formData.problemIdentification,
-      injuriesReported: false,
-      policeInvolved: false,
-      actionsTaken: formData.correctiveActions,
-      followUpRequired: true
     };
     
     if (existingReport) {
@@ -232,7 +217,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={existingReport ? "Edit CAR Report" : "Create CAR Report"}
-      maxWidth="4xl"
+      maxWidth="2xl"
     >
       <div className="space-y-6">
         {/* Header */}
@@ -290,7 +275,7 @@ const CARReportForm: React.FC<CARReportFormProps> = ({
             <div className="p-3 bg-purple-50 border border-purple-200 rounded-md">
               <p className="text-sm font-medium text-purple-800">Reference:</p>
               <p className="text-sm text-purple-700">
-                Driver Event: {linkedEvent.eventType} - {formatDate(linkedEvent.eventDate || linkedEvent.date)}
+                Driver Event: {linkedEvent.eventType} - {formatDate(linkedEvent.eventDate)}
               </p>
             </div>
           )}

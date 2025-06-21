@@ -1,17 +1,10 @@
-<<<<<<< HEAD
-// ─── React ───────────────────────────────────────────────────────
-import React from 'react';
-
-// ─── Icons ───────────────────────────────────────────────────────
+import React, { FC } from 'react';
 import {
   Activity,
   BarChart3,
-  Calendar,
   CheckCircle,
   ClipboardList,
   Clock,
-  DollarSign,
-  FileText,
   Flag,
   Fuel,
   Plus,
@@ -24,7 +17,8 @@ import {
   Users,
   Wifi,
   WifiOff,
-  User as UserRound // Alias to avoid name conflict
+  User as UserRound,
+  Bell
 } from 'lucide-react';
 
 // ─── Context ─────────────────────────────────────────────────────
@@ -32,16 +26,11 @@ import { useAppContext } from '../../context/AppContext';
 
 // ─── UI Components ───────────────────────────────────────────────
 import Button from '../ui/Button';
-import SyncIndicator from '../ui/SyncIndicator';
-
-=======
-
-import React from 'react';
-import { User, Bell, Settings } from 'lucide-react';
-import Button from '../ui/Button';
->>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
 
 interface HeaderProps {
+  currentView: string;
+  onNavigate: (view: string) => void;
+  onNewTrip: () => void;
   title?: string;
   userName?: string;
   onProfileClick?: () => void;
@@ -49,10 +38,17 @@ interface HeaderProps {
   onSettingsClick?: () => void;
 }
 
-<<<<<<< HEAD
-const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) => {
+const Header: FC<HeaderProps> = ({
+  currentView,
+  onNavigate,
+  onNewTrip,
+  title = "Transport Management System",
+  userName = "Current User",
+  onProfileClick,
+  onNotificationsClick,
+  onSettingsClick
+}) => {
   const { connectionStatus } = useAppContext();
-  
   const navItems = [
     { id: 'ytd-kpis', label: 'YTD KPIs', icon: Target },
     { id: 'dashboard', label: 'Dashboard', icon: Activity },
@@ -68,16 +64,6 @@ const Header: React.FC<HeaderProps> = ({ currentView, onNavigate, onNewTrip }) =
     { id: 'driver-behavior', label: 'Driver Behavior', icon: Shield },
     { id: 'action-log', label: 'Action Log', icon: ClipboardList }
   ];
-
-=======
-const Header: React.FC<HeaderProps> = ({
-  title = "Transport Management System",
-  userName = "Current User",
-  onProfileClick,
-  onNotificationsClick,
-  onSettingsClick
-}) => {
->>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -126,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={onProfileClick}
-                icon={<User className="w-4 h-4" />}
+                icon={<UserRound className="w-4 h-4" />}
               >
                 Profile
               </Button>

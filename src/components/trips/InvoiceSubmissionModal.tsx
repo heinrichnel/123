@@ -1,35 +1,12 @@
-// ─── React & Icons ────────────────────────────────────────────────
 import React, { useState } from 'react';
-<<<<<<< HEAD
-import { Send, X, AlertTriangle, Flag } from 'lucide-react';
-
-// ─── Types & Helpers ──────────────────────────────────────────────
-import { Trip, AdditionalCost } from '../../types';
-import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
-
-// ─── UI Components ────────────────────────────────────────────────
+import { Send, X } from 'lucide-react';
+import { formatCurrency, calculateKPIs } from '../../utils/helpers';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { Input, Select, TextArea } from '../ui/FormElements';
-import FileUpload from '../ui/FileUpload';
-
-// ─── Feature Components ───────────────────────────────────────────
+import { Input, TextArea } from '../ui/FormElements';
 import AdditionalCostsForm from '../costs/AdditionalCostsForm';
-
-=======
 import { Trip, AdditionalCost } from '../../types/index';
-import Modal from '../ui/Modalx';
-import Button from '../ui/Buttonx';
-import { Input, TextArea, FileUpload } from '../ui/FormElementsx';
-import AdditionalCostsForm from '../costs/AdditionalCostsFormx';
-import { 
-  Send, 
-  X, 
-  AlertTriangle, 
-  Flag
-} from 'lucide-react';
-import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
->>>>>>> 26992b5f0a3b081be38f1bd0501c447ccf1bbf89
+import FileUpload from '../ui/FileUpload';
 
 interface InvoiceSubmissionModalProps {
   isOpen: boolean;
@@ -142,7 +119,7 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Submit Trip for Invoicing"
-      maxWidth="4xl"
+      maxWidth="2xl"
     >
       <div className="space-y-6">
         {/* Trip Summary */}
@@ -259,8 +236,8 @@ const InvoiceSubmissionModal: React.FC<InvoiceSubmissionModalProps> = ({
         {/* Additional Costs Form */}
         <AdditionalCostsForm
           tripId={trip.id}
-          onAddAdditionalCost={onAddAdditionalCost}
-          onRemoveAdditionalCost={onRemoveAdditionalCost}
+          onAddCost={onAddAdditionalCost}
+          onRemoveCost={onRemoveAdditionalCost}
           additionalCosts={trip.additionalCosts || []}
         />
 

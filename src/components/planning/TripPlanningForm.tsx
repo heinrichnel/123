@@ -157,21 +157,21 @@ const TripPlanningForm: React.FC<TripPlanningFormProps> = ({
               label="Planned Arrival Date & Time"
               type="datetime-local"
               value={plannedTimes.plannedArrivalDateTime}
-              onChange={(e) => handlePlannedTimeChange('plannedArrivalDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePlannedTimeChange('plannedArrivalDateTime', e.target.value)}
               disabled={readOnly}
             />
             <Input
               label="Planned Offload Date & Time"
               type="datetime-local"
               value={plannedTimes.plannedOffloadDateTime}
-              onChange={(e) => handlePlannedTimeChange('plannedOffloadDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePlannedTimeChange('plannedOffloadDateTime', e.target.value)}
               disabled={readOnly}
             />
             <Input
               label="Planned Departure Date & Time"
               type="datetime-local"
               value={plannedTimes.plannedDepartureDateTime}
-              onChange={(e) => handlePlannedTimeChange('plannedDepartureDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePlannedTimeChange('plannedDepartureDateTime', e.target.value)}
               disabled={readOnly}
             />
           </div>
@@ -196,21 +196,21 @@ const TripPlanningForm: React.FC<TripPlanningFormProps> = ({
               label="Actual Arrival Date & Time"
               type="datetime-local"
               value={actualTimes.actualArrivalDateTime}
-              onChange={(e) => handleActualTimeChange('actualArrivalDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleActualTimeChange('actualArrivalDateTime', e.target.value)}
               disabled={readOnly}
             />
             <Input
               label="Actual Offload Date & Time"
               type="datetime-local"
               value={actualTimes.actualOffloadDateTime}
-              onChange={(e) => handleActualTimeChange('actualOffloadDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleActualTimeChange('actualOffloadDateTime', e.target.value)}
               disabled={readOnly}
             />
             <Input
               label="Actual Departure Date & Time"
               type="datetime-local"
               value={actualTimes.actualDepartureDateTime}
-              onChange={(e) => handleActualTimeChange('actualDepartureDateTime', e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleActualTimeChange('actualDepartureDateTime', e.target.value)}
               disabled={readOnly}
             />
           </div>
@@ -321,7 +321,7 @@ const TripPlanningForm: React.FC<TripPlanningFormProps> = ({
                   ...DELAY_REASON_TYPES
                 ]}
               />
-              <TextArea
+              <Textarea
                 label="Description *"
                 value={newDelay.description}
                 onChange={(e) => setNewDelay(prev => ({ ...prev, description: e.target.value }))}

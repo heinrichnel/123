@@ -4,14 +4,13 @@ import React, { useState, useEffect } from 'react';
 // ─── Types ───────────────────────────────────────────────────────
 import { CostEntry, COST_CATEGORIES } from '../../types/index';
 
-// ─── UI Components ───────────────────────────────────────────────
+// ─── Components ───────────────────────────────────────────────────────
 import Button from '../ui/Button';
 import { Input, Select, TextArea } from '../ui/FormElements';
 import FileUpload from '../ui/FileUpload';
 // ─── Icons ───────────────────────────────────────────────────────
 import {
   AlertTriangle,
-  Calculator,
   Flag,
   Save,
   Upload,
@@ -27,11 +26,22 @@ interface CostFormProps {
 }
 
 const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    category: string;
+    subCategory: string;
+    amount: string;
+    currency: 'USD' | 'ZAR';
+    referenceNumber: string;
+    date: string;
+    notes: string;
+    isFlagged: boolean;
+    flagReason: string;
+    noDocumentReason: string;
+  }>({
     category: '',
     subCategory: '',
     amount: '',
-    currency: 'ZAR' as 'USD' | 'ZAR',
+    currency: 'ZAR',
     referenceNumber: '',
     date: '',
     notes: '',
@@ -43,6 +53,12 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [availableSubCategories, setAvailableSubCategories] = useState<string[]>([]);
+
+  // Move these to top-level so they are available everywhere
+  const hasFiles = selectedFiles && selectedFiles.length > 0;
+  const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
+  const hasDocumentation = hasFiles || hasExistingAttachments;
+  const isHighRiskCategory = ['Non-Value-Added Costs', 'Border Costs'].includes(formData.category);
 
   useEffect(() => {
     if (cost) {
@@ -58,13 +74,10 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
         flagReason: cost.flagReason || '',
         noDocumentReason: cost.noDocumentReason || ''
       });
-      
-      // Set available subcategories for existing cost
-      if (cost.category && COST_CATEGORIES[cost.category]) {
-        setAvailableSubCategories(COST_CATEGORIES[cost.category]);
+      if (cost.category && (COST_CATEGORIES as Record<string, string[]>)[cost.category]) {
+        setAvailableSubCategories((COST_CATEGORIES as Record<string, string[]>)[cost.category]);
       }
     } else {
-      // Set today's date as default for new cost entries
       setFormData(prev => ({
         ...prev,
         date: new Date().toISOString().split('T')[0]
@@ -72,78 +85,56 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
     }
   }, [cost]);
 
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = (field: keyof typeof formData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Update subcategories when category changes
     if (field === 'category' && typeof value === 'string') {
-      const subCategories = COST_CATEGORIES[value] || [];
+      const subCategories = (COST_CATEGORIES as Record<string, string[]>)[value] || [];
       setAvailableSubCategories(subCategories);
-      setFormData(prev => ({ ...prev, subCategory: '' })); // Reset subcategory
+      setFormData(prev => ({ ...prev, subCategory: '' }));
     }
-    
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-
     if (!formData.category) newErrors.category = 'Cost category is required';
     if (!formData.subCategory) newErrors.subCategory = 'Sub-cost type is required';
     if (!formData.amount) newErrors.amount = 'Amount is required';
     if (formData.amount && isNaN(Number(formData.amount))) {
       newErrors.amount = 'Amount must be a valid number';
     }
-    if (Number(formData.amount) <= 0) {
+    if (formData.amount && Number(formData.amount) <= 0) {
       newErrors.amount = 'Amount must be greater than 0';
     }
     if (!formData.currency) newErrors.currency = 'Currency is required';
     if (!formData.referenceNumber) newErrors.referenceNumber = 'Reference number is required';
     if (!formData.date) newErrors.date = 'Date is required';
-
-    // Prevent manual entry of System Costs
     if (formData.category === 'System Costs') {
       newErrors.category = 'System costs are automatically generated and cannot be manually added';
     }
-
-    // Document attachment validation - MANDATORY REQUIREMENT
     const hasFiles = selectedFiles && selectedFiles.length > 0;
     const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
     const hasNoDocumentReason = String(formData.noDocumentReason ?? '').trim().length > 0;
-
     if (!cost && !hasFiles && !hasNoDocumentReason) {
       newErrors.documents = 'Either attach a receipt/document OR provide a reason for missing documentation';
     }
-
-    // Manual flag validation
     if (formData.isFlagged && !String(formData.flagReason ?? '').trim()) {
       newErrors.flagReason = 'Flag reason is required when manually flagging a cost entry';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!validateForm()) return;
-
-    // Determine if item should be flagged
-    const hasFiles = selectedFiles && selectedFiles.length > 0;
-    const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
-    const hasDocumentation = hasFiles || hasExistingAttachments;
-    
-    // Auto-flag conditions
+    // Use already declared variables
     const highRiskCategories = ['Non-Value-Added Costs', 'Border Costs'];
     const isHighRisk = highRiskCategories.includes(formData.category);
     const missingDocumentation = !hasDocumentation && formData.noDocumentReason.trim();
-    
-    // Determine if should be flagged
     const shouldFlag = formData.isFlagged || isHighRisk || missingDocumentation;
-    
-    // Determine flag reason
     let flagReason = '';
     if (formData.isFlagged && String(formData.flagReason ?? '').trim()) {
       flagReason = String(formData.flagReason ?? '').trim();
@@ -152,8 +143,7 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
     } else if (missingDocumentation) {
       flagReason = `Missing documentation: ${String(formData.noDocumentReason ?? '').trim()}`;
     }
-
-    const costData = {
+    const costData: Omit<CostEntry, 'id' | 'attachments'> = {
       tripId,
       category: formData.category,
       subCategory: formData.subCategory,
@@ -162,29 +152,21 @@ const CostForm: React.FC<CostFormProps> = ({ tripId, cost, onSubmit, onCancel })
       referenceNumber: String(formData.referenceNumber ?? '').trim(),
       date: formData.date,
       notes: String(formData.notes ?? '').trim() || undefined,
-      isFlagged: shouldFlag,
+      isFlagged: Boolean(shouldFlag),
       flagReason: flagReason || undefined,
       noDocumentReason: String(formData.noDocumentReason ?? '').trim() || undefined,
-      investigationStatus: shouldFlag ? 'pending' as const : undefined,
+      investigationStatus: shouldFlag ? 'pending' : undefined,
       flaggedAt: shouldFlag ? new Date().toISOString() : undefined,
-      flaggedBy: shouldFlag ? 'Current User' : undefined, // In real app, use actual user
+      flaggedBy: shouldFlag ? 'Current User' : undefined,
       isSystemGenerated: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      // createdAt and updatedAt are not part of Omit<CostEntry, 'id' | 'attachments'>
     };
-    
-    // Pass files to the submit handler
     onSubmit(costData, selectedFiles || undefined);
   };
 
-  const getCurrencySymbol = (currency: 'USD' | 'ZAR') => {
+  const getCurrencySymbol = (currency: 'USD' | 'ZAR'): string => {
     return currency === 'USD' ? '$' : 'R';
   };
-
-  const hasFiles = selectedFiles && selectedFiles.length > 0;
-  const hasExistingAttachments = cost && cost.attachments && cost.attachments.length > 0;
-  const hasDocumentation = hasFiles || hasExistingAttachments;
-  const isHighRiskCategory = ['Non-Value-Added Costs', 'Border Costs'].includes(formData.category);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

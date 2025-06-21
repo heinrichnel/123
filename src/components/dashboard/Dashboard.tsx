@@ -412,9 +412,13 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
       {/* Missed Loads Impact */}
       <Card>
         <CardHeader 
-          title="Missed Loads Financial Impact" 
+          title={
+            <span className="flex items-center">
+              <TrendingDown className="w-5 h-5 text-red-600 mr-2" />
+              Missed Loads Financial Impact
+            </span>
+          }
           subtitle="Potential revenue and profit loss from missed business opportunities"
-          icon={<TrendingDown className="w-5 h-5 text-red-600" />}
         />
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -476,8 +480,12 @@ const Dashboard: React.FC<DashboardProps> = ({ trips }) => {
         {/* Trips Ready for Completion */}
         <Card>
           <CardHeader 
-            title="Trips Ready for Completion" 
-            icon={<CheckCircle className="w-5 h-5 text-green-600" />}
+            title={
+              <span className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                Trips Ready for Completion
+              </span>
+            }
           />
           <CardContent>
             {stats.tripsReadyForCompletion.length === 0 ? (

@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { Trip } from '../../types';
-import Button from '../ui/Button.js';
-import { Input, Select } from '../ui/FormElements.js';
+import Button from '../ui/Button';
+import { Input, Select } from '../ui/FormElements';
 import { CLIENTS, DRIVERS, FLEET_NUMBERS } from '../../types';
 
 interface AddTripFormProps {

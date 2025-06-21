@@ -20,8 +20,9 @@ const Card: CardComponent = ({ children, className = '' }) => {
 };
 
 interface CardHeaderProps {
-  title: string;
+  title: React.ReactNode;
   subtitle?: React.ReactNode;
+  icon?: React.ReactNode;
   action?: React.ReactNode;
   className?: string;
 }
@@ -29,15 +30,17 @@ interface CardHeaderProps {
 export const CardHeader: React.FC<CardHeaderProps> = ({ 
   title, 
   subtitle, 
+  icon,
   action,
   className = '' 
 }) => {
   return (
     <div className={`px-6 py-4 border-b border-slate-200 flex justify-between items-center ${className}`}>
-      <div>
+      <div className="flex items-center gap-2">
+        {icon && <span className="text-xl">{icon}</span>}
         <h3 className="text-xl font-semibold text-slate-800">{title}</h3>
-        {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
       </div>
+      {subtitle && <p className="text-sm text-slate-500 mt-1">{subtitle}</p>}
       {action && <div>{action}</div>}
     </div>
   );

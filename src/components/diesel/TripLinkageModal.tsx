@@ -17,9 +17,7 @@ import {
   AlertTriangle,
   DollarSign,
   Truck,
-  Calendar,
-  MapPin,
-  User
+  Calendar
 } from 'lucide-react';
 
 // ─── Utilities ───────────────────────────────────────────────────
