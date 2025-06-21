@@ -20,7 +20,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
     if (e.target.files?.length) {
       const file = e.target.files[0];
       setCsvFile(file);
-      
+
       // Generate preview
       try {
         const text = await file.text();
@@ -36,7 +36,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
     const lines = text.split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
     const data = [];
-    
+
     for (let i = 1; i < lines.length; i++) {
       if (lines[i].trim()) {
         const values = lines[i].split(',').map(v => v.trim());
@@ -47,7 +47,7 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
         data.push(row);
       }
     }
-    
+
     return data;
   };
 
@@ -55,11 +55,11 @@ const LoadImportModal: React.FC<LoadImportModalProps> = ({ isOpen, onClose }) =>
     if (!csvFile) return;
 
     setIsProcessing(true);
-    
+
     try {
       const text = await csvFile.text();
       const data = parseCSV(text);
-      
+
       const trips = data.map((row: any) => ({
         fleetNumber: row.fleetNumber || row.fleet || '',
         route: row.route || '',
