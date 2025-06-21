@@ -304,11 +304,22 @@ export interface InvoiceAging {
 export interface DriverBehaviorEvent {
   id: string;
   driverName: string;
-  eventType: string;
-  date: string;
-  points?: number;
-  severity?: string;
-  notes?: string;
+  fleetNumber: string;
+  eventDate: string;
+  eventTime: string;
+  eventType: DriverBehaviorEventType;
+  description: string;
+  location?: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  reportedBy: string;
+  reportedAt: string;
+  status: 'pending' | 'acknowledged' | 'resolved' | 'disputed';
+  actionTaken?: string;
+  points: number;
+  count?: number; // Column L - used for duplicate prevention
+  date?: string; // Legacy field
+  notes?: string; // Legacy field
+  carReportId?: string;
 }
 
 export type DriverBehaviorEventType = string;
