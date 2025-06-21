@@ -1,0 +1,70 @@
+The Netlify deploy errored, with the following guidance provided:
+
+**Diagnosis:**
+The build failed due to an error in the `Header.tsx` file at line 1, where there is an issue with the syntax.
+
+**Solution:**
+1. Check the `Header.tsx` file in the path `src/components/layout/Header.tsx` in your repository.
+2. In line 1, ensure that there is no unexpected or incorrect syntax.
+3. Correct any syntax errors, specifically looking for misplaced characters like "code" instead of a semicolon ";".
+4. After making the necessary changes, commit the corrections to your repository and trigger a new build to verify the fix.
+
+By resolving the syntax error in the `Header.tsx` file, the build should succeed without any issues.
+
+The relevant error logs are:
+
+Line 71: [36m[1m❯ Loading extensions[22m[39m
+Line 72:    - neon
+Line 73: [96m[1m​[22m[39m
+Line 74: [96m[1mbuild.command from netlify.toml                               [22m[39m
+Line 75: [96m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 76: ​
+Line 77: [36m$ vite build[39m
+Line 78: [36mvite v6.3.5 [32mbuilding for production...[36m[39m
+Line 79: transforming...
+Line 80: [32m✓[39m 16 modules transformed.
+Line 81: [31m✗[39m Build failed in 677ms
+Line 82: [31merror during build:
+Line 83: [31m[vite:esbuild] Transform failed with 1 error:
+Line 84: /opt/build/repo/src/components/layout/Header.tsx:1:4: ERROR: Expected ";" but found "code"[31m
+Line 85: file: [36m/opt/build/repo/src/components/layout/Header.tsx:1:4[31m
+Line 86: [33m
+Line 87: [33mExpected ";" but found "code"[33m
+Line 88: 1  |  The code adds a user profile component to the header of the application.
+Line 89:    |      ^
+Line 90: 2  |  ```
+3  |  
+[31m
+    at failureErrorWithLog (/opt/build/repo/node_modules/esbuild/lib/main.js:1463:15)
+    at /opt/build/r
+Line 91: [91m[1m"build.command" failed                                        [22m[39m
+Line 92: [91m[1m────────────────────────────────────────────────────────────────[22m[39m
+Line 93: ​
+Line 94:   [31m[1mError message[22m[39m
+Line 95:   Command failed with exit code 1: vite build
+Line 96: ​
+Line 97:   [31m[1mError location[22m[39m
+Line 98:   In build.command from netlify.toml:
+Line 99:   vite build
+Line 100: ​
+Line 101:   [31m[1mResolved config[22m[39m
+Line 102:   build:
+Line 103:     command: vite build
+Line 104:     commandOrigin: config
+Line 105:     environment:
+Line 106:       - NETLIFY_DATABASE_URL
+Line 107:       - NETLIFY_DATABASE_URL_UNPOOLED
+Line 119:   plugins:
+Line 120:     - inputs: {}
+Line 121:       origin: config
+Line 122:       package: '@netlify/plugin-lighthouse'
+Line 123:     - inputs: {}
+Line 124:       origin: config
+Line 125:       package: netlify-plugin-formspree
+Line 126:     - inputs: {}
+Line 127:       origin: config
+Line 128:       package: netlify-plugin-cloudinary
+Line 129: Failed during stage 'building site': Build script returned non-zero exit code: 2
+Line 130: Build failed due to a user error: Build script returned non-zero exit code: 2
+Line 131: Failing build: Failed to build site
+Line 132: Finished processing build request in 30.939s

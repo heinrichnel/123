@@ -1,4 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { User, Bell, Settings } from 'lucide-react';
+import Button from '../ui/Button.tsx';
+
+interface HeaderProps {
+  title?: string;
+  userName?: string;
+  onProfileClick?: () => void;
+  onNotificationsClick?: () => void;
+  onSettingsClick?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ title, userName, onProfileClick, onNotificationsClick, onSettingsClick }) => {
+  return (
+    <header className="flex justify-between items-center p-4 bg-gray-800 text-white">
+      <h1>{title}</h1>
+      <div className="flex items-center space-x-4">
+        <Button onClick={onProfileClick}><User /></Button>
+        <Button onClick={onNotificationsClick}><Bell /></Button>
+        <Button onClick={onSettingsClick}><Settings /></Button>
+      </div>
+    </header>
+  );
+};
+
+export default Header;import React, { useState } from 'react';
 import { Trip, CostEntry, AdditionalCost } from '../../types/index.js';
 import { useAppContext } from '../../context/AppContext.js';
 import Card, { CardContent, CardHeader } from '../ui/Card.tsx';
