@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { User, Bell, Settings } from 'lucide-react';
-import Button from '../ui/Button.tsx';
+import Button from '../ui/Button';
 
 interface HeaderProps {
   title?: string;
