@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Trip, AdditionalCost } from '../../types/index.js';
-import Modal from '../ui/Modal.tsx';
-import Button from '../ui/Button.tsx';
-import { Input, TextArea, FileUpload } from '../ui/FormElements.tsx';
-import AdditionalCostsForm from '../costs/AdditionalCostsForm.tsx';
+import { Trip, AdditionalCost } from '../../types/index';
+import Modal from '../ui/Modalx';
+import Button from '../ui/Buttonx';
+import { Input, TextArea, FileUpload } from '../ui/FormElementsx';
+import AdditionalCostsForm from '../costs/AdditionalCostsFormx';
 import { 
   Send, 
   X, 
   AlertTriangle, 
   Flag
 } from 'lucide-react';
-import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers.ts';
+import { formatCurrency, formatDateTime, calculateKPIs } from '../../utils/helpers';
 
 interface InvoiceSubmissionModalProps {
   isOpen: boolean;

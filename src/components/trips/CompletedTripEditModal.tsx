@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trip, TripEditRecord, TRIP_EDIT_REASONS } from '../../types';
+import * as types from '../../types.ts';
 import Modal from '../ui/Modal.js';
 import Button from '../ui/Button.js';
 import { Input, Select, TextArea } from '../ui/FormElements.js';
@@ -8,9 +8,9 @@ import { formatDateTime } from '../../utils/helpers';
 
 interface CompletedTripEditModalProps {
   isOpen: boolean;
-  trip: Trip;
+  trip: types.Trip;
   onClose: () => void;
-  onSave: (updatedTrip: Trip, editRecord: Omit<TripEditRecord, 'id'>) => void;
+  onSave: (updatedTrip: types.Trip, editRecord: Omit<types.TripEditRecord, 'id'>) => void;
 }
 
 const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
@@ -56,7 +56,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
 
     // Check if any changes were made
     const hasChanges = Object.keys(formData).some(key => {
-      const originalValue = trip[key as keyof Trip]?.toString() || '';
+      const originalValue = trip[key as keyof types.Trip]?.toString() || '';
       const newValue = formData[key as keyof typeof formData] || '';
       return originalValue !== newValue;
     });
@@ -76,7 +76,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
     const changes: Array<{field: string, oldValue: string, newValue: string}> = [];
     
     Object.keys(formData).forEach(key => {
-      const originalValue = trip[key as keyof Trip]?.toString() || '';
+      const originalValue = trip[key as keyof types.Trip]?.toString() || '';
       const newValue = formData[key as keyof typeof formData] || '';
       if (originalValue !== newValue) {
         changes.push({
@@ -91,7 +91,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
 
     // Create edit records for each change
     changes.forEach(change => {
-      const editRecord: Omit<TripEditRecord, 'id'> = {
+      const editRecord: Omit<types.TripEditRecord, 'id'> = {
         tripId: trip.id,
         editedBy: 'Current User', // In real app, use actual user
         editedAt: new Date().toISOString(),
@@ -103,7 +103,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
       };
 
       // Update trip with new data and edit history
-      const updatedTrip: Trip = {
+      const updatedTrip: types.Trip = {
         ...trip,
         ...formData,
         baseRevenue: Number(formData.baseRevenue),
@@ -149,7 +149,7 @@ const CompletedTripEditModal: React.FC<CompletedTripEditModalProps> = ({
             onChange={(e) => setEditReason(e.target.value)}
             options={[
               { label: 'Select reason for editing...', value: '' },
-              ...TRIP_EDIT_REASONS.map(reason => ({ label: reason, value: reason }))
+              ...types.TRIP_EDIT_REASONS.map(reason => ({ label: reason, value: reason }))
             ]}
             error={errors.editReason}
           />

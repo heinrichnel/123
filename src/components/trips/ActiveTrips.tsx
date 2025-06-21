@@ -1,10 +1,10 @@
 import React from "react";
-import { Trip } from "../../types";
+import * as types from "../../App.tsx";
 
 interface ActiveTripsProps {
-  trips: Trip[];
-  onView: (trip: Trip) => void;
-  onEdit: (trip: Trip) => void;
+  trips: types.Trip[];
+  onView: (trip: types.Trip) => void;
+  onEdit: (trip: types.Trip) => void;
   onDelete: (id: string) => void;
   onCompleteTrip: (tripId: string) => void;
 }
@@ -26,7 +26,7 @@ const ActiveTrips: React.FC<ActiveTripsProps> = ({
 
         return (
           <div key={trip.id} className="trip-card p-4 border rounded mb-4">
-            <h3 className="font-semibold">{trip.fleetNumber}</h3>
+            className="font-semibold"{">"}{trip.fleetNumber}
             <p>{trip.route}</p>
 
             <button onClick={() => onView(trip)}>View</button>

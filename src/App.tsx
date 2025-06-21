@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { AppProvider, useAppContext } from "./context/AppContext.js";
-import { ReplitAuthProvider, useReplitAuth } from "./context/ReplitAuthContext.js";
+import {
+  ReplitAuthProvider,
+  useReplitAuth,
+} from "./context/ReplitAuthContext.js";
 import Header from "./components/layout/Header.js";
 import LoginPage from "./components/auth/LoginPage.js";
 import Dashboard from "./components/dashboard/Dashboard.js";
@@ -15,7 +18,11 @@ import MissedLoadsTracker from "./components/trips/MissedLoadsTracker.js";
 import DieselDashboard from "./components/diesel/DieselDashboard.js";
 import Modal from "./components/ui/Modal.js";
 import ConnectionStatus from "./components/ui/ConnectionStatus.js";
-import { Trip, SystemCostRates, DEFAULT_SYSTEM_COST_RATES } from "./types/index.js";
+import {
+  Trip,
+  SystemCostRates,
+  DEFAULT_SYSTEM_COST_RATES,
+} from "./types/index.js";
 import { Database } from "lucide-react";
 import DriverBehaviorPage from "./pages/DriverBehaviorPage.js";
 import TripDetails from "./components/trips/TripDetails.js";
@@ -26,19 +33,7 @@ import { db } from "./firebase.js";
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useReplitAuth();
-  const {
-    trips,
-    addTrip,
-    updateTrip,
-    deleteTrip,
-    completeTrip,
-    missedLoads,
-    addMissedLoad,
-    updateMissedLoad,
-    deleteMissedLoad,
-    connectionStatus,
-    setTrips,
-  } = useAppContext();
+  useAppContext();
 
   if (isLoading) {
     return (
@@ -78,14 +73,19 @@ const AppContent: React.FC = () => {
   // Real-time Firestore listener for trips
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "trips"), (snapshot) => {
-      const tripsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const tripsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
       setTrips(tripsData as Trip[]);
     });
     return () => unsub();
   }, [setTrips]);
 
   // Add Trip handler
-  const handleAddTrip = async (tripData: Omit<Trip, "id" | "costs" | "status">) => {
+  const handleAddTrip = async (
+    tripData: Omit<Trip, "id" | "costs" | "status">,
+  ) => {
     try {
       const newTrip = {
         ...tripData,
@@ -103,7 +103,9 @@ const AppContent: React.FC = () => {
   };
 
   // Update Trip handler
-  const handleUpdateTrip = (tripData: Omit<Trip, "id" | "costs" | "status">) => {
+  const handleUpdateTrip = (
+    tripData: Omit<Trip, "id" | "costs" | "status">,
+  ) => {
     if (editingTrip) {
       const updatedTrip = {
         ...editingTrip,
@@ -130,7 +132,12 @@ const AppContent: React.FC = () => {
   // Delete trip handler
   const handleDeleteTrip = (id: string) => {
     const trip = trips.find((t) => t.id === id);
-    if (trip && confirm(`Delete trip for fleet ${trip.fleetNumber}? This cannot be undone.`)) {
+    if (
+      trip &&
+      confirm(
+        `Delete trip for fleet ${trip.fleetNumber}? This cannot be undone.`,
+      )
+    ) {
       deleteTrip(id);
       if (selectedTrip?.id === id) setSelectedTrip(null);
       alert("Trip deleted successfully.");
@@ -172,10 +179,14 @@ const AppContent: React.FC = () => {
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mb-4"></div>
             <p className="text-lg font-medium text-gray-700">Loading data...</p>
-            <p className="text-sm text-gray-500 mt-2">Connecting to Firestore database</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Connecting to Firestore database
+            </p>
             <div className="flex items-center justify-center mt-4 space-x-2">
               <Database className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-600">Establishing real-time connection</span>
+              <span className="text-sm text-blue-600">
+                Establishing real-time connection
+              </span>
             </div>
           </div>
         </div>
@@ -183,7 +194,9 @@ const AppContent: React.FC = () => {
     }
 
     if (selectedTrip) {
-      return <TripDetails trip={selectedTrip} onBack={() => setSelectedTrip(null)} />;
+      return (
+        <TripDetails trip={selectedTrip} onBack={() => setSelectedTrip(null)} />
+      );
     }
 
     switch (currentView) {
@@ -204,7 +217,7 @@ const AppContent: React.FC = () => {
         return (
           <CompletedTrips
             trips={trips.filter((t) =>
-              ["completed", "invoiced", "paid"].includes(t.status)
+              ["completed", "invoiced", "paid"].includes(t.status),
             )}
             onView={setSelectedTrip}
           />
@@ -275,6 +288,7 @@ const App: React.FC = () => (
 export default App;
 
 export interface Trip {
+  route: ReactNode;
   id: string;
   fleetNumber: string;
   status: string;
