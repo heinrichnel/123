@@ -33,7 +33,17 @@ import { db } from "./firebase.js";
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useReplitAuth();
-  useAppContext();
+  const { 
+    trips, 
+    setTrips, 
+    missedLoads, 
+    addMissedLoad, 
+    updateMissedLoad, 
+    deleteMissedLoad,
+    updateTrip,
+    deleteTrip,
+    completeTrip
+  } = useAppContext();
 
   if (isLoading) {
     return (

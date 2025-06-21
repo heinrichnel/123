@@ -188,11 +188,22 @@ export const CLIENTS = [
 ];
 
 export const DRIVERS = [
-  // ... [your full DRIVERS array here]
+  'John Smith',
+  'Mike Johnson',
+  'David Wilson',
+  'Chris Brown',
+  'Alex Davis',
+  'Robert Miller',
+  'James Garcia',
+  'William Rodriguez',
+  'Michael Martinez',
+  'Daniel Anderson'
 ];
 
 export const FLEET_NUMBERS = [
-  // ... [your full FLEET_NUMBERS array here]
+  'FL001', 'FL002', 'FL003', 'FL004', 'FL005',
+  'FL006', 'FL007', 'FL008', 'FL009', 'FL010',
+  'FL011', 'FL012', 'FL013', 'FL014', 'FL015'
 ];
 
 export const RESPONSIBLE_PERSONS = [
